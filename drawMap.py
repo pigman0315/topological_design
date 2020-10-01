@@ -4,6 +4,8 @@ import math
 import os
 
 ##################################### Global Variable #################################
+# Parameter
+theta = 10
 # Data points
 dataBound = None
 dataCent = None
@@ -36,12 +38,12 @@ def Center_find1stLayerCenter(candidates):
 	bestCenter = None
 	bestCost = -1
 	for cenerCand in candidates:
-		cenerCand.split()
+		cenerCand.split() # split x , y
 		cx = float(cenerCand[0])
 		cy = float(cenerCand[1])
 		totalDist = 0
 		for boundary in dataBound[1:]:
-			boundary = boundary.split()
+			boundary = boundary.split() # split x , y
 			bx = float(boundary[0])
 			by = float(boundary[1])
 			totalDist += math.sqrt((abs(cx-bx)**2 + abs(cy-by)**2))
@@ -54,11 +56,28 @@ def Center_find1stLayerCenter(candidates):
 			by = float(boundary[1])
 			totalDist += abs(math.sqrt((abs(cx-bx)**2 + abs(cy-by)**2)) - average)
 			
-		#print(cenerCand + ' ' + str(totalDist))
 		if bestCost == -1 or totalDist < bestCost:
 			bestCost = totalDist
 			bestCenter = cenerCand
-	return bestCenter.split()
+	bestCenter = bestCenter.split()
+	bestCenter[0] = float(bestCenter[0])
+	bestCenter[1] = float(bestCenter[1])
+	return bestCenter
+# Find 1st districting
+def find1stLayerRotDeg(m_I,theta,best1stCenter):
+	global dataCust
+	for k in range(0,int(360/m_I), theta):
+		limits = [] #cos value of districting point
+		for i in range(m_I):
+			limits.append(math.cos(((k+(360/m_I)*i)/180.0)*math.pi))
+		count = int(dataCust[0])
+		for customers in dataCust[1:]:
+			customers = customers.split()
+			v1 = [float(customers[0])-best1stCenter[0],float(customers[1])-best1stCenter[1]]
+			v0 = [1,0]
+			cos_val = (v0[0]*v1[0]+v0[1]*v1[1])/(math.sqrt(v0[0]**2+v0[1]**2)*math.sqrt(v1[0]**2+v1[1]**2))
+			print(cos_val)
+	return 0
 
 # Read data points from files
 def Read_file():
@@ -78,7 +97,7 @@ def Read_file():
 
 # Draw map for visualization
 def Draw_map():
-	global best1stCenter
+	global best1stCenter, theta
 	# plot boundary points
 	count = int(dataBound[0])
 	for boundaries in dataBound[1:]:
@@ -98,25 +117,27 @@ def Draw_map():
 	# plot best 1st layer center
 	count = int(dataCent[1])
 	best1stCenter = Center_find1stLayerCenter(dataCent[2:2+count])
-	plt.plot(float(best1stCenter[0]), float(best1stCenter[1]), 'r.') # r.: red point
+	plt.plot(best1stCenter[0], best1stCenter[1], 'r.') # r.: red point
 	
 	# plot 1st layer districting line
-	rotate_degree = 0.0
-	m_I = 3
+	m_I = 4
 	district_angle = 360.0 / m_I
-	district_points = [[float(best1stCenter[0])+50.0,float(best1stCenter[1])]]
+	rotate_degree = find1stLayerRotDeg(m_I,theta,best1stCenter)
+	district_points = [[float(best1stCenter[0])+x_max,float(best1stCenter[1])]]
 	district_points[0] = Rotate(best1stCenter,district_points[0],rotate_degree)
 	for i in range(m_I-1):
 		district_points.append(Rotate(best1stCenter,district_points[i],district_angle))
 	for i in range(len(district_points)):
-		x_1 = min(x_max,max(x_min,float(best1stCenter[0])))
-		x_2 = min(x_max,max(x_min,district_points[i][0]))
-		y_1 = min(y_max,max(y_min,float(best1stCenter[1])))
-		y_2 = min(y_max,max(y_min,district_points[i][1]))
+		x_1 = best1stCenter[0]
+		x_2 = district_points[i][0]
+		y_1 = best1stCenter[1]
+		y_2 = district_points[i][1]
 		# plot a line: plot([x_1,x_2],[y_1,y_2])
 		plt.plot([x_1,x_2],[y_1,y_2],'k') # k: black line
 	# show graph
-	plt.xticks(np.arange(0,x_max,10))
+	plt.xticks(np.arange(0,x_max+10,10))
+	plt.yticks(np.arange(0,x_max+10,10))
+	plt.axis('equal')
 	plt.show()	
 
 ##################################### Main Function #################################
