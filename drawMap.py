@@ -4,22 +4,31 @@ import math
 import os
 
 ##################################### Global Variable #################################
+# Constant
+LENGTH_OF_MAP = 20000
+INTERVAL = 200
 # Parameter
-theta = 10
+m_I = 4
+m_O = 3
+theta = 30
 # Data points
 dataBound = None
 dataCent = None
 dataCust = None
 
-# Boundery limit
-x_max = 50.0
-x_min = 0.0
-y_max = 50.0
-y_min = 0.0
 # final solution
 best1stCenter = None
 
-##################################### Function Define #################################
+##################################### Function Definition #################################
+# Find degree between center and customer
+def Find_angle(center,customer):
+	#atan2(y,x)
+	delta_y = customer[1] - center[1]
+	delta_x = customer[0] - center[0]
+	deg = math.atan2(delta_y, delta_x)*180/math.pi
+	if(deg < 0):
+		deg += 360
+	return deg
 # rotate a point in a 2D plane
 def Rotate(origin,target,degree):
 	result = [0,0]
@@ -34,51 +43,64 @@ def Rotate(origin,target,degree):
 	result[1] = o_y + math.sin(radius)*d_x + math.cos(radius)*d_y
 	return result
 # Find first layer's center
-def Center_find1stLayerCenter(candidates):
-	bestCenter = None
-	bestCost = -1
-	for cenerCand in candidates:
-		cenerCand.split() # split x , y
-		cx = float(cenerCand[0])
-		cy = float(cenerCand[1])
-		totalDist = 0
-		for boundary in dataBound[1:]:
-			boundary = boundary.split() # split x , y
-			bx = float(boundary[0])
-			by = float(boundary[1])
-			totalDist += math.sqrt((abs(cx-bx)**2 + abs(cy-by)**2))
-		average = totalDist / len(dataBound[1:])
-		
-		totalDist = 0
-		for boundary in dataBound[1:]:
-			boundary = boundary.split()
-			bx = float(boundary[0])
-			by = float(boundary[1])
-			totalDist += abs(math.sqrt((abs(cx-bx)**2 + abs(cy-by)**2)) - average)
-			
-		if bestCost == -1 or totalDist < bestCost:
-			bestCost = totalDist
-			bestCenter = cenerCand
-	bestCenter = bestCenter.split()
-	bestCenter[0] = float(bestCenter[0])
-	bestCenter[1] = float(bestCenter[1])
-	return bestCenter
-# Find 1st districting
+def Center_find1stLayerCenter():
+	result = [0,0]
+	result[0] = LENGTH_OF_MAP / 2.0
+	result[1] = LENGTH_OF_MAP / 2.0
+	return result
+# Find 1st districting lines
 def find1stLayerRotDeg(m_I,theta,best1stCenter):
-	global dataCust
-	for k in range(0,int(360/m_I), theta):
-		limits = [] #cos value of districting point
-		for i in range(m_I):
-			limits.append(math.cos(((k+(360/m_I)*i)/180.0)*math.pi))
-		count = int(dataCust[0])
-		for customers in dataCust[1:]:
-			customers = customers.split()
-			v1 = [float(customers[0])-best1stCenter[0],float(customers[1])-best1stCenter[1]]
-			v0 = [1,0]
-			cos_val = (v0[0]*v1[0]+v0[1]*v1[1])/(math.sqrt(v0[0]**2+v0[1]**2)*math.sqrt(v1[0]**2+v1[1]**2))
-			print(cos_val)
 	return 0
-
+def find1stLayerDistrictPoint():
+	district_angle = 360.0 / m_I
+   	##############NOT DONE YET############################################################
+   	#best_rotate_degree = find1stLayerRotDeg(m_I,theta,best1stCenter)					 #
+	best_rotate_degree = 90									     #
+	######################################################################################
+	center = Center_find1stLayerCenter()
+	end_points = [[float(center[0])+LENGTH_OF_MAP,float(center[1])]]
+	end_points[0] = Rotate(center,end_points[0], best_rotate_degree)
+	result = []
+	for i in range(m_I-1):
+		end_points.append(Rotate(center,end_points[i],district_angle))
+	for i in range(0,len(end_points)):
+		tmp_list = []
+		result.append(tmp_list)
+		delta_x = end_points[i][0] - center[0]
+		delta_y = end_points[i][1] - center[1]
+		slope = delta_y / delta_x
+		deg = math.atan2(delta_y, delta_x)*180/math.pi
+		if(deg < 0):
+			deg += 360
+		print(deg)
+		# To count how many points we should draw on the line
+		counter = int(math.sqrt(delta_x**2 + delta_y**2)) // INTERVAL # integer division
+		result[i].append([center[0], center[1]])
+		for j in range(counter): # counter: length of districting line / INTERVAL
+			# if deg ~= 90, (return value of atan2 function return value might be 89.9999/90.999)
+			#slope will be inf
+			if(abs(deg-90) < 1):
+				tmp_x = center[0]
+				tmp_y = result[i][j-1][1] + INTERVAL
+			# if deg ~= 270(return value of atan2 function return value might be 269.9999/270.999)
+			# slope will be -inf
+			elif(abs(deg-270) < 1):
+				tmp_x = center[0]
+				tmp_y = result[i][j-1][1] - INTERVAL
+			# deg != 90 && deg != 270
+			# if delta_x < 0, it means end point  is on the left of center
+			# otherwise, end point is on the right of center
+			else:
+				if(delta_x < 0):
+					tmp_x = result[i][j-1][0] - INTERVAL
+					tmp_y = result[i][j-1][1] - INTERVAL*slope
+				else:
+					tmp_x = result[i][j-1][0] + INTERVAL
+					tmp_y = result[i][j-1][1] + INTERVAL*slope	
+			if(tmp_x < 0 or tmp_x > LENGTH_OF_MAP or tmp_y < 0 or tmp_y > LENGTH_OF_MAP):
+				break
+			result[i].append([tmp_x,tmp_y])
+	return result
 # Read data points from files
 def Read_file():
 	global dataBound,dataCent,dataCust
@@ -94,51 +116,42 @@ def Read_file():
 	fileCent.close()
 	dataCust = fileCust.readlines()
 	fileCust.close()
-
+	# convert (x,y) from string to float, e.g.: ('10','10') ---> (10,10)
+	for i in range(0,len(dataBound)):
+		dataBound[i] = dataBound[i].split()
+		dataBound[i][0] = float(dataBound[i][0])
+		dataBound[i][1] = float(dataBound[i][1])
+	for i in range(0,len(dataCust)):
+		dataCust[i] = dataCust[i].split()
+		dataCust[i][0] = float(dataCust[i][0])
+		dataCust[i][1] = float(dataCust[i][1])
 # Draw map for visualization
 def Draw_map():
 	global best1stCenter, theta
 	# plot boundary points
-	count = int(dataBound[0])
-	for boundaries in dataBound[1:]:
-		boundaries = boundaries.split()
-		x = float(boundaries[0])
-		y = float(boundaries[1])
-		plt.plot(x, y, 'k.') # k.: black point
+	for point in dataBound[1:]:
+		plt.plot(point[0], point[1], 'k.') # k.: black point
 		
-	# plot customer points
-	count = int(dataCust[0])	
-	for customers in dataCust[1:]:
-		customers = customers.split()
-		x = float(customers[0])
-		y = float(customers[1])
-		plt.plot(x, y, 'b.') # b.: blue point
+	# plot customer points	
+	for point in dataCust[1:]:
+		plt.plot(point[0], point[1], 'b.') # b.: blue point
 
 	# plot best 1st layer center
-	count = int(dataCent[1])
-	best1stCenter = Center_find1stLayerCenter(dataCent[2:2+count])
+	best1stCenter = Center_find1stLayerCenter()
 	plt.plot(best1stCenter[0], best1stCenter[1], 'r.') # r.: red point
 	
 	# plot 1st layer districting line
-	m_I = 4
-	district_angle = 360.0 / m_I
-	rotate_degree = find1stLayerRotDeg(m_I,theta,best1stCenter)
-	district_points = [[float(best1stCenter[0])+x_max,float(best1stCenter[1])]]
-	district_points[0] = Rotate(best1stCenter,district_points[0],rotate_degree)
-	for i in range(m_I-1):
-		district_points.append(Rotate(best1stCenter,district_points[i],district_angle))
+	district_points = find1stLayerDistrictPoint()
 	for i in range(len(district_points)):
-		x_1 = best1stCenter[0]
-		x_2 = district_points[i][0]
-		y_1 = best1stCenter[1]
-		y_2 = district_points[i][1]
-		# plot a line: plot([x_1,x_2],[y_1,y_2])
-		plt.plot([x_1,x_2],[y_1,y_2],'k') # k: black line
+		for j in range(len(district_points[i])):
+			plt.plot(district_points[i][j][0], district_points[i][j][1], 'g.')
+	
 	# show graph
-	plt.xticks(np.arange(0,x_max+10,10))
-	plt.yticks(np.arange(0,x_max+10,10))
+	plt.xticks(np.arange(0,LENGTH_OF_MAP+1,LENGTH_OF_MAP/10))
+	plt.yticks(np.arange(0,LENGTH_OF_MAP+1,LENGTH_OF_MAP/10))
 	plt.axis('equal')
 	plt.show()	
+
 
 ##################################### Main Function #################################
 Read_file()
