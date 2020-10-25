@@ -8,8 +8,7 @@ from shapely import wkt
 ##################################### Global Variable #################################
 # Constant
 LENGTH_OF_MAP = 20000
-INTERVAL = 200
-
+INTERVAL = 600
 # Parameter
 # m_I = 4 --> degree = 90, m_I = 3 ---> degree = 120
 # m_O = 3 --> degree = 90, m_O = 2 ---> degree = 120
@@ -31,6 +30,7 @@ district_points_2nd = None
 # center
 best1stCenter = None
 best2ndCenter = []
+
 ##################################### Function Definition #################################
 def show_info():
 	print("*******************  Map Information  *****************")
@@ -107,7 +107,6 @@ def find2ndLayerCenter():
 		tmp_p = [-1,-1]
 		# a Polygon in Library 'shapely'
 		p = Polygon(points_set[i])
-		print(points_set[i])
 		# get centroid of polygon 'p'
 		# cetroid is a POINT type in 'shapely'
 		centroid = p.centroid
@@ -126,7 +125,7 @@ def find1stLayerDistrictPoint():
    	#best_rotate_degree = find1stLayerRotDeg(m_I,theta,best1stCenter)					 #
 	######################################################################################
 	center = find1stLayerCenter()
-	end_points = [[float(center[0])+LENGTH_OF_MAP,float(center[1])]]
+	end_points = [[float(center[0])+LENGTH_OF_MAP*math.sqrt(2),float(center[1])]]
 	end_points[0] = Rotate(center,end_points[0], best_rotate_degree_1st)
 	result = []
 	for i in range(m_I-1):
@@ -137,43 +136,18 @@ def find1stLayerDistrictPoint():
 		delta_x = end_points[i][0] - center[0]
 		delta_y = end_points[i][1] - center[1]
 		slope = delta_y / delta_x
-		deg = math.atan2(delta_y, delta_x)*180/math.pi
+		rad = math.atan2(delta_y, delta_x) # radius
+		deg = rad*180/math.pi # degree
 		if(deg < 0):
 			deg += 360
 		# To count how many points we should draw on the line
-		counter = int(math.sqrt(delta_x**2 + delta_y**2)) // INTERVAL # integer division
+		counter = int(math.sqrt(delta_x**2 + delta_y**2)) // INTERVAL # //: integer division
 		result[i].append([center[0], center[1]])
 		for j in range(counter): # counter: length of districting line / INTERVAL
-			# if deg ~= 90, (return value of atan2 function return value might be 89.9999/90.999)
-			#slope will be inf
-			if(abs(deg-90) < 1):
-				tmp_x = center[0]
-				tmp_y = result[i][j-1][1] + INTERVAL
-			# if deg ~= 270(return value of atan2 function return value might be 269.9999/270.999)
-			# slope will be -inf
-			elif(abs(deg-270) < 1):
-				tmp_x = center[0]
-				tmp_y = result[i][j-1][1] - INTERVAL
-			# deg != 90 && deg != 270
-			# if delta_x < 0, it means end point  is on the left of center
-			# otherwise, end point is on the right of center
-			else:
-				if(delta_x < 0):
-					tmp_x = result[i][j-1][0] - INTERVAL
-					tmp_y = result[i][j-1][1] - INTERVAL*slope
-				else:
-					tmp_x = result[i][j-1][0] + INTERVAL
-					tmp_y = result[i][j-1][1] + INTERVAL*slope	
+			tmp_x = result[i][j-1][0] + INTERVAL*math.cos(rad)
+			tmp_y = result[i][j-1][1] + INTERVAL*math.sin(rad)
+			# if tmp_x or tmp_y is out of bound, ignore it and stop the for-loop
 			if(tmp_x < 0 or tmp_x > LENGTH_OF_MAP or tmp_y < 0 or tmp_y > LENGTH_OF_MAP):
-				if(tmp_x < 0):
-					tmp_x = 0
-				if(tmp_y < 0):
-					tmp_y = 0
-				if(tmp_x > LENGTH_OF_MAP):
-					tmp_x = LENGTH_OF_MAP
-				if(tmp_y > LENGTH_OF_MAP):
-					tmp_y = LENGTH_OF_MAP
-				result[i].append([tmp_x,tmp_y])
 				break
 			result[i].append([tmp_x,tmp_y])
 	return result
