@@ -9,7 +9,6 @@ from shapely import wkt
 # Constant
 LENGTH_OF_MAP = 20000
 INTERVAL = 600
-MAGIC_NUMBER = 100 # To avoid districting lines in 2nd layer are too short
 # Parameter
 # m_I = 4 --> degree = 90, m_I = 3 ---> degree = 120
 # m_O = 3 --> degree = 90, m_O = 2 ---> degree = 120
@@ -137,8 +136,8 @@ def find1stLayerDistrictPoint():
 		deg = rad*180/math.pi # degree
 		if(deg < 0):
 			deg += 360
-		# To count how many points we should draw on the line
-		counter = int(math.sqrt(delta_x**2 + delta_y**2)) // INTERVAL # //: integer division
+		# Use to count how many points we should draw at most on the line
+		counter = LENGTH_OF_MAP // INTERVAL # //: integer division
 		result[i].append([center[0], center[1]])
 		for j in range(counter): # counter: length of districting line / INTERVAL
 			tmp_x = result[i][j-1][0] + INTERVAL*math.cos(rad)
@@ -214,7 +213,8 @@ def find2ndLayerDistrictPoint():
 			delta_x = end_points[j][0] - best2ndCenter[i][0]
 			delta_y = end_points[j][1] - best2ndCenter[i][1]
 			rad = math.atan2(delta_y, delta_x) #radius
-			counter = max(MAGIC_NUMBER,int(math.sqrt(delta_x**2 + delta_y**2)) // INTERVAL) # //: integer division
+			# Use to count how many points we should draw at most on the line
+			counter = LENGTH_OF_MAP // INTERVAL # //: integer division
 			tmp_list.append([best2ndCenter[i][0],best2ndCenter[i][1]])
 			for k in range(counter):
 				tmp_x = tmp_list[k][0] + INTERVAL*math.cos(rad)
