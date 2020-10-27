@@ -137,7 +137,7 @@ def find1stLayerDistrictPoint():
 		if(deg < 0):
 			deg += 360
 		# Use to count how many points we should draw at most on the line
-		counter = LENGTH_OF_MAP // INTERVAL # //: integer division
+		counter = LENGTH_OF_MAP*2 // INTERVAL # //: integer division
 		result[i].append([center[0], center[1]])
 		for j in range(counter): # counter: length of districting line / INTERVAL
 			tmp_x = result[i][j-1][0] + INTERVAL*math.cos(rad)
@@ -214,7 +214,7 @@ def find2ndLayerDistrictPoint():
 			delta_y = end_points[j][1] - best2ndCenter[i][1]
 			rad = math.atan2(delta_y, delta_x) #radius
 			# Use to count how many points we should draw at most on the line
-			counter = LENGTH_OF_MAP // INTERVAL # //: integer division
+			counter = LENGTH_OF_MAP*2 // INTERVAL # //: integer division
 			tmp_list.append([best2ndCenter[i][0],best2ndCenter[i][1]])
 			for k in range(counter):
 				tmp_x = tmp_list[k][0] + INTERVAL*math.cos(rad)
