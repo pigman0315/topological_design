@@ -1,7 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import random
 import sys
+import copy
 import os
 from shapely.geometry import Polygon
 from shapely import wkt
@@ -96,6 +98,7 @@ def find1stLayerRotDeg(I,theta,best1stCenter):
 def find1stDistrictEndPoint(I,district_points_1st, best1stCenter, LENGTH_OF_MAP):
 	cps_deg = [45,135,225,315]
 	cps = [[LENGTH_OF_MAP,LENGTH_OF_MAP],[0,LENGTH_OF_MAP],[0,0],[LENGTH_OF_MAP,0]]
+	cps_used = [False]*4
 	result = []
 	c = best1stCenter
 	for i in range(I):
@@ -121,8 +124,13 @@ def find1stDistrictEndPoint(I,district_points_1st, best1stCenter, LENGTH_OF_MAP)
 		tmp.append(ep1)
 		# add corner points to tmp
 		for i in range(4):
-			if((cps_deg[i] >= deg1 and cps_deg[i] <= deg2) or ((cps_deg[i]+360) >= deg1 and (cps_deg[i]+360) <= deg2)):
+			if((cps_deg[i] >= deg1 and cps_deg[i] <= deg2)):
 				tmp.append(cps[i])
+				cps_used[i] = True
+		for i in range(4):
+			if((cps_deg[i]+360) >= deg1 and (cps_deg[i]+360) <= deg2 and cps_used[i] == False):
+				tmp.append(cps[i])
+				cps_used[i] = True
 		# add 2nd end point to tmp
 		tmp.append(ep2)
 		result.append(tmp)
@@ -156,7 +164,7 @@ def find1stLayerDistrictPoint(I,rot_deg):
 			tmp_x = result[i][j-1][0] + INTERVAL*math.cos(rad)
 			tmp_y = result[i][j-1][1] + INTERVAL*math.sin(rad)
 			# if tmp_x or tmp_y is out of bound, ignore it and stop the for-loop
-			#if(tmp_x < 0 or tmp_x > LENGTH_OF_MAP or tmp_y < 0 or tmp_y > LENGTH_OF_MAP):
+			
 			if(out_of_bound([tmp_x,tmp_y], center,1,I)):
 				break
 			result[i].append([tmp_x,tmp_y])
@@ -397,6 +405,196 @@ def getDispersionValue(w,I,O,distr_cust_points,bestCenter):
 		avg_dist /= (I*(O+1))
 		delta = omega*avg_dist + (1-omega)*max_dist
 	return delta
+# randomly create candidate exchange point
+def getCandExchPoint(w,I,O,bestCenter,r,maxN,minN):
+	# r is the radius of circle
+	# maxN is the max number of candidate exchange point in each circle
+	# minN is the min number of candidate exchange point in each circle
+	random.seed(22) # for debug
+	result = []
+	if(w == 1):
+		for i in range(I):
+			tmp = []
+			c = bestCenter[i]
+			n = random.randint(minN,maxN)
+			for j in range(n):
+				node = [-1,-1]
+				theta = random.uniform(0,2*math.pi)
+				node[0] = r*math.cos(theta)	+ c[0]
+				node[1] = r*math.sin(theta) + c[1]
+				tmp.append(node)
+			result.append(tmp)
+
+	else:
+		for i in range(I):
+			tmp1 = []
+			for o in range(O+1):
+				tmp2 = []
+				c = bestCenter[i][o]
+				n = random.randint(minN,maxN)
+				for j in range(n):
+					node = [-1,-1]
+					theta = random.uniform(0,2*math.pi)
+					node[0] = r*math.cos(theta)	+ c[0]
+					node[1] = r*math.sin(theta) + c[1]
+					tmp2.append(node)
+				tmp1.append(tmp2)
+			result.append(tmp1)
+	return result		
+# get weight of candidate exchange point 
+def getCepWeight(w,I,O,a,cand_exch_point,districted_customer_points):
+	result = []
+	if(w == 1):
+		for i in range(I):
+			# customer points
+			cps = districted_customer_points[i]
+			tmp = []
+			for cep in cand_exch_point[i]:
+				cnt = 0
+				for p in cps:
+					dist = math.sqrt((p[0]-cep[0])**2 + (p[1]-cep[1])**2)
+					if(dist < a):
+						cnt += 1
+				tmp.append(cnt)
+			result.append(tmp)
+
+	else:
+		for i in range(I):
+			tmp1 = []
+			for o in range(O+1):
+				# customer points
+				cps = districted_customer_points[i][o]
+				tmp2 = []
+				for cep in cand_exch_point[i][o]:
+					cnt = 0
+					for p in cps:
+						dist = math.sqrt((p[0]-cep[0])**2 + (p[1]-cep[1])**2)
+						if(dist < a):
+							cnt += 1
+					tmp2.append(cnt)
+				tmp1.append(tmp2)
+			result.append(tmp1)
+	return result
+# make a graph of adjecency matrix
+def makeGraph(w,m_I,m_O,cep_weight,cep):
+	
+	if(w == 1):
+		return None
+	else:
+		# array to record each cand exch point's number
+		num_ary = [0]*(len(cep))
+		for i in range(1,len(cep)):
+			num_ary[i] = num_ary[i-1]+len(cep[i-1])
+		# array to record each cand exch point
+		point_ary = []
+		for i in range(len(cep)):
+			for p in cep[i]:
+				point_ary.append(p)
+		
+		# initialization
+		cnt = len(point_ary)
+		print(cnt) 
+		print(num_ary)
+		G = [-1]*cnt
+		for i in range(cnt):
+			G[i] = [-1]*cnt
+		#g = 0
+		for i in range(1,len(cep)):
+			for j in range(len(cep[i])):
+				for k in range(len(cep[i-1])):
+					u = cep[i-1][k]
+					v = cep[i][j]
+					dist = math.sqrt((u[0]-v[0])**2 + (u[1]-v[1])**2)
+					
+					if((dist/SPEED) <= T):
+						#g+=1
+						G[num_ary[i-1]+k][num_ary[i]+j] = cep_weight[i][j]
+		# print(g)
+		# for i in range(len(G)):
+		# 	print(G[i])
+		return G
+def calculateInDeg(G):
+	n = len(G)
+	in_deg = [0]*n
+	for j in range(n):
+		cnt=0
+		for i in range(n):
+			if(G[i][j] != -1 and G[i][j] != 0):
+				cnt+=1
+		in_deg[j] = cnt
+	return in_deg
+# topological sort
+def topoSort(graph):
+	result = []
+	# make a copy to prevent graph from being modified
+	G = copy.deepcopy(graph)
+	n = len(G)
+	in_deg  = calculateInDeg(G)
+	used = [False]*n
+	while(sum(in_deg)>0):
+		for i in range(n):
+			if(used[i] == False and in_deg[i] == 0):
+				used[i] = True
+				for j in range(n):
+					G[i][j] = -1
+				in_deg  = calculateInDeg(G)
+	
+				result.append(i)
+	return result
+# relaxation function for DAG shortest path problem
+def relax(G,u,v,shortest,pred):
+	if(shortest[u] + G[u][v] < shortest[v]):
+		pred[v] = u
+		shortest[v] = shortest[u] + G[u][v]
+
+# get exchange point
+def getExchPoint(w,l,I,O,cep_weight,cand_exch_point):
+	# l = 1 --> inner layer, l = 2 --> outer layer
+	result = []
+	if(w == 1):
+		return None
+	else: # w = 2
+		# First, calculate outer layer's longest path
+		for i in range(I):
+			tmp = []
+			cep = cand_exch_point[i]
+			cep_weight = cep_weight[i]
+			# make a graph of adjecency matrix
+			G = makeGraph(w,I,O,cep_weight,cep)
+			# add v0 to G
+			v0 = [-1]*(len(G)+1)
+			for i in range(len(cep_weight[0])):
+				v0[i] = cep_weight[0][i]
+			G.append(v0)
+			n = len(G) # node number
+			for i in range(n):
+				G[i].append(-1)
+			for i in range(n):
+				for j in range(n):
+					if(i==j):
+						G[i][j] = 0
+			# Topological sort
+			ts_result = topoSort(G)
+			# multiply -1 to each element of G
+			for i in range(n):
+				for j in range(n):
+					G[i][j] *= -1 
+			# predecessor & shortest
+			pred = [-1]*n
+			shortest = [0]*n
+			for i in range(n):
+				if(i == (n-1)):
+					shortest[i] = 0
+				else:
+					shortest[i] = sys.maxsize
+			# Relaxation
+			for u in ts_result:
+				for v in range(n):
+					if(G[u][v] != -1):
+						relax(G,u,v,shortest,pred)
+			print(shortest)
+
+
 # Read data points from files
 def Read_file():
 	global dataBound,dataCent,dataCust
@@ -425,7 +623,6 @@ def Read_file():
 # Draw map for visualization
 def Draw_map():
 	global best1stCenter, best2ndCenter, best3rdCenter, theta, district_points_1st
-	print("*******************  Show Map  ************************")
 	
 	
 	# plot boundary points
@@ -433,14 +630,13 @@ def Draw_map():
 		plt.plot(point[0], point[1], 'k.') # k.: black point
 		
 	# plot customer points	
-	for point in dataCust[1:]:
-		plt.plot(point[0], point[1], 'b.') # b.: blue point
+	# for point in dataCust[1:]:
+	# 	plt.plot(point[0], point[1], 'b.') # b.: blue point
 	# for p in districted_customer_points_1st[2]:
 	# 	plt.plot(p[0], p[1], 'b.')
 	
 	
 	# plot 1st layer districting line
-	
 	for i in range(len(district_points_1st)):
 		for j in range(len(district_points_1st[i])):
 			plt.plot(district_points_1st[i][j][0], district_points_1st[i][j][1], 'g.')
@@ -448,6 +644,9 @@ def Draw_map():
 	# plot best 1st layer center
 	plt.plot(best1stCenter[0], best1stCenter[1], 'r.') # r.: red point
 	
+	# plot best 2nd layer center
+	for c in best2ndCenter:
+		plt.plot(c[0],c[1], 'm.')
 	################### Plot two layer #######################
 	if(w == 2):
 		# plot 2nd layer districting line
@@ -456,13 +655,15 @@ def Draw_map():
 				for k in range(1,len(district_points_2nd[i][j])):
 					plt.plot(district_points_2nd[i][j][k][0],district_points_2nd[i][j][k][1], 'y.')
 		
-		# plot best 2nd layer center
-		for c in best2ndCenter:
-			plt.plot(c[0],c[1], 'm.')
 		# plot best 3rd layer center
 		for i in range(m_I):
 			for j in range(m_O+1):
 				plt.plot(best3rdCenter[i][j][0],best3rdCenter[i][j][1],'co')
+		# draw candidate exchange point
+		for i in range(m_I):
+			for j in range(m_O+1):
+				for p in cand_exch_point[i][j]:
+					plt.plot(p[0],p[1],'b.')
 	# show graph
 	plt.xticks(np.arange(0,LENGTH_OF_MAP+1,LENGTH_OF_MAP/10))
 	plt.yticks(np.arange(0,LENGTH_OF_MAP+1,LENGTH_OF_MAP/10))
@@ -482,7 +683,7 @@ m_I = 3
 m_O = 2
 w = 1
 best_rot_deg = 0
-H = 2
+H = 3
 T = H / (0.5+m_I+2*(w-1)*m_O)
 SPEED = 40000 # unit: (m/hr)
 
@@ -507,6 +708,14 @@ best2ndCenter = []
 district_end_points_1st = None
 # districted custormer points
 distr_cust_points_1st = None
+# candiate exchange points
+cand_exch_point = None
+# weight of candiate exchange points
+cep_weight = None
+# exchange point of 1st(inner) layer
+exch_point_1st = None
+# exchange point of 2nd(outer) layer
+exch_point_2nd = None
 ###################### Main Function #################################
 Read_file()
 #### Districting Problem
@@ -561,10 +770,11 @@ for i in range(3,5):
 			print("*** m_I =",i,"m_O = ",o,"cannot guarantee the service time ***")
 
 # set m_I, m_O, w by previous result
-m_I = 4
-m_O = 3
+m_I = 3
+m_O = 2
 w = 2
 print("\n---- Set m_I = ",m_I,", m_O = ",m_O,", w = ",w," ----",sep = "")
+
 print("\n********** Find a best rotation degree ********************")
 min_dp = sys.maxsize
 for rot_deg in range(0,360//m_I, SINGLE_ROT_DEG):
@@ -598,5 +808,50 @@ for rot_deg in range(0,360//m_I, SINGLE_ROT_DEG):
 			min_dp = dp
 			best_rot_deg = rot_deg
 print("\n---- Set rotation degree = ", best_rot_deg, " ----",sep = "")
+print("\n********** Districting problem is done *******************")
+# find districting points in 1-layer
+district_points_1st = find1stLayerDistrictPoint(m_I,best_rot_deg)
+# find center of 1st layer
+best1stCenter = find1stLayerCenter()
+# find end points of districting line
+district_end_points_1st = find1stDistrictEndPoint(m_I,district_points_1st, best1stCenter,LENGTH_OF_MAP)
+# distribute customer points to its corresponding district
+districted_customer_points_1st = find1stLayerCust(m_I,dataCust, district_end_points_1st)
+# find center of each sub-district in 2-layer design
+best2ndCenter = find2ndLayerCenter(m_I,district_end_points_1st)
+if(w == 2):
+	# find districting points of each sub-district in 2nd layer design
+	district_points_2nd = find2ndLayerDistrictPoint(m_I,m_O)
+	# find end points of each sub-sub-district
+	district_end_points_2nd = find2ndDistrictEndPoint(district_end_points_1st, best2ndCenter, district_points_2nd, m_I, m_O)
+	# distribute customer points to its corresponding district
+	districted_customer_points_2nd = find2ndLayerCust(dataCust, district_end_points_2nd,m_I,m_O)
+	# find center of each sub-sub-district
+	best3rdCenter = find3rdLayerCenter(district_end_points_2nd, m_I, m_O)
+
+
+print("\n********** Start ring network design problem ***************")
+# parameter
+maxN = 5 # max number of candidate exchange points in a circle
+minN = 3 # min number of candidate exchange points in a circle
+r = 1000 # be used to create candidate exchange point around centroid of each sub-district, unit: meter
+a = 4000 # be used to calculate weight of each candidate exchange point, unit: meter
+
+if(w == 1):
+	# get candidate exchange point 
+	cand_exch_point = getCandExchPoint(w,m_I,m_O,best2ndCenter, r, maxN, minN)
+	# calculate weight of each candidate exchange point
+	cep_weight = getCepWeight(w,m_I,m_O,a,cand_exch_point,districted_customer_points_1st)
+	# get exchange point of 1st layer
+	exch_point_1st = getExchPoint(w,1,m_I,m_O,cep_weight, cand_exch_point)
+else: # w = 2
+	cand_exch_point = getCandExchPoint(w,m_I,m_O,best3rdCenter, r, maxN, minN)
+	# calculate weight of each candidate exchange point
+	cep_weight = getCepWeight(w,m_I,m_O,a,cand_exch_point, districted_customer_points_2nd)
+	# get exchange point of 1st(inner) layer
+	exch_point_1st = getExchPoint(w,1,m_I,m_O,cep_weight, cand_exch_point)
+	# get exchange point of 2nd(outer) layer
+	exch_point_2nd = getExchPoint(w,2,m_I,m_O,cep_weight, cand_exch_point)
+
 #show_info()
-#Draw_map()
+Draw_map()
