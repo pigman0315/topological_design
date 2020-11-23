@@ -1,37 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import sys
 import os
 from shapely.geometry import Polygon
 from shapely import wkt
 
-##################################### Global Variable #################################
-# Constant
-LENGTH_OF_MAP = 20000
-INTERVAL = 600
-# Parameter
-# m_I = 4 --> degree = 90, m_I = 3 ---> degree = 120
-# m_O = 3 --> degree = 90, m_O = 2 ---> degree = 120
-# w = 1 ---> single layer, w = 2 ---> two layer
-m_I = 3
-m_O = 2
-w = 2
-best_rotate_degree_1st = 0
-
-# Data points from files
-dataBound = None
-dataCent = None
-dataCust = None
-
-# Districting points
-district_points_1st = None
-district_points_2nd = None
-
-# center
-best1stCenter = None
-best2ndCenter = []
-
-##################################### Function Definition #################################
+########################### Function Definition #####################
 def show_info():
 	print("*******************  Map Information  *****************")
 	print("Side length of the map: ", LENGTH_OF_MAP,"(m)")
@@ -40,7 +15,12 @@ def show_info():
 	print("1-layer or 2-layer:", w)
 	print("Number of inner district(m_I): ", m_I)
 	print("Number of outter district(m_O): ", m_O)
-
+	print("Guarantee service time H: ", H, "(hr)")
+	print("Guarantee service time H: ", H*60, "(min)")
+	print("Travel time T: ", T, "(hr)")
+	print("Travel time T: ", T*60,"(min)")
+	print("Speed of courier: ",SPEED, "(km/hr)")
+	print("Speed of courier: ",SPEED*1000//60, "(m/min)")
 # subfunction for out_of_bound to return the cross value of p1p2 line & p1p3 line 
 def cross(p1,p2,p3):
 	x1=p2[0]-p1[0]
@@ -49,14 +29,14 @@ def cross(p1,p2,p3):
 	y2=p3[1]-p1[1]
 	return x1*y2-x2*y1 
 # check if the points out of bound
-def out_of_bound(point, center, mode):
-	district_angle = 360.0 / m_I
+def out_of_bound(point, center, mode, I):
+	district_angle = 360.0 / I
 	if(point[0] < 0 or point[0] > LENGTH_OF_MAP or point[1] < 0 or point[1] > LENGTH_OF_MAP):
 		return True
 	if(mode == 2):
 			# get endpoint of 1st layer districting lines
 			end_points = []
-			for i in range(m_I):
+			for i in range(I):
 				end_points.append(district_points_1st[i][len(district_points_1st[i])-1])
 			
 			# check if two line segment intersect
@@ -111,20 +91,53 @@ def find1stLayerCenter():
 	return result
 
 # Find best 1st layer rotation degree
-def find1stLayerRotDeg(m_I,theta,best1stCenter):
+def find1stLayerRotDeg(I,theta,best1stCenter):
 	return 0
-
+def find1stDistrictEndPoint(I,district_points_1st, best1stCenter, LENGTH_OF_MAP):
+	cps_deg = [45,135,225,315]
+	cps = [[LENGTH_OF_MAP,LENGTH_OF_MAP],[0,LENGTH_OF_MAP],[0,0],[LENGTH_OF_MAP,0]]
+	result = []
+	c = best1stCenter
+	for i in range(I):
+		tmp = []
+		ep1 = district_points_1st[i][len(district_points_1st[i])-1]
+		ep2 = district_points_1st[(i+1)%I][len(district_points_1st[(i+1)%I])-1]
+		dx1 = ep1[0] - c[0]
+		dy1 = ep1[1] - c[1]
+		dx2 = ep2[0] - c[0]
+		dy2 = ep2[1] - c[1]
+		rad1 = math.atan2(dy1, dx1) # radius
+		deg1= rad1*180/math.pi # degree
+		if(deg1 < 0):
+			deg1 += 360
+		rad2 = math.atan2(dy2, dx2) # radius
+		deg2= rad2*180/math.pi # degree
+		if(deg2 < 0):
+			deg2 += 360
+		if(deg2 < deg1):
+			deg2 += 360
+		# add center, 1st end point to tmp
+		tmp.append(c)
+		tmp.append(ep1)
+		# add corner points to tmp
+		for i in range(4):
+			if((cps_deg[i] >= deg1 and cps_deg[i] <= deg2) or ((cps_deg[i]+360) >= deg1 and (cps_deg[i]+360) <= deg2)):
+				tmp.append(cps[i])
+		# add 2nd end point to tmp
+		tmp.append(ep2)
+		result.append(tmp)
+	return result
 # Find 1st layer districting points
-def find1stLayerDistrictPoint():
-	district_angle = 360.0 / m_I
+def find1stLayerDistrictPoint(I,rot_deg):
+	district_angle = 360.0 / I
    	##############NOT DONE YET############################################################
    	#best_rotate_degree = find1stLayerRotDeg(m_I,theta,best1stCenter)					 #
 	######################################################################################
 	center = find1stLayerCenter()
 	end_points = [[float(center[0])+LENGTH_OF_MAP*math.sqrt(2),float(center[1])]]
-	end_points[0] = Rotate(center,end_points[0], best_rotate_degree_1st)
+	end_points[0] = Rotate(center,end_points[0], rot_deg)
 	result = []
-	for i in range(m_I-1):
+	for i in range(I-1):
 		end_points.append(Rotate(center,end_points[i],district_angle))
 	for i in range(0,len(end_points)):
 		tmp_list = []
@@ -144,49 +157,89 @@ def find1stLayerDistrictPoint():
 			tmp_y = result[i][j-1][1] + INTERVAL*math.sin(rad)
 			# if tmp_x or tmp_y is out of bound, ignore it and stop the for-loop
 			#if(tmp_x < 0 or tmp_x > LENGTH_OF_MAP or tmp_y < 0 or tmp_y > LENGTH_OF_MAP):
-			if(out_of_bound([tmp_x,tmp_y], center,1)):
+			if(out_of_bound([tmp_x,tmp_y], center,1,I)):
 				break
 			result[i].append([tmp_x,tmp_y])
 	return result
+def isRayIntersectsSegment(poi,s_poi,e_poi): #[x,y] [lng,lat]
+    #輸入：判斷點，邊起點，邊終點，都是[lng,lat]格式數組
+    if s_poi[1]==e_poi[1]: #排除與射線平行、重合，線段首尾端點重合的情況
+        return False
+    if s_poi[1]>poi[1] and e_poi[1]>poi[1]: #線段在射線上邊
+        return False
+    if s_poi[1]<poi[1] and e_poi[1]<poi[1]: #線段在射線下邊
+        return False
+    if s_poi[1]==poi[1] and e_poi[1]>poi[1]: #交點爲下端點，對應spoint
+        return False
+    if e_poi[1]==poi[1] and s_poi[1]>poi[1]: #交點爲下端點，對應epoint
+        return False
+    if s_poi[0]<poi[0] and e_poi[1]<poi[1]: #線段在射線左邊
+        return False
 
-#Find 2st layer center
-def find2ndLayerCenter():
-	#### NOTICE: Must add points into set counter-clockwise/clockwise, otherwise might get incorrect centroid
-	#### NOTICE: This method can only be apply to "Square Map"
-	#### NOTICE: This function still has a lot to improve, if we want to apply this method on a more general map
+    xseg=e_poi[0]-(e_poi[0]-s_poi[0])*(e_poi[1]-poi[1])/(e_poi[1]-s_poi[1]) #求交
+    if xseg<poi[0]: #交點在射線起點的左側
+        return False
+    return True  #排除上述情況之後
+# determine if a point is in the polygon
+def in_poly(p,poly): 
+	sinsc = 0
+	for i in range(len(poly)):
+		s = poly[i]
+		e = poly[(i+1)%len(poly)]
+		if(isRayIntersectsSegment(p,s,e)):
+			sinsc +=1
+	if(sinsc % 2 == 1):
+		return True
+	else:
+		return False
+# districting 1 layer customer point
+def find1stLayerCust(I,dataCust, district_end_points_1st):
 	result = []
-	points_set = []
-	#### Find points of each polygon in map
-	for i in range(m_I):
-		p1 = district_points_1st[i][len(district_points_1st[i])-1]
-		temp = []	
-		points_set.append(temp)
-		points_set[i].append(best1stCenter)
-		points_set[i].append(p1)
-
-	flg = [False, False, False, False]
-	deg = [45,135,225,315]
-	# cps: corner points
-	cps = [[LENGTH_OF_MAP,LENGTH_OF_MAP],[0,LENGTH_OF_MAP],[0,0],[LENGTH_OF_MAP,0]]
-	for i in range(m_I-1):
-		deg1 = (360/m_I)*i + best_rotate_degree_1st 
-		deg2 = (360/m_I)*(i+1) + best_rotate_degree_1st
-		for j in range(4):
-			if(flg[j] == False and (deg1 <= deg[j] and deg2 > deg[j])):
-				flg[j] = True
-				points_set[i].append(cps[j])
-	# -1 index is to make sure we add points into set counter-clockwise
-	for i in range(3,-1,-1):
-		if(flg[i] == False):
-			points_set[m_I-1].append(cps[i])
-	for i in range(m_I):
-		# add last point into set
-		p2 = district_points_1st[(i+1)%m_I][len(district_points_1st[(i+1)%m_I])-1]
-		points_set[i].append(p2)
+	for i in range(I):
+		tmp = []
+		result.append(tmp)
+	for p in dataCust:
+		for i in range(I):
+			if(in_poly(p, district_end_points_1st[i])):
+				result[i].append(p)
+				break
+	return result
+# get max travel time
+def get_max_dist(w,I,O,distr_cust_points,bestCenter):
+	max_dist = 0
+	if(w == 1):
+		for i in range(I):
+			c = bestCenter[i]
+			for cp in distr_cust_points[i]:
+				dist = math.sqrt((cp[0] - c[0])**2 + (cp[1] - c[1])**2)
+				if(dist > max_dist):
+					max_dist = dist
+	else:
+		for i in range(I):
+			for o in range(O+1):
+				c = bestCenter[i][o]
+				for cp in distr_cust_points[i][o]:
+					dist = math.sqrt((cp[0]-c[0])**2 + (cp[1]-c[1])**2)
+					if(dist > max_dist):
+						max_dist = dist
+	return max_dist
+# Try to get best 1st layer design(max travel time is lower than 0.5T)
+def get_1stLayer_design(districted_customer_points_1st,best2ndCenter):
+	max_dist = get_max_dist(districted_customer_points_1st,best2ndCenter)
+	if(max_dist/SPEED > 0.5*T):
+		print("GG")
+	return 3,30
+#Find 2st layer center
+def find2ndLayerCenter(I,district_end_points_1st):
+	#### ATTENTION: Must add points into set counter-clockwise/clockwise, otherwise, you will get incorrect centroid
+	#### ATTENTION: This method can only be apply to "Square Map"
+	#### ATTENTION: This function still has a lot to improve, if we want to apply this method on a more general map
+	result = []
+	for i in range(I):
 		# temp variable representing [x,y]
 		tmp_p = [-1,-1]
 		# a Polygon in Library 'shapely'
-		p = Polygon(points_set[i])
+		p = Polygon(district_end_points_1st[i])
 		# get centroid of polygon 'p'
 		# cetroid is a POINT type in 'shapely'
 		centroid = p.centroid
@@ -195,18 +248,18 @@ def find2ndLayerCenter():
 		result.append(tmp_p)
 	return result
 # find 2nd layer districting points
-def find2ndLayerDistrictPoint():
+def find2ndLayerDistrictPoint(I,O):
 	global best1stCenter, district_points_1st
-	district_angle = 360.0 / (m_O+1)
+	district_angle = 360.0 / (O+1)
 	result = []
-	for i in range(len(best2ndCenter)):
+	for i in range(I):
 		# single layer districting points
 		single_layer_dp = []
 
 		# make single district endpoints in 2-layer design
 		end_points = []
 		end_points.append(Rotate(best2ndCenter[i], best1stCenter, district_angle / 2.0))
-		for j in range(m_O):
+		for j in range(O+1):
 			end_points.append(Rotate(best2ndCenter[i], end_points[j], district_angle))
 		for j in range(len(end_points)):
 			tmp_list = []
@@ -220,12 +273,130 @@ def find2ndLayerDistrictPoint():
 				tmp_x = tmp_list[k][0] + INTERVAL*math.cos(rad)
 				tmp_y = tmp_list[k][1] + INTERVAL*math.sin(rad)
 				#if(tmp_x < 0 or tmp_x > LENGTH_OF_MAP or tmp_y < 0 or tmp_y > LENGTH_OF_MAP):
-				if(out_of_bound([tmp_x,tmp_y], best2ndCenter[i],2) == True):
+				if(out_of_bound([tmp_x,tmp_y], best2ndCenter[i],2,I) == True):
 					break
 				tmp_list.append([tmp_x,tmp_y])
 			single_layer_dp.append(tmp_list)
 		result.append(single_layer_dp)	
 	return result
+def find2ndDistrictEndPoint(district_end_points_1st, best2ndCenter, district_points_2nd,I,O):
+	result = []
+	for i in range(I):
+		tmp1 = []
+		bps = district_end_points_1st[i]
+		c = best2ndCenter[i]
+		bps_deg = []
+		for p in bps:
+			dx = p[0] - c[0]
+			dy = p[1] - c[1]
+			rad = math.atan2(dy, dx) # radius
+			deg= rad*180/math.pi # degree
+			if(deg < 0):
+				deg += 360
+			bps_deg.append(deg)
+		for j in range(O+1):
+			tmp2 = []
+			# calculate 2nd districting line degree with respect to center of 2nd layer
+			ep1 = district_points_2nd[i][j][len(district_points_2nd[i][j])-1]
+			ep2 = district_points_2nd[i][(j+1)%(O+1)][len(district_points_2nd[i][(j+1)%(O+1)])-1]
+			dx1 = ep1[0] - c[0]
+			dy1 = ep1[1] - c[1]
+			dx2 = ep2[0] - c[0]
+			dy2 = ep2[1] - c[1]
+			rad1 = math.atan2(dy1, dx1) # radius
+			deg1= rad1*180/math.pi # degree
+			if(deg1 < 0):
+				deg1 += 360
+			rad2 = math.atan2(dy2, dx2) # radius
+			deg2= rad2*180/math.pi # degree
+			if(deg2 < 0):
+				deg2 += 360
+			if(deg2 < deg1):
+				deg2 += 360
+			# add center, 1st end point to tmp2
+			tmp2.append(c)
+			tmp2.append(ep1)
+			# add 1st-layer end point to tmp2
+			for idx in range(len(bps_deg)):
+				if((bps_deg[idx] >= deg1 and bps_deg[idx] <= deg2) or ((bps_deg[idx]+360) >= deg1 and (bps_deg[idx]+360) <= deg2)):
+					tmp2.append(bps[idx])
+			# add 2nd end point
+			tmp2.append(ep2)
+			# append tmp2 to tmp1
+			tmp1.append(tmp2)
+		result.append(tmp1)
+	return result
+def find2ndLayerCust(dataCust, district_end_points, I, O):
+	result = []
+	used = [False]*len(dataCust)
+	for i in range(I):
+		tmp1 = []
+		for j in range(O+1):
+			tmp2 = []
+			for k in range(len(dataCust)):
+				if(used[k] == False and in_poly(dataCust[k], district_end_points[i][j])):
+					tmp2.append(dataCust[k])
+					used[k] = True
+			tmp1.append(tmp2)
+		result.append(tmp1)
+	return result
+def find3rdLayerCenter(district_end_points_2nd, I, O):
+	result = []
+	for i in range(I):
+		tmp = []
+		for j in range(O+1):
+			ps = district_end_points_2nd[i][j]
+			# temp variable representing [x,y]
+			tmp_p = [-1,-1]
+			# a Polygon in Library 'shapely'
+			p = Polygon(ps)
+			# get centroid of polygon 'p'
+			# cetroid is a POINT type in 'shapely'
+			centroid = p.centroid
+			tmp_p[0] = centroid.x
+			tmp_p[1] = centroid.y
+			tmp.append(tmp_p)
+		result.append(tmp)
+	return result
+# Find best rotation degree
+def getDispersionValue(w,I,O,distr_cust_points,bestCenter):
+	avg_dist = 0
+	max_dist = 0
+	omega = 0.5 # omega is a weighted parameter of avg & max
+	delta = 0 # dispersion value of specific layer design
+	if(w == 1):	
+		for i in range(I):
+			cps = distr_cust_points[i] # customer point set
+			c = bestCenter[i] # center
+			total_dist = 0
+			for p in cps:
+				dist = math.sqrt((p[0]-c[0])**2 + (p[1]-c[1])**2)
+				total_dist += dist
+			if(total_dist > max_dist):
+				if(len(cps) != 0):
+					max_dist = total_dist / len(cps)
+			if(len(cps) != 0):
+				avg_dist += total_dist / len(cps)
+		avg_dist /= I
+		delta = omega*avg_dist + (1-omega)*max_dist
+		
+	else:
+		for i in range(I):
+			for o in range(O+1):
+				cps = distr_cust_points[i][o] # customer point set
+				c = bestCenter[i][o] # center
+				total_dist = 0
+				for p in cps:
+					dist = math.sqrt((p[0]-c[0])**2 + (p[1]-c[1])**2)
+					total_dist += dist
+				if(total_dist > max_dist):
+					if(len(cps) != 0):
+						max_dist = total_dist / len(cps)
+				if(len(cps) != 0):
+					avg_dist += total_dist / len(cps)
+		avg_dist /= (I*(O+1))
+		delta = omega*avg_dist + (1-omega)*max_dist
+	return delta
 # Read data points from files
 def Read_file():
 	global dataBound,dataCent,dataCust
@@ -253,7 +424,7 @@ def Read_file():
 
 # Draw map for visualization
 def Draw_map():
-	global best1stCenter, best2ndCenter, theta, district_points_1st
+	global best1stCenter, best2ndCenter, best3rdCenter, theta, district_points_1st
 	print("*******************  Show Map  ************************")
 	
 	
@@ -264,6 +435,9 @@ def Draw_map():
 	# plot customer points	
 	for point in dataCust[1:]:
 		plt.plot(point[0], point[1], 'b.') # b.: blue point
+	# for p in districted_customer_points_1st[2]:
+	# 	plt.plot(p[0], p[1], 'b.')
+	
 	
 	# plot 1st layer districting line
 	
@@ -285,119 +459,144 @@ def Draw_map():
 		# plot best 2nd layer center
 		for c in best2ndCenter:
 			plt.plot(c[0],c[1], 'm.')
-	
+		# plot best 3rd layer center
+		for i in range(m_I):
+			for j in range(m_O+1):
+				plt.plot(best3rdCenter[i][j][0],best3rdCenter[i][j][1],'co')
 	# show graph
 	plt.xticks(np.arange(0,LENGTH_OF_MAP+1,LENGTH_OF_MAP/10))
 	plt.yticks(np.arange(0,LENGTH_OF_MAP+1,LENGTH_OF_MAP/10))
 	plt.axis('equal')
 	plt.show()
 
+############################ Variable #################################
+# Constant
+LENGTH_OF_MAP = 20000
+INTERVAL = 600
+SINGLE_ROT_DEG = 15
+# Parameter
+# m_I = 4 --> degree = 90, m_I = 3 ---> degree = 120
+# m_O = 3 --> degree = 90, m_O = 2 ---> degree = 120
+# w = 1 ---> single layer, w = 2 ---> two layer
+m_I = 3
+m_O = 2
+w = 1
+best_rot_deg = 0
+H = 2
+T = H / (0.5+m_I+2*(w-1)*m_O)
+SPEED = 40000 # unit: (m/hr)
 
-##################################### Main Function #################################
+# Data points from files
+dataBound = None
+dataCent = None
+dataCust = None
+
+# Distringing end points
+district_end_points_1st = None
+district_end_points_2nd = None
+
+# Districting points
+district_points_1st = None
+district_points_2nd = None
+
+# center
+best1stCenter = None
+best2ndCenter = []
+
+# end points of districting line
+district_end_points_1st = None
+# districted custormer points
+distr_cust_points_1st = None
+###################### Main Function #################################
 Read_file()
-show_info()
-# find districting points in 1st layer
-district_points_1st = find1stLayerDistrictPoint()
-# find center of 1st layer
-best1stCenter = find1stLayerCenter()
-if(w == 2):
-	# find center of each sub-district in 2nd layer design
-	best2ndCenter = find2ndLayerCenter()
-	# find districting points of each sub-district in 2nd layer design
-	district_points_2nd = find2ndLayerDistrictPoint()
-Draw_map()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# plot center candidates points
-'''attr = dataCent[0].split()
-dataIdx = 1
-layerIdx = 1
-divides = int(attr[0])
-rotate = int(attr[1])
-layer = int(attr[2])
-
-if layer == 2:
-	divides += 1
-	
-for div in range(divides):
-	count = int(dataCent[dataIdx])
-	dataIdx += 1
-	for centers in dataCent[dataIdx:dataIdx+count]:
-		centers = centers.split()
-		x = float(centers[0])
-		y = float(centers[1])
-		plt.plot(x, y, 'r.')
-	dataIdx += count'''
-	
+#### Districting Problem
+# Try 1-layer design
+print("\n********** Find a proper layer design *********************\n")
+for i in range(3,5):
+	print("Try m_I =",i,"...",end=", ")
+	# find districting points in 1-layer
+	district_points_1st = find1stLayerDistrictPoint(i,0)
+	# find center of 1st layer
+	best1stCenter = find1stLayerCenter()
+	# find end points of districting line
+	district_end_points_1st = find1stDistrictEndPoint(i,district_points_1st, best1stCenter,LENGTH_OF_MAP)
+	# distribute customer points to its corresponding district
+	districted_customer_points_1st = find1stLayerCust(i,dataCust, district_end_points_1st)
+	# find center of each sub-district in 2-layer design
+	best2ndCenter = find2ndLayerCenter(i,district_end_points_1st)
+	# check if single layer is ok
+	max_d = get_max_dist(w,i,0,districted_customer_points_1st,best2ndCenter)
+	T = H / (0.5+i)
+	print("Max T = %.2f" % (max_d/SPEED), ", must under %.2f" % (T/2))
+	if(max_d/SPEED > 0.5*T):
+		print("*** m_I =",i,"cannot guarantee the service time *** ")
+# Try 2-layer design
+w = 2
+for i in range(3,5):
+	for o in range(2,4):
+		print("Try m_I =",i,"m_O = ",o,"...",end=", ")	
+		# find districting points in 1-layer
+		district_points_1st = find1stLayerDistrictPoint(i,0)
+		# find center of 1st layer
+		best1stCenter = find1stLayerCenter()
+		# find end points of districting line
+		district_end_points_1st = find1stDistrictEndPoint(i,district_points_1st, best1stCenter,LENGTH_OF_MAP)
+		# distribute customer points to its corresponding district
+		districted_customer_points_1st = find1stLayerCust(i,dataCust, district_end_points_1st)
+		# find center of each sub-district in 2-layer design
+		best2ndCenter = find2ndLayerCenter(i,district_end_points_1st)
+		# find districting points of each sub-district in 2nd layer design
+		district_points_2nd = find2ndLayerDistrictPoint(i,o)
+		# find end points of each sub-sub-district
+		district_end_points_2nd = find2ndDistrictEndPoint(district_end_points_1st, best2ndCenter, district_points_2nd, i, o)
+		# distribute customer points to its corresponding district
+		districted_customer_points_2nd = find2ndLayerCust(dataCust, district_end_points_2nd,i,o)
+		# find center of each sub-sub-district
+		best3rdCenter = find3rdLayerCenter(district_end_points_2nd, i, o)
+		# get max distance of client
+		max_d = get_max_dist(w,i,o,districted_customer_points_2nd,best3rdCenter)
+		T = H / (0.5+i+2*(w-1)*o)
+		print("Max T = %.2f" % (max_d/SPEED), ", must under %.2f" % (T/2))
+		if(max_d/SPEED > 0.5*T):
+			print("*** m_I =",i,"m_O = ",o,"cannot guarantee the service time ***")
+
+# set m_I, m_O, w by previous result
+m_I = 4
+m_O = 3
+w = 2
+print("\n---- Set m_I = ",m_I,", m_O = ",m_O,", w = ",w," ----",sep = "")
+print("\n********** Find a best rotation degree ********************")
+min_dp = sys.maxsize
+for rot_deg in range(0,360//m_I, SINGLE_ROT_DEG):
+	# find districting points in 1-layer
+	district_points_1st = find1stLayerDistrictPoint(m_I,rot_deg)
+	# find center of 1st layer
+	best1stCenter = find1stLayerCenter()
+	# find end points of districting line
+	district_end_points_1st = find1stDistrictEndPoint(m_I,district_points_1st, best1stCenter,LENGTH_OF_MAP)
+	# distribute customer points to its corresponding district
+	districted_customer_points_1st = find1stLayerCust(m_I,dataCust, district_end_points_1st)
+	# find center of each sub-district in 2-layer design
+	best2ndCenter = find2ndLayerCenter(m_I,district_end_points_1st)
+	if(w == 2):
+		# find districting points of each sub-district in 2nd layer design
+		district_points_2nd = find2ndLayerDistrictPoint(m_I,m_O)
+		# find end points of each sub-sub-district
+		district_end_points_2nd = find2ndDistrictEndPoint(district_end_points_1st, best2ndCenter, district_points_2nd, m_I, m_O)
+		# distribute customer points to its corresponding district
+		districted_customer_points_2nd = find2ndLayerCust(dataCust, district_end_points_2nd,m_I,m_O)
+		# find center of each sub-sub-district
+		best3rdCenter = find3rdLayerCenter(district_end_points_2nd, m_I, m_O)
+		# get dipersion value
+		dp = getDispersionValue(2,m_I,m_O,districted_customer_points_2nd,best3rdCenter)
+		if(dp < min_dp):
+			min_dp = dp
+			best_rot_deg = rot_deg
+	else:
+		dp = getDispersionValue(1,m_I,m_O,districted_customer_points_1st,best2ndCenter)
+		if(dp < min_dp):
+			min_dp = dp
+			best_rot_deg = rot_deg
+print("\n---- Set rotation degree = ", best_rot_deg, " ----",sep = "")
+#show_info()
+#Draw_map()
