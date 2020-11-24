@@ -477,8 +477,7 @@ def getCepWeight(w,I,O,a,cand_exch_point,districted_customer_points):
 			result.append(tmp1)
 	return result
 # make a graph of adjecency matrix
-def makeGraph(w,m_I,m_O,cep_weight,cep):
-	
+def makeGraph(w,m_I,m_O,cep_weight,cep,EPSILON):
 	# array to record each cand exch point's number
 	num_ary = [0]*(len(cep))
 	for i in range(1,len(cep)):
@@ -502,7 +501,7 @@ def makeGraph(w,m_I,m_O,cep_weight,cep):
 				v = cep[i][j]
 				dist = math.sqrt((u[0]-v[0])**2 + (u[1]-v[1])**2)
 				
-				if((dist/SPEED) <= T):
+				if((dist/SPEED) <= T + EPSILON):
 					#g+=1
 					G[num_ary[i-1]+k][num_ary[i]+j] = cep_weight[i][j]
 	return G
@@ -571,13 +570,13 @@ def getPath(shortest,pred,cep):
 	return path
 
 # get exchange point
-def getExchPoint(w,I,O,cep_weight,cand_exch_point):
+def getExchPoint(w,I,O,cep_weight,cand_exch_point,EPSILON):
 	# l = 1 --> inner layer, l = 2 --> outer layer
 	result = []
 	if(w == 1):
 		cep = cand_exch_point
 		cepW = cep_weight
-		G = makeGraph(w,I,O,cepW,cep)
+		G = makeGraph(w,I,O,cepW,cep,EPSILON)
 	# add v0 to G
 		v0 = [-1]*(len(G))
 		for i in range(len(cepW[0])):
@@ -620,7 +619,7 @@ def getExchPoint(w,I,O,cep_weight,cand_exch_point):
 			cep = cand_exch_point[i]
 			cepW = cep_weight[i]
 			# make a graph of adjecency matrix
-			G = makeGraph(w,I,O,cepW,cep)
+			G = makeGraph(w,I,O,cepW,cep,EPSILON)
 			# add v0 to G
 			v0 = [-1]*(len(G))
 			for i in range(len(cepW[0])):
@@ -716,6 +715,7 @@ def Draw_map():
 			for p in cand_exch_point[i]:
 				plt.plot(p[0],p[1],color='orange',marker='.')
 		# draw ring network
+		print(exch_point_1st)
 		for i in range(m_I):
 			x = exch_point_1st[i][0]
 			y = exch_point_1st[i][1]
@@ -764,15 +764,16 @@ def Draw_map():
 LENGTH_OF_MAP = 20000
 INTERVAL = 600
 SINGLE_ROT_DEG = 15
+EPSILON = 0.1
 # Parameter
 # m_I = 4 --> degree = 90, m_I = 3 ---> degree = 120
 # m_O = 3 --> degree = 90, m_O = 2 ---> degree = 120
 # w = 1 ---> single layer, w = 2 ---> two layer
-m_I = 0
-m_O = 0
-w = 1
+m_I = -1
+m_O = -1
+w = -1
 best_rot_deg = 0
-H = 3
+H = 2
 T = H / (0.5+m_I+2*(w-1)*m_O)
 SPEED = 40000 # unit: (m/hr)
 
@@ -810,6 +811,7 @@ Read_file()
 #### Districting Problem
 # Try 1-layer design
 print("\n********** Find a proper layer design *********************\n")
+w = 1
 for i in range(3,5):
 	print("Try m_I =",i,"...",end=", ")
 	# find districting points in 1-layer
@@ -858,9 +860,9 @@ for i in range(3,5):
 		if(max_d/SPEED > 0.5*T):
 			print("*** m_I =",i,"m_O = ",o,"cannot guarantee the service time ***")
 
-# set m_I, m_O, w by previous result
+# Rememer to set m_I, m_O, w manually by previous result
 m_I = 3
-m_O = 2
+m_O = 3
 w = 2
 print("\n---- Set m_I = ",m_I,", m_O = ",m_O,", w = ",w," ----",sep = "")
 
@@ -932,13 +934,13 @@ if(w == 1):
 	# calculate weight of each candidate exchange point
 	cep_weight = getCepWeight(w,m_I,m_O,a,cand_exch_point,districted_customer_points_1st)
 	# get exchange point of 1st layer
-	exch_point_1st = getExchPoint(w,m_I,m_O,cep_weight, cand_exch_point)
+	exch_point_1st = getExchPoint(w,m_I,m_O,cep_weight, cand_exch_point,EPSILON)
 else: # w = 2
 	cand_exch_point = getCandExchPoint(w,m_I,m_O,best3rdCenter, r, maxN, minN)
 	# calculate weight of each candidate exchange point
 	cep_weight = getCepWeight(w,m_I,m_O,a,cand_exch_point, districted_customer_points_2nd)
 	# get exchange point
-	exch_point = getExchPoint(w,m_I,m_O,cep_weight, cand_exch_point)
+	exch_point = getExchPoint(w,m_I,m_O,cep_weight, cand_exch_point,EPSILON)
 	exch_point_2nd = exch_point
 	exch_point_1st = []
 	for i in range(len(exch_point)):
