@@ -479,39 +479,33 @@ def getCepWeight(w,I,O,a,cand_exch_point,districted_customer_points):
 # make a graph of adjecency matrix
 def makeGraph(w,m_I,m_O,cep_weight,cep):
 	
-	if(w == 1):
-		return None
-	else:
-		# array to record each cand exch point's number
-		num_ary = [0]*(len(cep))
-		for i in range(1,len(cep)):
-			num_ary[i] = num_ary[i-1]+len(cep[i-1])
-		# array to record each cand exch point
-		point_ary = []
-		for i in range(len(cep)):
-			for p in cep[i]:
-				point_ary.append(p)
-		
-		# initialization
-		cnt = len(point_ary)
-		G = [-1]*cnt
-		for i in range(cnt):
-			G[i] = [-1]*cnt
-		#g = 0
-		for i in range(1,len(cep)):
-			for j in range(len(cep[i])):
-				for k in range(len(cep[i-1])):
-					u = cep[i-1][k]
-					v = cep[i][j]
-					dist = math.sqrt((u[0]-v[0])**2 + (u[1]-v[1])**2)
-					
-					if((dist/SPEED) <= T):
-						#g+=1
-						G[num_ary[i-1]+k][num_ary[i]+j] = cep_weight[i][j]
-		# print(g)
-		# for i in range(len(G)):
-		# 	print(G[i])
-		return G
+	# array to record each cand exch point's number
+	num_ary = [0]*(len(cep))
+	for i in range(1,len(cep)):
+		num_ary[i] = num_ary[i-1]+len(cep[i-1])
+	# array to record each cand exch point
+	point_ary = []
+	for i in range(len(cep)):
+		for p in cep[i]:
+			point_ary.append(p)
+	
+	# initialization
+	cnt = len(point_ary)
+	G = [-1]*cnt
+	for i in range(cnt):
+		G[i] = [-1]*cnt
+	#g = 0
+	for i in range(1,len(cep)):
+		for j in range(len(cep[i])):
+			for k in range(len(cep[i-1])):
+				u = cep[i-1][k]
+				v = cep[i][j]
+				dist = math.sqrt((u[0]-v[0])**2 + (u[1]-v[1])**2)
+				
+				if((dist/SPEED) <= T):
+					#g+=1
+					G[num_ary[i-1]+k][num_ary[i]+j] = cep_weight[i][j]
+	return G
 def calculateInDeg(G):
 	n = len(G)
 	in_deg = [0]*n
@@ -581,7 +575,44 @@ def getExchPoint(w,I,O,cep_weight,cand_exch_point):
 	# l = 1 --> inner layer, l = 2 --> outer layer
 	result = []
 	if(w == 1):
-		return None
+		cep = cand_exch_point
+		cepW = cep_weight
+		G = makeGraph(w,I,O,cepW,cep)
+	# add v0 to G
+		v0 = [-1]*(len(G))
+		for i in range(len(cepW[0])):
+			v0[i] = cepW[0][i]
+		G.append(v0)
+		n = len(G) # node number
+		for x in range(n):
+			G[x].append(-1)
+		for x in range(n):
+			for j in range(n):
+				if(x==j):
+					G[x][j] = 0
+		# Topological sort
+		ts_result = topoSort(G)
+		# multiply -1 to each element of G
+		for x in range(n):
+			for j in range(n):
+				G[x][j] *= -1 
+
+		# predecessor & shortest
+		pred = [-1]*n
+		shortest = [0]*n
+		for x in range(n):
+			if(x == (n-1)):
+				shortest[x] = 0
+			else:
+				shortest[x] = sys.maxsize
+		# Relaxation
+		for u in ts_result:
+			for v in range(n):
+				if(G[u][v] != 1):
+					relax(G,u,v,shortest,pred)
+		# get shortest path
+		shortest_path = getPath(shortest,pred,cep)
+		result = shortest_path
 	else: # w = 2
 		# First, calculate outer layer's longest path
 		for i in range(I):
@@ -661,10 +692,10 @@ def Draw_map():
 		plt.plot(point[0], point[1], 'k.') # k.: black point
 		
 	# plot customer points	
-	# for point in dataCust[1:]:
-	# 	plt.plot(point[0], point[1], 'b.') # b.: blue point
-	# for p in districted_customer_points_1st[2]:
-	# 	plt.plot(p[0], p[1], 'b.')
+	for point in dataCust[1:]:
+		plt.plot(point[0], point[1], 'b.') # b.: blue point
+	for p in districted_customer_points_1st[2]:
+		plt.plot(p[0], p[1], 'b.')
 	
 	
 	# plot 1st layer districting line
@@ -678,6 +709,19 @@ def Draw_map():
 	# plot best 2nd layer center
 	for c in best2ndCenter:
 		plt.plot(c[0],c[1], 'm.')
+	
+	if(w == 1):
+		# draw candidate exchange point
+		for i in range(m_I):
+			for p in cand_exch_point[i]:
+				plt.plot(p[0],p[1],color='orange',marker='.')
+		# draw ring network
+		for i in range(m_I):
+			x = exch_point_1st[i][0]
+			y = exch_point_1st[i][1]
+			dx = exch_point_1st[(i+1)%m_I][0] - x
+			dy = exch_point_1st[(i+1)%m_I][1] - y
+			plt.arrow(x,y,dx,dy,width=100,length_includes_head = True,color='r')
 	################### Plot two layer #######################
 	if(w == 2):
 		# plot 2nd layer districting line
@@ -694,7 +738,7 @@ def Draw_map():
 		for i in range(m_I):
 			for j in range(m_O+1):
 				for p in cand_exch_point[i][j]:
-					plt.plot(p[0],p[1],'b.')
+					plt.plot(p[0],p[1],color='orange',marker='.')
 		# draw ring network
 		for i in range(m_I):
 			for o in range(m_O+1):
@@ -726,7 +770,7 @@ SINGLE_ROT_DEG = 15
 # w = 1 ---> single layer, w = 2 ---> two layer
 m_I = 0
 m_O = 0
-w = 0
+w = 1
 best_rot_deg = 0
 H = 3
 T = H / (0.5+m_I+2*(w-1)*m_O)
@@ -816,8 +860,8 @@ for i in range(3,5):
 
 # set m_I, m_O, w by previous result
 m_I = 3
-m_O = 0
-w = 1
+m_O = 2
+w = 2
 print("\n---- Set m_I = ",m_I,", m_O = ",m_O,", w = ",w," ----",sep = "")
 
 print("\n********** Find a best rotation degree ********************")
@@ -888,7 +932,7 @@ if(w == 1):
 	# calculate weight of each candidate exchange point
 	cep_weight = getCepWeight(w,m_I,m_O,a,cand_exch_point,districted_customer_points_1st)
 	# get exchange point of 1st layer
-	exch_point = getExchPoint(w,1,m_I,m_O,cep_weight, cand_exch_point)
+	exch_point_1st = getExchPoint(w,m_I,m_O,cep_weight, cand_exch_point)
 else: # w = 2
 	cand_exch_point = getCandExchPoint(w,m_I,m_O,best3rdCenter, r, maxN, minN)
 	# calculate weight of each candidate exchange point
