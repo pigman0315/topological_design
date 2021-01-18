@@ -213,12 +213,12 @@ def find1stLayerCust(I,dataCust, district_end_points_1st):
 				break
 	return result
 # get max travel time
-def get_max_dist(w,I,O,distr_cust_points,bestCenter):
+def get_max_dist(w,I,O,distr_end_points,bestCenter):
 	max_dist = 0
 	if(w == 1):
 		for i in range(I):
 			c = bestCenter[i]
-			for cp in distr_cust_points[i]:
+			for cp in distr_end_points[i]:
 				dist = math.sqrt((cp[0] - c[0])**2 + (cp[1] - c[1])**2)
 				if(dist > max_dist):
 					max_dist = dist
@@ -226,7 +226,7 @@ def get_max_dist(w,I,O,distr_cust_points,bestCenter):
 		for i in range(I):
 			for o in range(O+1):
 				c = bestCenter[i][o]
-				for cp in distr_cust_points[i][o]:
+				for cp in distr_end_points[i][o]:
 					dist = math.sqrt((cp[0]-c[0])**2 + (cp[1]-c[1])**2)
 					if(dist > max_dist):
 						max_dist = dist
@@ -821,11 +821,11 @@ for i in range(3,5):
 	# find end points of districting line
 	district_end_points_1st = find1stDistrictEndPoint(i,district_points_1st, best1stCenter,LENGTH_OF_MAP)
 	# distribute customer points to its corresponding district
-	districted_customer_points_1st = find1stLayerCust(i,dataCust, district_end_points_1st)
+	district_customer_points_1st = find1stLayerCust(i,dataCust, district_end_points_1st)
 	# find center of each sub-district in 2-layer design
 	best2ndCenter = find2ndLayerCenter(i,district_end_points_1st)
 	# check if single layer is ok
-	max_d = get_max_dist(w,i,0,districted_customer_points_1st,best2ndCenter)
+	max_d = get_max_dist(w,i,0,district_end_points_1st,best2ndCenter)
 	T = H / (0.5+i)
 	print("Max T = %.2f" % (max_d/SPEED), ", must under %.2f" % (T/2))
 	if(max_d/SPEED > 0.5*T):
@@ -842,7 +842,7 @@ for i in range(3,5):
 		# find end points of districting line
 		district_end_points_1st = find1stDistrictEndPoint(i,district_points_1st, best1stCenter,LENGTH_OF_MAP)
 		# distribute customer points to its corresponding district
-		districted_customer_points_1st = find1stLayerCust(i,dataCust, district_end_points_1st)
+		district_customer_points_1st = find1stLayerCust(i,dataCust, district_end_points_1st)
 		# find center of each sub-district in 2-layer design
 		best2ndCenter = find2ndLayerCenter(i,district_end_points_1st)
 		# find districting points of each sub-district in 2nd layer design
@@ -850,11 +850,11 @@ for i in range(3,5):
 		# find end points of each sub-sub-district
 		district_end_points_2nd = find2ndDistrictEndPoint(district_end_points_1st, best2ndCenter, district_points_2nd, i, o)
 		# distribute customer points to its corresponding district
-		districted_customer_points_2nd = find2ndLayerCust(dataCust, district_end_points_2nd,i,o)
+		district_customer_points_2nd = find2ndLayerCust(dataCust, district_end_points_2nd,i,o)
 		# find center of each sub-sub-district
 		best3rdCenter = find3rdLayerCenter(district_end_points_2nd, i, o)
 		# get max distance of client
-		max_d = get_max_dist(w,i,o,districted_customer_points_2nd,best3rdCenter)
+		max_d = get_max_dist(w,i,o,district_end_points_2nd,best3rdCenter)
 		T = H / (0.5+i+2*(w-1)*o)
 		print("Max T = %.2f" % (max_d/SPEED), ", must under %.2f" % (T/2))
 		if(max_d/SPEED > 0.5*T):
@@ -862,7 +862,7 @@ for i in range(3,5):
 
 # Rememer to set m_I, m_O, w manually by previous result
 m_I = 3
-m_O = 3
+m_O = 2
 w = 2
 print("\n---- Set m_I = ",m_I,", m_O = ",m_O,", w = ",w," ----",sep = "")
 
