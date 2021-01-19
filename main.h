@@ -13,6 +13,8 @@ extern vector< vector<Node> > district_endpoints_1st;
 extern vector< vector< vector<Node> > > district_endpoints_2nd;
 extern vector< vector<Node> > district_customers_1st;
 extern vector< vector< vector<Node> > > district_customers_2nd;
+extern vector<Node> exch_points_1st;
+extern vector< vector<Node> > exch_points_2nd;
 //
 class ReadFile{
 public:
@@ -63,6 +65,12 @@ public:
 				}
 				district_customers_1st.push_back(tmp_vec);
 			}
+			// get 1st layer exchange points
+			for(int i = 0;i < m_I;i++){
+				getline(file,str);
+				Node tmp = get_node(str);
+				exch_points_1st.push_back(tmp);
+			}
 		}
 		if(w == 2){
 			// get best 3rd layer center
@@ -106,6 +114,23 @@ public:
 					tmp_vv.push_back(tmp_v);
 				}
 				district_customers_2nd.push_back(tmp_vv);
+			}
+			// get 1st layer exchange points
+			for(int i = 0;i < m_I;i++){
+				getline(file,str);
+				Node tmp = get_node(str);
+				exch_points_1st.push_back(tmp);
+			}
+			// get 1st layer exchange points
+			// get best 3rd layer center
+			for(int i = 0;i < m_I;i++){
+				vector<Node> tmp_v;
+				for(int j = 0;j < m_O+1;j++){
+					getline(file,str);
+					Node tmp = get_node(str);
+					tmp_v.push_back(tmp);
+				}
+				exch_points_2nd.push_back(tmp_v);
 			}
 		}
 		file.close();

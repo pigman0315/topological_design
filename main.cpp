@@ -8,9 +8,14 @@ vector< vector<Node> > district_endpoints_1st;
 vector< vector< vector<Node> > > district_endpoints_2nd;
 vector< vector<Node> > district_customers_1st;
 vector< vector< vector<Node> > > district_customers_2nd;
+vector<Node> exch_points_1st;
+vector< vector<Node> > exch_points_2nd;
 //
 int main(){
 	// read file
 	ReadFile rf;
 	rf.run();
+	// do randomized savings algo.
+	SavingsAlgo sa(district_customers_1st[0],exch_points_1st[0]);
+	sa.run();
 }
