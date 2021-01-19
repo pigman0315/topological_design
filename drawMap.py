@@ -860,7 +860,7 @@ def draw_map():
 	plt.yticks(np.arange(0,LENGTH_OF_MAP+1,LENGTH_OF_MAP/10))
 	plt.axis('equal')
 	plt.show()
-def output_info_1(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,district_end_points_1st):
+def output_info_1(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,district_end_points_1st,districted_customer_points_1st):
 	f = open('sp1_result.txt',mode='w')
 	f.write(str(w)+'\n')
 	f.write(str(m_I)+'\n')
@@ -873,8 +873,12 @@ def output_info_1(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,district_en
 		f.write(str(len(district_end_points_1st[i]))+"\n")
 		for j in range(len(district_end_points_1st[i])):
 			f.write(str(int(district_end_points_1st[i][j][0]))+' '+str(int(district_end_points_1st[i][j][1]))+'\n')
+	for i in range(m_I):
+		f.write(str(len(districted_customer_points_1st[i]))+"\n")
+		for j in range(len(districted_customer_points_1st[i])):
+			f.write(str(int(districted_customer_points_1st[i][j][0]))+' '+str(int(districted_customer_points_1st[i][j][1]))+'\n')
 	f.close()
-def output_info_2(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,best3rdCenter,district_end_points_1st,district_end_points_2nd):
+def output_info_2(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,best3rdCenter,district_end_points_1st,district_end_points_2nd,districted_customer_points_2nd):
 	f = open('sp1_result.txt',mode='w')
 	f.write(str(w)+'\n')
 	f.write(str(m_I)+'\n')
@@ -883,18 +887,23 @@ def output_info_2(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,best3rdCent
 	f.write(str(int(best1stCenter[0]))+' '+str(int(best1stCenter[1]))+'\n')
 	for i in range(m_I):
 		f.write(str(int(best2ndCenter[i][0]))+' '+str(int(best2ndCenter[i][1]))+'\n')
+	for i in range(m_I):
+		f.write(str(len(district_end_points_1st[i]))+"\n")
+		for j in range(len(district_end_points_1st[i])):
+			f.write(str(int(district_end_points_1st[i][j][0]))+' '+str(int(district_end_points_1st[i][j][1]))+'\n')
 	for i in range(m_I):
 		for o in range(m_O+1):
 			f.write(str(int(best3rdCenter[i][o][0]))+' '+str(int(best3rdCenter[i][o][1]))+'\n')
-	for i in range(m_I):
-		f.write(str(len(district_end_points_1st[i]))+"\n")
-		for j in range(len(district_end_points_1st[i])):
-			f.write(str(int(district_end_points_1st[i][j][0]))+' '+str(int(district_end_points_1st[i][j][1]))+'\n')
 	for i in range(m_I):
 		for o in range(m_O+1):
 			f.write(str(len(district_end_points_2nd[i][o]))+"\n")
 			for k in range(len(district_end_points_2nd[i][o])):
 				f.write(str(int(district_end_points_2nd[i][o][k][0]))+' '+str(int(district_end_points_2nd[i][o][k][1]))+'\n')
+	for i in range(m_I):
+		for o in range(m_O+1):
+			f.write(str(len(districted_customer_points_2nd))+"\n")
+			for k in range(len(districted_customer_points_2nd[i][o])):
+				f.write(str(int(ddistricted_customer_points_2nd[i][o][k][0]))+' '+str(int(districted_customer_points_2nd[i][o][k][1]))+'\n')
 	f.close()
 ###################### Main Function #################################
 read_file()
@@ -985,6 +994,6 @@ else: # w = 2
 print("\n********** Ring network design problem is done ************")
 #draw_map()
 if(w == 1):
-	output_info_1(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,district_end_points_1st)
+	output_info_1(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,district_end_points_1st,districted_customer_points_1st)
 else:
-	output_info_2(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,best3rdCenter,district_end_points_1st,district_end_points_2nd)
+	output_info_2(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,best3rdCenter,district_end_points_1st,district_end_points_2nd, districted_customer_points_2nd)
