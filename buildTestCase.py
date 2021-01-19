@@ -3,7 +3,7 @@ import os
 #### Constant
 SIDE_LENGTH = 20000
 INTERVAL = 100
-CUSTOMER_NUM = 100
+CUSTOMER_NUM = 300
 #### open files
 curPath = os.path.dirname(os.path.abspath(__file__))
 fileBound = open(curPath+"/boundaries.txt", "w")
