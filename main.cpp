@@ -10,7 +10,7 @@ vector< vector<Node> > district_customers_1st;
 vector< vector< vector<Node> > > district_customers_2nd;
 vector<Node> exch_points_1st;
 vector< vector<Node> > exch_points_2nd;
-float T = 0.29; //hr
+float T = 0.5; //hr
 float SPEED = 40000; //km/hr
 //
 int main(){

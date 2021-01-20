@@ -29,6 +29,7 @@ public:
 	// variables
 	vector< vector<int> > routes_table;// be used to record routes with customer index of customer_points
 	map<int,int> routes_map; // be used to map customer with his route number
+	vector<bool> routes_flg; // to show which routes in map is available
 	vector<SavingsNode> savings_list;
 	vector<Node> customer_points;
 	int customer_num;
@@ -60,6 +61,10 @@ SavingsAlgo::SavingsAlgo(vector<Node> cps, Node ep){
 	for(int i = 0;i < customer_num;i++){
 		routes_map[i] = i;
 	}
+	// set routes flg
+	for(int i = 0;i < customer_num;i++){
+		routes_flg.push_back(true);
+	}
 }
 // funciton
 void SavingsAlgo::run(){
@@ -68,8 +73,6 @@ void SavingsAlgo::run(){
 	while(1){
 		// find a valid savings node
 		SavingsNode sn = find_valid_sn();
-		cout << "here\n";
-		sn.show();
 
 		// this means we cannot no longer find a valid savings node, so end this algo. 
 		if(sn.value == -1)
@@ -80,6 +83,14 @@ void SavingsAlgo::run(){
 		int sn_j = sn.j;
 
 		merge_route(sn_i,sn_j);
+	}
+	for(int i = 0;i < customer_num;i++){
+		if(routes_flg[i] == true){
+			for(int j = 0;j < routes_table[i].size();j++){
+				cout << routes_table[i][j] << " ";
+			}
+			cout << "\n\n";
+		}
 	}
 }
 float SavingsAlgo::get_dist(Node n1, Node n2){
@@ -94,19 +105,15 @@ bool SavingsAlgo::check_sn(SavingsNode sn){
 		//cout << "same route" << endl;
 		return false;
 	}
-
 	// check if both customer nodes are not the interior node of their route
 	vector<int> route_i = routes_table[routes_map[sn.i]];
 	vector<int> route_j = routes_table[routes_map[sn.j]];
 	if(route_i[0] != sn.i && route_i[route_i.size()-1] != sn.i){
-		//cout << "i is interior" << endl;
 		return false;
 	}
 	if(route_j[0] != sn.j && route_j[route_j.size()-1] != sn.j){
-		//cout << "j is interior" << endl;
 		return false;
 	}
-
 	// check time limit after merge 
 	float ri_dist, rj_dist, totoal_dist;
 	float max_dist = SPEED*T;
@@ -175,16 +182,13 @@ SavingsNode SavingsAlgo::find_valid_sn(){
 		shuffle(n_list.begin(),n_list.end(),default_random_engine(time(NULL)));
 		for(int i = 0;i < max_p;i++){
 			sn = savings_list[n_list[i]];
-			cout << "ss\n";
 			if(check_sn(sn)){
 				// set flag
 				is_sn_valid = true;
 				// delete valid sn in savings_list
 				savings_list.erase(savings_list.begin()+n_list[i]);
-				cout << "aa\n";
 				break;
 			}
-			cout << "dd\n";
 		}
 		// if first max_p savings node cannot satisfy conditions, delete them
 		if(!is_sn_valid){
@@ -214,11 +218,10 @@ void SavingsAlgo::merge_route(int sn_i, int sn_j){
 		routes_map[route_j[i]] = ri_idx;
 		// add node in route_j into route_i
 		route_i.push_back(route_j[i]);
+		//
+		routes_flg[route_j[i]] = false;
 		
 	}
-
-	// remove route_j in routes_table
-	routes_table.erase(routes_table.begin()+rj_idx);
 
 	// use new route_i to replace old route_i
 	routes_table[routes_map[sn_i]].clear();
