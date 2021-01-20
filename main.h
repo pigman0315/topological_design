@@ -3,7 +3,7 @@
 #include <map>
 #include <set>
 #include <vector>
-#include "sp2.h"
+#include "sp2.h" // class SavingsAlgo
 //
 extern int w, m_I, m_O, best_rot_deg;
 extern Node best_1st_center;
@@ -15,6 +15,8 @@ extern vector< vector<Node> > district_customers_1st;
 extern vector< vector< vector<Node> > > district_customers_2nd;
 extern vector<Node> exch_points_1st;
 extern vector< vector<Node> > exch_points_2nd;
+extern float T;
+extern float SPEED;
 //
 class ReadFile{
 public:

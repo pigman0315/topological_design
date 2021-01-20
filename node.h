@@ -23,3 +23,26 @@ public:
 		cout << x << " " << y << endl;
 	}
 };
+class SavingsNode{
+public:
+	float value;
+	int i,j;
+	Node ni;
+	Node nj;
+	SavingsNode(){
+		value = -1;
+	}
+	SavingsNode(float v, int i_, int j_, Node n1, Node n2){
+		value = v;
+		i = i_;
+		j = j_;
+		ni = n1;
+		nj = n2;
+	}
+	void show(){
+		cout << "Saving value: " << value << endl;
+		cout << "i: " << i << ", j: " << j << endl;
+		ni.show();
+		nj.show(); 
+	}
+};
