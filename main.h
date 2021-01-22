@@ -16,7 +16,7 @@ extern vector< vector< vector<Node> > > district_customers_2nd;
 extern vector<Node> exch_points_1st;
 extern vector< vector<Node> > exch_points_2nd;
 extern float T;
-extern float SPEED;
+extern const float SPEED;
 //
 class ReadFile{
 public:

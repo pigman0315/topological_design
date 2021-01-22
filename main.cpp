@@ -10,16 +10,27 @@ vector< vector<Node> > district_customers_1st;
 vector< vector< vector<Node> > > district_customers_2nd;
 vector<Node> exch_points_1st;
 vector< vector<Node> > exch_points_2nd;
-float T = 0.5; //hr
-float SPEED = 40000; //km/hr
+const float H = 2.0;
+float T; //hr
+const float SPEED = 40000; //km/hr
 //
 int main(){
 	// read file
 	ReadFile rf;
 	rf.run();
 
+	// show customer numbers
+	cout << district_customers_1st[0].size() << endl;
+	
+	// calculate T by given formula
+	T = H / (0.5+m_I+2*(w-1)*m_O);
+	cout << "T: " << T << endl; 
+
 	// do randomized savings algo.
 	srand(time(NULL)); // random seed
 	SavingsAlgo sa(district_customers_1st[0],exch_points_1st[0]);
 	sa.run();
+
+	//
+	return 0;
 }
