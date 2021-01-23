@@ -11,8 +11,9 @@ vector< vector< vector<Node> > > district_customers_2nd;
 vector<Node> exch_points_1st;
 vector< vector<Node> > exch_points_2nd;
 const float H = 2.0;
-float T; //hr
-const float SPEED = 40000; //km/hr
+float T; // unit: hr
+const float SPEED = 40000; // unit: km/hr
+
 //
 int main(){
 	// read file
@@ -20,7 +21,7 @@ int main(){
 	rf.run();
 
 	// show customer numbers
-	cout << district_customers_1st[0].size() << endl;
+	cout << "Custormer numbers: " << district_customers_1st[0].size() << endl;
 	
 	// calculate T by given formula
 	T = H / (0.5+m_I+2*(w-1)*m_O);

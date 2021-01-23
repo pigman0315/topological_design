@@ -85,7 +85,7 @@ void SavingsAlgo::run(){
 
 	// get new routes
 	get_routes_time();
-
+	show_routes();
 	cout << "-----" << endl;
 
 	// try to minimize the number of routes
@@ -146,11 +146,11 @@ bool SavingsAlgo::insert_node(Node n_insert, int n_insert_num){
 	return false;
 }
 void SavingsAlgo::minimize_routes(){
-	vector<int> single_node_nums;
+	vector<int> single_node_nums; // nodes which is released
 	// release routes
 	for(int i = 0;i < routes_table.size();i++){
 		if(routes_table[i].size() <= RSA_U && routes_flg[i] == true){
-			for(int j = 0;j < routes_table[i].size();j++){
+			for(int j = 1;j < routes_table[i].size();j++){
 				routes_table[routes_table[i][j]].clear();
 				routes_table[routes_table[i][j]].push_back(routes_table[i][j]);
 				routes_map[routes_table[i][j]] = routes_table[i][j];
@@ -159,32 +159,92 @@ void SavingsAlgo::minimize_routes(){
 			routes_table[i].clear();
 			routes_table[i].push_back(i);
 			routes_flg[i] = false;
+			single_node_nums.push_back(i);
 			
 		}
 	}
-	cout << single_node_nums.size() << endl;
+	cout << "Total release node numbers: " << single_node_nums.size() << endl;
+	vector<int> failed_nodes; // nodes which fail to be inserted into existed routes
 	// insert those single node into current available routes
 	for(int n = 0;n < single_node_nums.size();n++){
 		cout << single_node_nums[n] << endl;
 		Node n_insert = customer_points[single_node_nums[n]]; // node we want to insert 
 		if(!insert_node(n_insert, single_node_nums[n])){
+			failed_nodes.push_back(single_node_nums[n]);
 			cout << "insert node " << single_node_nums[n] << " failed." << endl;
-			// rebuild those node which cannot be inserted into existed route
 		}
 	}
-	
-	
+	// rebuild routes for those nodes which cannot be inserted into existed routes
+	if(failed_nodes.size() >= 1){
+		float min_dist = SPEED*T*2;
+		Node prev_node;
+		Node cur_node;
+		Node min_node;
+		int min_idx;
+		int cur_rn; // current route number
+		float cur_dist;
+		// find a node closest to be first node
+		for(int i = 0;i < failed_nodes.size();i++){
+			cur_node = customer_points[failed_nodes[i]];
+			cur_dist = get_dist(cur_node,exch_point);
+			if(cur_dist < min_dist){
+				min_dist = cur_dist;
+				min_idx = i;
+				cur_rn = failed_nodes[i];
+			}
+		}
+		routes_flg[cur_rn] = true;
+		failed_nodes.erase(failed_nodes.begin()+min_idx);
+		// do while until number of failed nodes = 0
+		while(failed_nodes.size() > 0){
+			for(int i = 0;i < failed_nodes.size();i++){
+				cur_node = customer_points[failed_nodes[i]];
+				cur_dist = get_dist(cur_node,prev_node);
+				if(cur_dist < min_dist){
+					min_dist = cur_dist;
+					min_idx = i;
+					min_node = cur_node;
+				}
+			}
+			float add_dist = cur_dist + get_dist(min_node, exch_point) - get_dist(prev_node,exch_point);
+			float add_time = add_dist / SPEED;
+			if((add_time+routes_time[cur_rn]) <= T){
+				routes_table[cur_rn].push_back(failed_nodes[min_idx]);
+				routes_map[failed_nodes[min_idx]] = cur_rn;
+				routes_time[cur_rn] += add_time;
+				failed_nodes.erase(failed_nodes.begin()+min_idx);
+			}
+			// find anothor start point if exceed time limit
+			else{
+				min_dist = SPEED*T*2;
+				for(int i = 0;i < failed_nodes.size();i++){
+					cur_node = customer_points[failed_nodes[i]];
+					cur_dist = get_dist(cur_node,exch_point);
+					if(cur_dist < min_dist){
+						min_dist = cur_dist;
+						min_idx = i;
+						cur_rn = failed_nodes[i];
+					}
+				}
+				routes_flg[cur_rn] = true;
+				failed_nodes.erase(failed_nodes.begin()+min_idx);
+			}
+		}
+	}	
 }
 void SavingsAlgo::show_routes(){
+	int cnt = 0;
 	for(int i = 0;i < customer_num;i++){
 		if(routes_flg[i] == true){
 			for(int j = 0;j < routes_table[i].size();j++){
+				cnt++;
 				cout << routes_table[i][j] << " ";
 			}
 			cout << ", time: " << routes_time[i]; 
 			cout << "\n\n";
 		}
 	}
+	cout << "Total node number: " << cnt << endl;
 }
 void SavingsAlgo::do_savings_algo(){
 	while(1){
