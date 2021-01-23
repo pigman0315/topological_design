@@ -83,11 +83,8 @@ void SavingsAlgo::run(){
 	// do randomized savings algo to find initial routes
 	do_savings_algo();
 
-
-	// get new routes time after updating
+	// get new routes
 	get_routes_time();
-	// show
-	show_routes();
 
 	cout << "-----" << endl;
 
@@ -156,6 +153,7 @@ void SavingsAlgo::minimize_routes(){
 			for(int j = 0;j < routes_table[i].size();j++){
 				routes_table[routes_table[i][j]].clear();
 				routes_table[routes_table[i][j]].push_back(routes_table[i][j]);
+				routes_map[routes_table[i][j]] = routes_table[i][j];
 				single_node_nums.push_back(routes_table[i][j]);
 			}
 			routes_table[i].clear();
@@ -171,6 +169,7 @@ void SavingsAlgo::minimize_routes(){
 		Node n_insert = customer_points[single_node_nums[n]]; // node we want to insert 
 		if(!insert_node(n_insert, single_node_nums[n])){
 			cout << "insert node " << single_node_nums[n] << " failed." << endl;
+			// rebuild those node which cannot be inserted into existed route
 		}
 	}
 	
