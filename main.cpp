@@ -21,14 +21,13 @@ int main(){
 	rf.run();
 
 	// show customer numbers
-	cout << "Custormer numbers: " << district_customers_1st[0].size() << endl;
+	cout << "Customer numbers: " << district_customers_1st[0].size() << endl;
 	
 	// calculate T by given formula
 	T = H / (0.5+m_I+2*(w-1)*m_O);
 	cout << "T: " << T << endl; 
 
 	// do randomized savings algo.
-	srand(time(NULL)); // random seed
 	SavingsAlgo sa(district_customers_1st[0],exch_points_1st[0]);
 	sa.run();
 

@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <stdlib.h>
 #include <random>
+#include <chrono>
 #include "node.h" // class Node/SavingsNode
 //
 extern int w, m_I, m_O, best_rot_deg;
@@ -38,9 +39,10 @@ public:
 	Node exch_point;
 	static const int RSA_P = 10; // parameter for randomized savings algo.
 	static const int RSA_Q = 10; // parameter for randomized savings algo.
-	static const int RSA_U = 3; // parameter in minimize_routes to optimize randomized savings algo.
+	static const int RSA_U = 2; // parameter in minimize_routes to optimize randomized savings algo.
 	// functions
 	SavingsAlgo(vector<Node> cps, Node ep);
+	void initial();
 	void run();
 	void get_savings();
 	float get_dist(Node n1, Node n2);
@@ -53,12 +55,17 @@ public:
 	void minimize_routes();
 	void get_routes_time();
 	bool insert_node(Node n_insert, int n_insert_num);
+	float get_total_travel_time();
 };
 // constructor
 SavingsAlgo::SavingsAlgo(vector<Node> cps, Node ep){
 	customer_points = cps;
 	exch_point = ep;
 	customer_num = customer_points.size();
+	routes_table.clear();
+	routes_map.clear();
+	routes_flg.clear();
+	routes_time.clear();
 	// make route table with each customer node
 	for(int i = 0;i < customer_num;i++){
 		vector<int> tmp;
@@ -77,25 +84,33 @@ SavingsAlgo::SavingsAlgo(vector<Node> cps, Node ep){
 }
 // funciton
 void SavingsAlgo::run(){
-	// calculate savings value for each pair of node
-	get_savings();
-
 	// do randomized savings algo to find initial routes
 	do_savings_algo();
-
-	// get new routes
-	get_routes_time();
-	show_routes();
-	cout << "-----" << endl;
-
 	// try to minimize the number of routes
 	minimize_routes();
-
-	// get new routes time after updating
-	get_routes_time();
-
 	// show routes
 	show_routes();
+}
+void SavingsAlgo::initial(){
+	routes_table.clear();
+	routes_map.clear();
+	routes_flg.clear();
+	routes_time.clear();
+	// make route table with each customer node
+	for(int i = 0;i < customer_num;i++){
+		vector<int> tmp;
+		tmp.push_back(i);
+		routes_table.push_back(tmp);
+
+		// register customer node number into route map
+		routes_map[i] = i;
+
+		// set routes flg
+		routes_flg.push_back(true);
+
+		// reset routes time
+		routes_time.push_back(0.0);
+	}
 }
 void SavingsAlgo::get_routes_time(){
 	for(int i = 0;i < customer_num;i++){
@@ -230,7 +245,8 @@ void SavingsAlgo::minimize_routes(){
 				failed_nodes.erase(failed_nodes.begin()+min_idx);
 			}
 		}
-	}	
+	}
+	get_routes_time();	
 }
 void SavingsAlgo::show_routes(){
 	int cnt = 0;
@@ -247,20 +263,53 @@ void SavingsAlgo::show_routes(){
 	cout << "Total node number: " << cnt << endl;
 }
 void SavingsAlgo::do_savings_algo(){
-	while(1){
-		// find a valid savings node
-		SavingsNode sn = find_valid_sn();
+	float min_time = SPEED*T*2;
+	vector< vector<int> > best_routes_table;// be used to record routes with customer index of customer_points
+	map<int,int> best_routes_map; // be used to map customer with his route number
+	vector<bool> best_routes_flg; // to show which routes in map is available
+	vector<float> best_routes_time; // store each routes' time
+	bool update = false;
+	// do Q times to find best routes(Randomized Savings algo.)
+	for(int i = 0;i < RSA_Q;i++){
+		// initial routes
+		initial();
 
-		// this means we cannot no longer find a valid savings node, so end this algo. 
-		if(sn.value == -1)
-			break;
+		// calculate savings value for each pair of node
+		get_savings();
+		while(1){
+			// find a valid savings node
+			SavingsNode sn = find_valid_sn();
 
-		// merge the route of ni, nj in savings node
-		int sn_i = sn.i;
-		int sn_j = sn.j;
+			// this means we cannot no longer find a valid savings node, so end this algo. 
+			if(sn.value == -1)
+				break;
 
-		merge_route(sn_i,sn_j);
+			// merge the route of ni, nj in savings node
+			int sn_i = sn.i;
+			int sn_j = sn.j;
+
+			merge_route(sn_i,sn_j);
+		}
+		// get each route's travel time
+		get_routes_time();
+
+		// compare current travel time with best
+		float cur_time = get_total_travel_time();
+		if(cur_time < min_time){
+			min_time = cur_time;
+			best_routes_table = routes_table;
+			best_routes_map = routes_map;
+			best_routes_time = routes_time;
+			best_routes_flg = routes_flg;
+			update = true;
+		}
 	}
+	if(update == true){
+		routes_table = best_routes_table;
+		routes_map = best_routes_map;
+		routes_flg = best_routes_flg;
+		routes_time = best_routes_time;
+	}	
 }
 float SavingsAlgo::get_dist(Node n1, Node n2){
 	return sqrt((n1.x-n2.x)*(n1.x-n2.x) + (n1.y-n2.y)*(n1.y-n2.y));
@@ -348,7 +397,8 @@ SavingsNode SavingsAlgo::find_valid_sn(){
 		for(int i = 0;i < max_p;i++){
 			n_list.push_back(i);
 		}
-		shuffle(n_list.begin(),n_list.end(),default_random_engine(time(NULL)));
+		unsigned seed = chrono::system_clock::now().time_since_epoch().count();
+		shuffle(n_list.begin(),n_list.end(),default_random_engine(seed));
 		for(int i = 0;i < max_p;i++){
 			sn = savings_list[n_list[i]];
 			if(check_sn(sn)){
@@ -398,5 +448,14 @@ void SavingsAlgo::merge_route(int sn_i, int sn_j){
 		routes_table[routes_map[sn_i]].push_back(route_i[i]);
 	}
 
+}
+float SavingsAlgo::get_total_travel_time(){
+	float sum = 0.0;
+	for(int i = 0;i < customer_num;i++){
+		if(routes_flg[i] == true){
+			sum += routes_time[i];
+		}
+	}
+	return sum;
 }
 
