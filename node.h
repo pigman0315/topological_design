@@ -57,6 +57,20 @@ public:
 	int route_num;
 public:
 	SolutionNode(){}
+	SolutionNode(vector< vector<int> > _routes_table){
+		routes_table = _routes_table;
+		route_num = routes_table.size();
+		total_time = 0.0;
+	}
+	SolutionNode(vector< vector<int> > _routes_table,vector<float> _routes_time){
+		routes_table = _routes_table;
+		routes_time = _routes_time;
+		route_num = routes_table.size();
+		total_time = 0.0;
+		for(int i = 0;i < route_num;i++){
+			total_time += routes_time[i];
+		}
+	}
 	SolutionNode(vector< vector<int> > _routes_table,
 				 map<int,int> _routes_map,
 				 vector<bool> _routes_flg,
@@ -91,5 +105,16 @@ public:
 		}
 		cout << "Total node number: " << cnt << endl;
 		cout << "Total time: " << total_time << endl;
+	}
+	void show_routes(){
+		int cnt = 0;
+		for(int i = 0;i < route_num;i++){
+			for(int j = 0;j < routes_table[i].size();j++){
+				cnt++;
+				cout << routes_table[i][j] << " ";
+			}
+			cout << endl;
+		}
+		cout << "Total node number: " << cnt << endl;
 	}
 };
