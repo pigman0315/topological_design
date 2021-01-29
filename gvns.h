@@ -46,6 +46,8 @@ public:
 	vector<SolutionNode> build_shake_ns(int k);
 	void do_shake(int k);
 	void do_VND();
+	void comb_go(int offset, int k, vector<int> &combination, vector<int> people,vector< vector<int> > &result);
+	bool check_comb(vector<int> vev);
 };
 
 GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep){
@@ -61,10 +63,10 @@ void GVNS::run(){
 void GVNS::do_shake(int k){
 	// get neighborhood structures of shaking
 	vector<SolutionNode> ns = build_shake_ns(k);
-	//cout << ns.size() << endl;
+	ns[0].show_routes();
 	//
 }
-void comb_go(int offset, int k, vector<int> &combination, vector<int> people,vector< vector<int> > &result) {
+void GVNS::comb_go(int offset, int k, vector<int> &combination, vector<int> people,vector< vector<int> > &result) {
   if (k == 0) {
     result.push_back(combination);
     return;
@@ -75,6 +77,13 @@ void comb_go(int offset, int k, vector<int> &combination, vector<int> people,vec
     combination.pop_back();
   }
 }
+bool GVNS::check_comb(vector<int> vec){
+	for(int i = 0;i < vec.size()-1;i++){
+		if(vec[i+1]-vec[i]<=1)
+			return false;
+	}
+	return true;
+}	
 vector<SolutionNode> GVNS::build_shake_ns(int k){
 	vector<SolutionNode> sn_vec;
 	// do intra-route Or-opt
@@ -105,7 +114,7 @@ vector<SolutionNode> GVNS::build_shake_ns(int k){
 	else if(k == 2){
 		const int NUM_OF_NODE = 4;
 		vector< vector<int> > rt = solution.routes_table;
-		for(int i = 0;i < solution.route_num;i++){
+		for(int i = 0;i < 1;i++){
 			vector<int> route = rt[i];
 			int route_len = route.size();
 			if(route_len > NUM_OF_NODE){
@@ -113,9 +122,27 @@ vector<SolutionNode> GVNS::build_shake_ns(int k){
 				vector<int> people;
 				vector<int> combination;
 				vector< vector<int> > result;
-				int n = route_len, k = NUM_OF_NODE;
+				int n = route_len+1, k = NUM_OF_NODE;
 				for (int i = 0; i < n; ++i) { people.push_back(i+1); }
 				comb_go(0, k,combination, people, result);
+				for(int r = 0;r < result.size();r++){
+					// check if the edges are not adjacency
+					if(check_comb(result[r])){
+						vector<int> A,B,C,D,tmp_v;
+						A.assign(route.begin(),route.begin()+result[r][0]+1);
+						B.assign(route.begin()+result[r][0]+1,route.begin()+result[r][1]+1);
+						C.assign(route.begin()+result[r][1]+1,route.begin()+result[r][2]+1);
+						D.assign(route.begin()+result[r][2]+1,route.end());
+						tmp_v.insert(tmp_v.end(),A.begin(),A.end());
+						tmp_v.insert(tmp_v.end(),D.begin(),D.end());
+						tmp_v.insert(tmp_v.end(),C.begin(),C.end());
+						tmp_v.insert(tmp_v.end(),B.begin(),B.end());
+						vector< vector<int> > tmp_rt = rt;
+						tmp_rt[i] = tmp_v;
+						SolutionNode tmp_sn(tmp_rt);
+						sn_vec.push_back(tmp_sn);
+					}
+				}
 			}
 			//
 		}
