@@ -1,3 +1,6 @@
+// 
+// Implemantation of randomized savings algorithm
+//
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -9,7 +12,12 @@
 #include <stdlib.h>
 #include <random>
 #include <chrono>
-#include "node.h" // class Node/SavingsNode
+
+#ifndef _NODE_
+#define _NODE_
+#include "node.h" // class Node/SavingsNode/SolutionNode
+#endif
+
 //
 extern int w, m_I, m_O, best_rot_deg;
 extern Node best_1st_center;
@@ -40,6 +48,7 @@ public:
 	static const int RSA_P = 10; // parameter for randomized savings algo.
 	static const int RSA_Q = 10; // parameter for randomized savings algo.
 	static const int RSA_U = 2; // parameter in minimize_routes to optimize randomized savings algo.
+public:
 	// functions
 	SavingsAlgo(vector<Node> cps, Node ep);
 	void initial();
@@ -56,6 +65,7 @@ public:
 	void get_routes_time();
 	bool insert_node(Node n_insert, int n_insert_num);
 	float get_total_travel_time();
+	SolutionNode get_solution();
 };
 // constructor
 SavingsAlgo::SavingsAlgo(vector<Node> cps, Node ep){
@@ -111,6 +121,10 @@ void SavingsAlgo::initial(){
 		// reset routes time
 		routes_time.push_back(0.0);
 	}
+}
+SolutionNode SavingsAlgo::get_solution(){
+	SolutionNode sn(routes_table,routes_map,routes_flg,routes_time,customer_num);
+	return sn;
 }
 void SavingsAlgo::get_routes_time(){
 	for(int i = 0;i < customer_num;i++){

@@ -22,15 +22,23 @@ int main(){
 
 	// show customer numbers
 	cout << "Customer numbers: " << district_customers_1st[0].size() << endl;
-	
+	//
+	vector<Node> cur_custormers = district_customers_1st[0];
+	Node cur_exch_point = exch_points_1st[0];
 	// calculate T by given formula
 	T = H / (0.5+m_I+2*(w-1)*m_O);
 	cout << "T: " << T << endl; 
 
 	// do randomized savings algo.
-	SavingsAlgo sa(district_customers_1st[0],exch_points_1st[0]);
+	cout << "------------\n";
+	SavingsAlgo sa(cur_custormers,cur_exch_point);
 	sa.run();
 
-	//
+	// do GVNS
+	cout << "------------\n";
+	SolutionNode sn = sa.get_solution();
+	GVNS gvns(sn,cur_custormers,cur_exch_point);
+	gvns.run();
+
 	return 0;
 }

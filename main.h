@@ -4,6 +4,7 @@
 #include <set>
 #include <vector>
 #include "rand_sa.h" // class SavingsAlgo
+#include "gvns.h"
 //
 extern int w, m_I, m_O, best_rot_deg;
 extern Node best_1st_center;
