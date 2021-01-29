@@ -3,7 +3,7 @@
 #include <map>
 #include <set>
 #include <vector>
-#include "sp2.h" // class SavingsAlgo
+#include "rand_sa.h" // class SavingsAlgo
 //
 extern int w, m_I, m_O, best_rot_deg;
 extern Node best_1st_center;
