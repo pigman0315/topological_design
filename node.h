@@ -1,5 +1,9 @@
 #include <iostream>
+#include <math.h>
 using namespace std;
+
+extern const float SPEED;
+
 class Node{
 public:
 	float x;
@@ -51,28 +55,49 @@ public:
 class SolutionNode{
 public:
 	vector< vector<int> > routes_table;// be used to record routes with customer index of customer_points
-	map<int,int> routes_map; // be used to map customer with his route number
 	vector<float> routes_time;
 	float total_time;
 	int route_num;
 public:
 	SolutionNode(){}
-	SolutionNode(vector< vector<int> > _routes_table){
+	SolutionNode(vector< vector<int> > _routes_table, 
+				 vector<Node> customer_points,
+				 Node exch_point)
+	{
 		routes_table = _routes_table;
 		route_num = routes_table.size();
 		total_time = 0.0;
+		for(int i = 0;i < routes_table.size();i++){
+			float dist;
+			float time = 0.0;
+			for(int j = 0;j < routes_table[i].size();j++){
+				if(j == 0){
+					Node cur_n = customer_points[routes_table[i][j]];
+					dist = sqrt((cur_n.x - exch_point.x)*(cur_n.x - exch_point.x) + (cur_n.y - exch_point.y)*(cur_n.y - exch_point.y));
+				}
+				else{
+					Node cur_n = customer_points[routes_table[i][j]];
+					Node prev_n = customer_points[routes_table[i][j-1]];
+					dist = sqrt((cur_n.x - prev_n.x)*(cur_n.x - prev_n.x) + (cur_n.y - prev_n.y)*(cur_n.y - prev_n.y));
+				}
+				time += dist / SPEED;
+			}
+			Node last_n = customer_points[routes_table[i][routes_table[i].size()-1]];
+			dist = sqrt((last_n.x - exch_point.x)*(last_n.x - exch_point.x) + (last_n.y - exch_point.y)*(last_n.y - exch_point.y));
+			time += dist / SPEED;
+			total_time += time;
+			routes_time.push_back(time);
+		}
 	}
 	SolutionNode(vector< vector<int> > _routes_table,vector<float> _routes_time){
 		routes_table = _routes_table;
-		routes_time = _routes_time;
 		route_num = routes_table.size();
 		total_time = 0.0;
 		for(int i = 0;i < route_num;i++){
-			total_time += routes_time[i];
+			total_time += _routes_time[i];
 		}
 	}
 	SolutionNode(vector< vector<int> > _routes_table,
-				 map<int,int> _routes_map,
 				 vector<bool> _routes_flg,
 				 vector<float> _routes_time,
 				 int customer_num)
@@ -86,9 +111,7 @@ public:
 				int rn = _routes_table[i].size();
 				for(int j = 0;j < _routes_table[i].size();j++){
 					tmp_v.push_back(_routes_table[i][j]);
-					routes_map[_routes_table[i][j]] = rn;
 				}
-				routes_time.push_back(_routes_time[i]);
 				total_time += _routes_time[i];
 				routes_table.push_back(tmp_v);
 			}
@@ -101,20 +124,9 @@ public:
 				cnt++;
 				cout << routes_table[i][j] << " ";
 			}
-			cout << ",time: " << routes_time[i] << endl;
+			cout << ", time: " << routes_time[i] << endl;
 		}
 		cout << "Total node number: " << cnt << endl;
 		cout << "Total time: " << total_time << endl;
-	}
-	void show_routes(){
-		int cnt = 0;
-		for(int i = 0;i < route_num;i++){
-			for(int j = 0;j < routes_table[i].size();j++){
-				cnt++;
-				cout << routes_table[i][j] << " ";
-			}
-			cout << endl;
-		}
-		cout << "Total node number: " << cnt << endl;
 	}
 };

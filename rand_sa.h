@@ -123,7 +123,7 @@ void SavingsAlgo::initial(){
 	}
 }
 SolutionNode SavingsAlgo::get_solution(){
-	SolutionNode sn(routes_table,routes_map,routes_flg,routes_time,customer_num);
+	SolutionNode sn(routes_table,routes_flg,routes_time,customer_num);
 	return sn;
 }
 void SavingsAlgo::get_routes_time(){
