@@ -45,7 +45,7 @@ public:
 	vector<SolutionNode> shake_ns4(); // shake phase's neighborhood structure 4: inter-route cross-exchange
 	vector<SolutionNode> shake_ns5(); // shake phase's neighborhood structure 5: inter-route icross-exchange
 	// for VND
-	SolutionNode do_VND();
+	SolutionNode do_VND(SolutionNode sn1);
 	vector<SolutionNode> build_VND_ns(SolutionNode cur_sn, int l);
 	vector<SolutionNode> VND_ns1(SolutionNode cur_sn); // VND phase's neighborhood structure 1: intra-route 2-opt
 	vector<SolutionNode> VND_ns2(SolutionNode cur_sn); // VND phase's neighborhood structure 2: intra-route Or-opt
@@ -64,19 +64,20 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep){
 	customer_num = customer_points.size();
 }
 void GVNS::run(){
-	int k = 1;
+	int k = 2;
 	SolutionNode sn1, sn2;
 	sn1 = do_shake(k);
-	sn2 = do_VND();
+	sn1.show();
+	cout << "----------" << endl;
+	sn2 = do_VND(sn1);
 }
-SolutionNode GVNS::do_VND(){
-	SolutionNode cur_sn = solution;
-	int l = 2;
+SolutionNode GVNS::do_VND(SolutionNode sn1){
+	SolutionNode cur_sn = sn1;
+	int l = 3;
 
 	// get neighborhood structures l of current solution node in VND
 	vector<SolutionNode> ns = build_VND_ns(cur_sn,l);
 	cout << ns.size() << endl;
-	ns[2].show();
 	// result result
 	return cur_sn;
 }
@@ -200,9 +201,134 @@ vector<SolutionNode> GVNS::VND_ns2(SolutionNode cur_sn){
 }
 vector<SolutionNode> GVNS::VND_ns3(SolutionNode cur_sn){
 	vector<SolutionNode> sn_vec;
+	vector< vector<int> > rt = cur_sn.routes_table;
+	int route_num = rt.size();
+	const int NUM_OF_NODE = 3;
 	//
 	// TODO: intra-route 3-opt
 	//
+	for(int i = 0;i < route_num;i++){
+		// check length > 3
+		if(rt[i].size() < 3) continue;
+		// get combinations of C(n,3)
+		vector<int> people;
+		vector<int> combination;
+		vector< vector<int> > result;
+		vector<int> route = rt[i];
+		int route_len = rt[i].size();
+		int n = route_len+1, k = NUM_OF_NODE;
+		for (int j = 0; j < n; j++) { people.push_back(j+1); }
+		comb_go(0, k,combination, people, result);
+		for(int j = 0;j < result.size();j++){
+			if(check_comb(result[j])){
+				//
+				// do 7 kinds of connection in 3-opt
+				//
+				vector<int> seg;
+				vector<int> tmp_route;
+				vector< vector<int> > tmp_rt;	
+				// 1. single 2-opt(0,1)			
+				seg.assign(route.begin()+result[j][0]-1,route.begin()+result[j][1]-1);
+				tmp_route = route;
+				tmp_route.erase(tmp_route.begin()+result[j][0]-1,tmp_route.begin()+result[j][1]-1);
+				for(int k = 0;k < seg.size();k++){
+					tmp_route.insert(tmp_route.begin()+result[j][0]-1+k,seg[seg.size()-1-k]);
+				}
+				tmp_rt = rt;
+				tmp_rt[i] = tmp_route;
+				SolutionNode tmp_sn1(tmp_rt,customer_points,exch_point);
+				sn_vec.push_back(tmp_sn1);
+
+				// 2. single 2-opt(0,2)
+				seg.assign(route.begin()+result[j][0]-1,route.begin()+result[j][2]-1);
+				tmp_route = route;
+				tmp_route.erase(tmp_route.begin()+result[j][0]-1,tmp_route.begin()+result[j][2]-1);
+				for(int k = 0;k < seg.size();k++){
+					tmp_route.insert(tmp_route.begin()+result[j][0]-1+k,seg[seg.size()-1-k]);
+				}
+				tmp_rt = rt;
+				tmp_rt[i] = tmp_route;
+				SolutionNode tmp_sn2(tmp_rt,customer_points,exch_point);
+				sn_vec.push_back(tmp_sn2);
+
+				// 3. single 2-opt(1,2)
+				seg.assign(route.begin()+result[j][1]-1,route.begin()+result[j][2]-1);
+				tmp_route = route;
+				tmp_route.erase(tmp_route.begin()+result[j][1]-1,tmp_route.begin()+result[j][2]-1);
+				for(int k = 0;k < seg.size();k++){
+					tmp_route.insert(tmp_route.begin()+result[j][1]-1+k,seg[seg.size()-1-k]);
+				}
+				tmp_rt = rt;
+				tmp_rt[i] = tmp_route;
+				SolutionNode tmp_sn3(tmp_rt,customer_points,exch_point);
+				sn_vec.push_back(tmp_sn3);
+
+				// split route into A,B,C segments
+				vector<int> A,B,C;
+				A.assign(route.begin()+result[j][0]-1,route.begin()+result[j][1]-1);
+				B.assign(route.begin()+result[j][1]-1,route.begin()+result[j][2]-1);
+				C.assign(route.begin()+result[j][2]-1,route.end());
+				if(result[j][0] != 1){
+					C.insert(C.end(),route.begin(),route.begin()+result[j][0]-1);
+				}
+				// 4. 3-opt(A,B',C')
+				tmp_route.clear();
+				tmp_route.insert(tmp_route.end(),A.begin(),A.end());
+				for(int k = B.size()-1;k>=0;k--){
+					tmp_route.insert(tmp_route.end(),B[k]);
+				}
+				for(int k = C.size()-1;k>=0;k--){
+					tmp_route.insert(tmp_route.end(),C[k]);
+				}
+				tmp_rt = rt;
+				tmp_rt[i] = tmp_route;
+				SolutionNode tmp_sn4(tmp_rt,customer_points,exch_point);
+				sn_vec.push_back(tmp_sn4);
+				// 5. 3-opt(A',B',C)
+				tmp_route.clear();
+				for(int k = A.size()-1;k>=0;k--){
+					tmp_route.insert(tmp_route.end(),A[k]);
+				}
+				for(int k = B.size()-1;k>=0;k--){
+					tmp_route.insert(tmp_route.end(),B[k]);
+				}
+				tmp_route.insert(tmp_route.end(),C.begin(),C.end());
+				tmp_rt = rt;
+				tmp_rt[i] = tmp_route;
+				SolutionNode tmp_sn5(tmp_rt,customer_points,exch_point);
+				sn_vec.push_back(tmp_sn5);
+				// 6. 3-opt(A',B,C')
+				tmp_route.clear();
+				for(int k = A.size()-1;k>=0;k--){
+					tmp_route.insert(tmp_route.end(),A[k]);
+				}
+				tmp_route.insert(tmp_route.end(),B.begin(),B.end());
+				for(int k = C.size()-1;k>=0;k--){
+					tmp_route.insert(tmp_route.end(),C[k]);
+				}
+				tmp_rt = rt;
+				tmp_rt[i] = tmp_route;
+				SolutionNode tmp_sn6(tmp_rt,customer_points,exch_point);
+				sn_vec.push_back(tmp_sn6);
+				// 7. 3-opt(A',B',C')
+				tmp_route.clear();
+				for(int k = A.size()-1;k>=0;k--){
+					tmp_route.insert(tmp_route.end(),A[k]);
+				}
+				for(int k = B.size()-1;k>=0;k--){
+					tmp_route.insert(tmp_route.end(),B[k]);
+				}
+				for(int k = C.size()-1;k>=0;k--){
+					tmp_route.insert(tmp_route.end(),C[k]);
+				}
+				tmp_rt = rt;
+				tmp_rt[i] = tmp_route;
+				SolutionNode tmp_sn7(tmp_rt,customer_points,exch_point);
+				sn_vec.push_back(tmp_sn7);
+			}
+		}
+	}
+	
 	return sn_vec;
 }
 vector<SolutionNode> GVNS::VND_ns4(SolutionNode cur_sn){
@@ -333,10 +459,13 @@ vector<SolutionNode> GVNS::shake_ns2(){
 				// check if the edges are not adjacency
 				if(check_comb(result[r])){
 					vector<int> A,B,C,D,tmp_v;
-					A.assign(route.begin(),route.begin()+result[r][0]+1);
-					B.assign(route.begin()+result[r][0]+1,route.begin()+result[r][1]+1);
-					C.assign(route.begin()+result[r][1]+1,route.begin()+result[r][2]+1);
-					D.assign(route.begin()+result[r][2]+1,route.end());
+					A.assign(route.begin()+result[r][0]-1,route.begin()+result[r][1]-1);
+					B.assign(route.begin()+result[r][1]-1,route.begin()+result[r][2]-1);
+					C.assign(route.begin()+result[r][2]-1,route.begin()+result[r][3]-1);
+					D.assign(route.begin()+result[r][3]-1,route.end());
+					if(result[r][0] != 1){
+						D.insert(D.end(),route.begin(),route.begin()+result[r][0]-1);
+					}
 					tmp_v.insert(tmp_v.end(),A.begin(),A.end());
 					tmp_v.insert(tmp_v.end(),D.begin(),D.end());
 					tmp_v.insert(tmp_v.end(),C.begin(),C.end());
