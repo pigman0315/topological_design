@@ -28,22 +28,33 @@ public:
 	int customer_num;
 	static const time_t t_max = 60;
 	static const int k_max = 5;
+	static const int l_max = 8;
 public:
-	// functions
 	GVNS(SolutionNode sn, vector<Node> cps, Node ep);
 	void initial();
 	void run();
 	void show_result();
+	// for shake
 	vector<SolutionNode> build_shake_ns(int k);
 	SolutionNode do_shake(int k);
-	SolutionNode do_VND();
 	void comb_go(int offset, int k, vector<int> &combination, vector<int> people,vector< vector<int> > &result);
-	bool check_comb(vector<int> vev);
+	bool check_comb(vector<int> vec);
 	vector<SolutionNode> shake_ns1(); // shake phase's neighborhood structure 1: intra-route or-opt
 	vector<SolutionNode> shake_ns2(); // shake phase's neighborhood structure 2: intra-route double-bridge
 	vector<SolutionNode> shake_ns3(); // shake phase's neighborhood structure 3: inter-route or-opt
-	vector<SolutionNode> shake_ns4(); // shake phase's neighborhood structure 4
-	vector<SolutionNode> shake_ns5(); // shake phase's neighborhood structure 5
+	vector<SolutionNode> shake_ns4(); // shake phase's neighborhood structure 4: inter-route cross-exchange
+	vector<SolutionNode> shake_ns5(); // shake phase's neighborhood structure 5: inter-route icross-exchange
+	// for VND
+	SolutionNode do_VND();
+	vector<SolutionNode> build_VND_ns(SolutionNode cur_sn, int l);
+	vector<SolutionNode> VND_ns1(SolutionNode cur_sn); // VND phase's neighborhood structure 1: intra-route 2-opt
+	vector<SolutionNode> VND_ns2(SolutionNode cur_sn); // VND phase's neighborhood structure 2: intra-route Or-opt
+	vector<SolutionNode> VND_ns3(SolutionNode cur_sn); // VND phase's neighborhood structure 3: intra-route 3-opt
+	vector<SolutionNode> VND_ns4(SolutionNode cur_sn); // VND phase's neighborhood structure 4: inter-route shift(1,0)
+	vector<SolutionNode> VND_ns5(SolutionNode cur_sn); // VND phase's neighborhood structure 5: inter-route swap(1,1)
+	vector<SolutionNode> VND_ns6(SolutionNode cur_sn); // VND phase's neighborhood structure 6: inter-route or-opt
+	vector<SolutionNode> VND_ns7(SolutionNode cur_sn); // VND phase's neighborhood structure 7: inter-route cross-exchange
+	vector<SolutionNode> VND_ns8(SolutionNode cur_sn); // VND phase's neighborhood structure 8: inter-route icross-exchange
 };
 
 GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep){
@@ -53,14 +64,23 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep){
 	customer_num = customer_points.size();
 }
 void GVNS::run(){
-	int k = 5;
+	int k = 1;
 	SolutionNode sn1, sn2;
 	sn1 = do_shake(k);
 	sn2 = do_VND();
 }
 SolutionNode GVNS::do_VND(){
-	
+	SolutionNode cur_sn = solution;
+	int l = 2;
+
+	// get neighborhood structures l of current solution node in VND
+	vector<SolutionNode> ns = build_VND_ns(cur_sn,l);
+	cout << ns.size() << endl;
+	ns[2].show();
+	// result result
+	return cur_sn;
 }
+
 SolutionNode GVNS::do_shake(int k){
 	// get neighborhood structures of shaking
 	vector<SolutionNode> ns = build_shake_ns(k);
@@ -68,9 +88,186 @@ SolutionNode GVNS::do_shake(int k){
 	// randomly choose one solution from neighborhood structure of k
 	int n = ns.size();
 	int rand_num = rand()%n;
+
+	// return result
 	return ns[rand_num];
-	//
 }
+
+vector<SolutionNode> GVNS::build_VND_ns(SolutionNode cur_sn, int l){
+	vector<SolutionNode> sn_vec;
+	switch(l){
+		case 1:
+			sn_vec = VND_ns1(cur_sn);
+			break;
+		case 2:
+			sn_vec = VND_ns2(cur_sn);
+			break;
+		case 3:
+			sn_vec = VND_ns3(cur_sn);
+			break;
+		case 4:
+			sn_vec = VND_ns4(cur_sn);
+			break;
+		case 5:
+			sn_vec = VND_ns5(cur_sn);
+			break;
+		case 6:
+			sn_vec = VND_ns6(cur_sn);
+			break;
+		case 7:
+			sn_vec = VND_ns7(cur_sn);
+			break;
+		case 8:
+			sn_vec = VND_ns8(cur_sn);
+			break;
+	}
+	return sn_vec;
+}
+
+vector<SolutionNode> GVNS::VND_ns1(SolutionNode cur_sn){
+	vector<SolutionNode> sn_vec;
+	vector< vector<int> > rt = cur_sn.routes_table;
+	const int NUM_OF_NODE = 2;
+	//
+	// TODO: 2-opt
+	// 
+	for(int i = 0; i < rt.size();i++){
+		// get all combinations of C(n,k)
+		if(rt[i].size() < 3)
+			continue;
+		vector<int> people;
+		vector<int> combination;
+		vector< vector<int> > result;
+		vector<int> route = rt[i];
+		int route_len = rt[i].size();
+		int n = route_len+1, k = NUM_OF_NODE;
+		for (int j = 0; j < n; j++) { people.push_back(j+1); }
+		comb_go(0, k,combination, people, result);
+		for(int j = 0;j < result.size();j++){
+			if(check_comb(result[j])){
+				vector<int> seg;
+				seg.assign(route.begin()+result[j][0]-1,route.begin()+result[j][1]-1);
+				vector<int> tmp_route = route;
+				tmp_route.erase(tmp_route.begin()+result[j][0]-1,tmp_route.begin()+result[j][1]-1);
+				for(int k = 0;k < seg.size();k++){
+					tmp_route.insert(tmp_route.begin()+result[j][0]-1+k,seg[seg.size()-1-k]);
+				}
+				vector< vector<int> > tmp_rt = rt;
+				tmp_rt[i] = tmp_route;
+				SolutionNode tmp_sn(tmp_rt,customer_points,exch_point);
+				sn_vec.push_back(tmp_sn);
+			}
+		}
+	}
+	return sn_vec;
+}
+vector<SolutionNode> GVNS::VND_ns2(SolutionNode cur_sn){
+	vector<SolutionNode> sn_vec;
+	//
+	// TODO: intra-route Or-opt
+	//
+	vector< vector<int> > rt = cur_sn.routes_table;
+	int route_num = rt.size();
+	for(int i = 0;i < route_num;i++){
+		int route_len = rt[i].size();
+		vector<int> route = rt[i];
+		// determine segment length of or-opt
+		int seg_len;
+		if(rt[i].size() == 1) continue;
+		else if(rt[i].size() == 2){
+			seg_len = rand() % 2 + 1;
+		}
+		else{
+			seg_len = rand() % 3 + 1;
+		}
+		//
+		for(int j = 0;j < route_len - seg_len + 1;j++){
+			vector<int> seg;
+			seg.assign(route.begin()+j,route.begin()+j+seg_len);
+			for(int k = 0;k < route_len - seg_len + 1;k++){
+				vector<int> tmp_route = route;
+				tmp_route.erase(tmp_route.begin()+j,tmp_route.begin()+j+seg_len);
+				tmp_route.insert(tmp_route.begin()+k,seg.begin(),seg.end());
+				vector< vector<int> > tmp_rt = rt;
+				tmp_rt[i] = tmp_route;
+				SolutionNode tmp_sn(tmp_rt,customer_points,exch_point);
+				sn_vec.push_back(tmp_sn);
+			}
+		}
+	}
+
+	return sn_vec;
+}
+vector<SolutionNode> GVNS::VND_ns3(SolutionNode cur_sn){
+	vector<SolutionNode> sn_vec;
+	//
+	// TODO: intra-route 3-opt
+	//
+	return sn_vec;
+}
+vector<SolutionNode> GVNS::VND_ns4(SolutionNode cur_sn){
+	vector<SolutionNode> sn_vec;
+	//
+	// TODO: inter-route shift(1,0)
+	//
+	return sn_vec;
+}
+vector<SolutionNode> GVNS::VND_ns5(SolutionNode cur_sn){
+	vector<SolutionNode> sn_vec;
+	//
+	// TODO: inter-route swap(1,1)
+	//
+	return sn_vec;
+}
+vector<SolutionNode> GVNS::VND_ns6(SolutionNode cur_sn){
+	vector<SolutionNode> sn_vec;
+	//
+	// TODO: inter-route Or-opt
+	//
+	return sn_vec;
+}
+vector<SolutionNode> GVNS::VND_ns7(SolutionNode cur_sn){
+	vector<SolutionNode> sn_vec;
+	//
+	// TODO: inter-route cross-exchange
+	//
+	return sn_vec;
+}
+vector<SolutionNode> GVNS::VND_ns8(SolutionNode cur_sn){
+	vector<SolutionNode> sn_vec;
+	//
+	// TODO: inter-route icross-exchange
+	//
+	return sn_vec;
+}
+
+vector<SolutionNode> GVNS::build_shake_ns(int k){
+	vector<SolutionNode> sn_vec;
+	switch(k){
+		case 1:
+			// do intra-route Or-opt
+			sn_vec = shake_ns1();
+			break;
+		case 2:
+			// do intra-route double-bridge
+			sn_vec = shake_ns2();
+			break;
+		case 3:
+			// do inter-route Or-opt
+			sn_vec = shake_ns3();
+			break;
+		case 4:
+			// do inter-route cross-exchange
+			sn_vec = shake_ns4();
+			break;
+		case 5:
+			// do inter-route icross-exchange
+			sn_vec = shake_ns5();
+			break;
+	}
+	return sn_vec;
+}
+
 void GVNS::comb_go(int offset, int k, vector<int> &combination, vector<int> people,vector< vector<int> > &result) {
   if (k == 0) {
     result.push_back(combination);
@@ -82,6 +279,7 @@ void GVNS::comb_go(int offset, int k, vector<int> &combination, vector<int> peop
     combination.pop_back();
   }
 }
+
 bool GVNS::check_comb(vector<int> vec){
 	for(int i = 0;i < vec.size()-1;i++){
 		if(vec[i+1]-vec[i]<=1)
@@ -89,6 +287,7 @@ bool GVNS::check_comb(vector<int> vec){
 	}
 	return true;
 }
+
 vector<SolutionNode> GVNS::shake_ns1(){
 	vector<SolutionNode> sn_vec;
 	const int NUM_OF_NODE = 4;
@@ -114,6 +313,7 @@ vector<SolutionNode> GVNS::shake_ns1(){
 	}
 	return sn_vec;
 }
+
 vector<SolutionNode> GVNS::shake_ns2(){
 	vector<SolutionNode> sn_vec;
 	const int NUM_OF_NODE = 4;
@@ -127,7 +327,7 @@ vector<SolutionNode> GVNS::shake_ns2(){
 			vector<int> combination;
 			vector< vector<int> > result;
 			int n = route_len+1, k = NUM_OF_NODE;
-			for (int i = 0; i < n; ++i) { people.push_back(i+1); }
+			for (int j = 0; j < n; j++) { people.push_back(j+1); }
 			comb_go(0, k,combination, people, result);
 			for(int r = 0;r < result.size();r++){
 				// check if the edges are not adjacency
@@ -151,6 +351,7 @@ vector<SolutionNode> GVNS::shake_ns2(){
 	}
 	return sn_vec;
 }
+
 vector<SolutionNode> GVNS::shake_ns3(){
 	vector<SolutionNode> sn_vec;
 	vector< vector<int> > rt = solution.routes_table;
@@ -195,6 +396,7 @@ vector<SolutionNode> GVNS::shake_ns3(){
 	}
 	return sn_vec;
 }
+
 vector<SolutionNode> GVNS::shake_ns4(){
 	vector<SolutionNode> sn_vec;
 	vector< vector<int> > rt = solution.routes_table;
@@ -253,6 +455,7 @@ vector<SolutionNode> GVNS::shake_ns4(){
 	}
 	return sn_vec;
 }
+
 vector<SolutionNode> GVNS::shake_ns5(){
 	vector<SolutionNode> sn_vec;
 	vector< vector<int> > rt = solution.routes_table;
@@ -312,33 +515,6 @@ vector<SolutionNode> GVNS::shake_ns5(){
 				}
 			}
 		}
-	}
-	return sn_vec;
-}
-vector<SolutionNode> GVNS::build_shake_ns(int k){
-	vector<SolutionNode> sn_vec;
-	switch(k){
-		case 1:
-			// do intra-route Or-opt
-			sn_vec = shake_ns1();
-			break;
-		case 2:
-			// do intra-route double-bridge
-			sn_vec = shake_ns2();
-			break;
-		case 3:
-			// do inter-route Or-opt
-			sn_vec = shake_ns3();
-			break;
-		case 4:
-			// do inter-route cross-exchange
-			sn_vec = shake_ns4();
-			break;
-		case 5:
-			// do inter-route icross-exchange
-			sn_vec = shake_ns5();
-			break;
-
 	}
 	return sn_vec;
 }
