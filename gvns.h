@@ -115,7 +115,7 @@ SolutionNode GVNS::find_best_neighbor(vector<SolutionNode> ns){
 SolutionNode GVNS::do_VND(SolutionNode sn1){
 	SolutionNode cur_sn = sn1;
 	int l = 1;
-	while(l < 6){
+	while(l <= l_max){
 		// get neighborhood structures l of current solution node in VND
 		vector<SolutionNode> ns = build_VND_ns(cur_sn,l);
 		// best best neighbor
