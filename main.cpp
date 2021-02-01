@@ -21,10 +21,10 @@ int main(){
 	rf.run();
 
 	// show customer numbers
-	cout << "Customer numbers: " << district_customers_1st[0].size() << endl;
+	cout << "Customer numbers: " << district_customers_2nd[0][0].size() << endl;
 	//
-	vector<Node> cur_custormers = district_customers_1st[0];
-	Node cur_exch_point = exch_points_1st[0];
+	vector<Node> cur_custormers = district_customers_2nd[0][0];
+	Node cur_exch_point = exch_points_2nd[0][0];
 	// calculate T by given formula
 	T = H / (0.5+m_I+2*(w-1)*m_O);
 	cout << "T: " << T << endl; 

@@ -113,6 +113,7 @@ public:
 					tmp_v.push_back(_routes_table[i][j]);
 				}
 				total_time += _routes_time[i];
+				routes_time.push_back(_routes_time[i]);
 				routes_table.push_back(tmp_v);
 			}
 		}
