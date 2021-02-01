@@ -26,7 +26,7 @@ public:
 	vector<Node> customer_points;
 	Node exch_point;
 	int customer_num;
-	static const time_t t_max = 10;
+	static const time_t t_max = 30;
 	static const int k_max = 5;
 	static const int l_max = 8;
 public:
@@ -83,9 +83,10 @@ void GVNS::run(){
 		}
 		end_t = time(NULL);
 		t = end_t - start_t;
-		printf("%ld\n",t);
 	}
 	cout << "New total time = " << solution.total_time << endl;
+	cout << "-----------" << endl;
+	solution.show();
 }
 bool GVNS::is_better_sol(SolutionNode best_sn, SolutionNode sn){
 	if(best_sn.total_time <= sn.total_time)
@@ -471,7 +472,7 @@ vector<SolutionNode> GVNS::VND_ns6(SolutionNode cur_sn){
 				insert_vec.assign(route.begin()+j,route.begin()+j+NUM_OF_NODE);
 				delete_vec = route;
 				delete_vec.erase(delete_vec.begin()+j,delete_vec.begin()+j+NUM_OF_NODE);
-				for(int k = 0;k < solution.route_num;k++){
+				for(int k = 0;k < route_num;k++){
 					if(k == i)
 						continue;
 					for(int l = 0;l < rt[k].size();l++){
@@ -511,7 +512,7 @@ vector<SolutionNode> GVNS::VND_ns7(SolutionNode cur_sn){
 			for(int j = 0;j < rt[i].size()-NUM_OF_NODE1+1;j++){
 				vector<int> seg1;
 				seg1.assign(route1.begin()+j,route1.begin()+j+NUM_OF_NODE1);
-				for(int k = 0;k < solution.route_num;k++){
+				for(int k = 0;k < route_num;k++){
 					if(k == i)
 						continue;
 					int NUM_OF_NODE2;
@@ -563,7 +564,7 @@ vector<SolutionNode> GVNS::VND_ns8(SolutionNode cur_sn){
 			for(int j = 0;j < rt[i].size()-NUM_OF_NODE1+1;j++){
 				vector<int> seg1;
 				seg1.assign(route1.begin()+j,route1.begin()+j+NUM_OF_NODE1);
-				for(int k = 0;k < solution.route_num;k++){
+				for(int k = 0;k < route_num;k++){
 					if(k == i)
 						continue;
 					int NUM_OF_NODE2;
