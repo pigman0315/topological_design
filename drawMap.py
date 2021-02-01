@@ -706,33 +706,33 @@ def get_best_layer_design():
 	w = 1
 	I = -1
 	O = -1
-	# for i in range(3,5):
-	# 	min_dp = sys.maxsize;
-	# 	brg = -1.0;
-	# 	for rot_deg in range(0,360//i, SINGLE_ROT_DEG):
-	# 		print("Try m_I =",i,"& rotate degree =",rot_deg,"...",end=", ")
-	# 		# find districting points in 1-layer
-	# 		district_points_1st = find1stLayerDistrictPoint(i,rot_deg)
-	# 		# find center of 1st layer
-	# 		best1stCenter = find1stLayerCenter()
-	# 		# find end points of districting line
-	# 		district_end_points_1st = find1stDistrictEndPoint(i,district_points_1st, best1stCenter,LENGTH_OF_MAP)
-	# 		# distribute customer points to its corresponding district
-	# 		district_customer_points_1st = find1stLayerCust(i,dataCust, district_end_points_1st)
-	# 		# find center of each sub-district in 2-layer design
-	# 		best2ndCenter = find2ndLayerCenter(i,district_end_points_1st)
-	# 		# check if single layer is ok
-	# 		max_d = get_max_dist(w,i,0,district_end_points_1st,best2ndCenter)
-	# 		T = H / (0.5+i)
-	# 		print("Max T = %.5f" % (max_d/SPEED), ", must under %.5f" % (T/2))
-	# 		if(max_d/SPEED <= 0.5*T):
-	# 			I = i
-	# 			dp = getDispersionValue(1,I,O,district_customer_points_1st,best2ndCenter)
-	# 			if(dp < min_dp):
-	# 				min_dp = dp
-	# 				brg = rot_deg
-	# 	if(brg != -1.0):
-	# 		return w,I,O,brg
+	for i in range(3,5):
+		min_dp = sys.maxsize;
+		brg = -1.0;
+		for rot_deg in range(0,360//i, SINGLE_ROT_DEG):
+			print("Try m_I =",i,"& rotate degree =",rot_deg,"...",end=", ")
+			# find districting points in 1-layer
+			district_points_1st = find1stLayerDistrictPoint(i,rot_deg)
+			# find center of 1st layer
+			best1stCenter = find1stLayerCenter()
+			# find end points of districting line
+			district_end_points_1st = find1stDistrictEndPoint(i,district_points_1st, best1stCenter,LENGTH_OF_MAP)
+			# distribute customer points to its corresponding district
+			district_customer_points_1st = find1stLayerCust(i,dataCust, district_end_points_1st)
+			# find center of each sub-district in 2-layer design
+			best2ndCenter = find2ndLayerCenter(i,district_end_points_1st)
+			# check if single layer is ok
+			max_d = get_max_dist(w,i,0,district_end_points_1st,best2ndCenter)
+			T = H / (0.5+i)
+			print("Max T = %.5f" % (max_d/SPEED), ", must under %.5f" % (T/2))
+			if(max_d/SPEED <= 0.5*T):
+				I = i
+				dp = getDispersionValue(1,I,O,district_customer_points_1st,best2ndCenter)
+				if(dp < min_dp):
+					min_dp = dp
+					brg = rot_deg
+		if(brg != -1.0):
+			return w,I,O,brg
 		# if(max_d/SPEED > 0.5*T):
 		# 	print("*** m_I =",i,"cannot guarantee the service time *** ")
 	# Try 2-layer design
