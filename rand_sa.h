@@ -271,7 +271,7 @@ void SavingsAlgo::show_routes(){
 				cout << routes_table[i][j] << " ";
 			}
 			cout << ", time: " << routes_time[i]; 
-			cout << "\n\n";
+			cout << endl;
 		}
 	}
 	cout << "Total node number: " << cnt << endl;

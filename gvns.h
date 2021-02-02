@@ -29,7 +29,10 @@ public:
 	static const time_t t_max = 30;
 	static const int k_max = 5;
 	static const int l_max = 8;
+	static const int m_max = 5;
+	const float delta_1 = 0.5;
 public:
+	GVNS();
 	GVNS(SolutionNode sn, vector<Node> cps, Node ep);
 	void initial();
 	void run();
@@ -58,8 +61,12 @@ public:
 	vector<SolutionNode> VND_ns6(SolutionNode cur_sn); // VND phase's neighborhood structure 6: inter-route or-opt
 	vector<SolutionNode> VND_ns7(SolutionNode cur_sn); // VND phase's neighborhood structure 7: inter-route cross-exchange
 	vector<SolutionNode> VND_ns8(SolutionNode cur_sn); // VND phase's neighborhood structure 8: inter-route icross-exchange
+	// for workload balance
+	void do_work_balance();
+	vector<SolutionNode> VNDI_ns1(SolutionNode cur_sn); // VND-I phase'sneighborhood structure 1: inter-route shift(1,0)
+	vector<SolutionNode> VNDI_ns2(SolutionNode cur_sn); // VND-I phase'sneighborhood structure 2: inter-route shift(2,0)
+	vector<SolutionNode> build_VNDI_ns(SolutionNode cur_sn, int m);
 };
-
 GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep){
 	exch_point = ep;
 	customer_points = cps;
@@ -67,51 +74,221 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep){
 	customer_num = customer_points.size();
 }
 void GVNS::run(){
-	cout << "Old total time = " << solution.total_time << endl;
+	cout << "Total time(initial) = " << solution.total_time << endl;
 	time_t t, start_t, end_t;
 	t = 0;
 	start_t = time(NULL);
-	while(t < t_max){
-		for(int k = 1;k <= k_max;k++){
-			SolutionNode sn1, sn2;
-			sn1 = do_shake(k);
-			sn2 = do_VND(sn1);
-			if(is_better_sol(solution,sn2)){
-				solution = sn2;
-				k = 1;
-			}
-		}
-		end_t = time(NULL);
-		t = end_t - start_t;
-	}
-	cout << "New total time = " << solution.total_time << endl;
+	// step 2, 3: improve initial routes
+	// while(t < t_max){
+	// 	for(int k = 1;k <= k_max;k++){
+	// 		SolutionNode sn1, sn2;
+	// 		sn1 = do_shake(k);
+	// 		sn2 = do_VND(sn1);
+	// 		if(is_better_sol(solution,sn2)){
+	// 			solution = sn2;
+	// 			k = 1;
+	// 		}
+	// 	}
+	// 	end_t = time(NULL);
+	// 	t = end_t - start_t;
+	// }
+	// cout << "Total time(after step2,3) = " << solution.total_time << endl;
 	cout << "-----------" << endl;
+	// step 4,5: workload balance
+	do_work_balance();
+	cout << "Total time(after step4,5) = " << solution.total_time << endl;
 	solution.show();
 }
-bool GVNS::is_better_sol(SolutionNode best_sn, SolutionNode sn){
-	if(best_sn.total_time <= sn.total_time)
-		return false;
-	vector<float> r_time = sn.routes_time;
-	for(int i = 0;i < r_time.size();i++){
-		if(r_time[i] > T)
-			return false;
+void GVNS::do_work_balance(){
+	// get neighborhood structures m of current solution node in VND-I
+	SolutionNode cur_sn = solution;
+	int m = 1;
+	while(m <= m_max){
+		vector<SolutionNode> ns = build_VNDI_ns(cur_sn,m);
+		// best best neighbor
+		SolutionNode best_neighbor = find_best_neighbor(ns);
+		cout << best_neighbor.total_time << endl;
+		if(cur_sn.total_time*(1+delta_1) > best_neighbor.total_time){
+			cur_sn = best_neighbor;
+			m = 1;
+		}
+		else{
+			m = m + 1;
+		}
 	}
-	return true;
+	solution = cur_sn;
 }
-SolutionNode GVNS::find_best_neighbor(vector<SolutionNode> ns){
-	SolutionNode best_sn = ns[0];
-	for(int i = 1;i < ns.size();i++){
-		SolutionNode cur_sn = ns[i];
-		int cnt = 0;
-		for(int j = 0;j < cur_sn.routes_time.size();j++){
-			if(cur_sn.routes_time[j] < T)
-				cnt++;
+vector<SolutionNode> GVNS::VNDI_ns1(SolutionNode cur_sn){
+	vector<SolutionNode> sn_vec;
+	vector< vector<int> > rt = cur_sn.routes_table;
+	int route_num = rt.size();
+	
+	// find big & small route
+	vector<int> big_routes;
+	vector<int> small_routes;
+	float avg = 0.0;
+	for(int i = 0;i < route_num;i++){
+		avg += rt[i].size();
+	}
+	avg /= rt.size();
+	for(int i = 0;i < route_num;i++){
+		if(rt[i].size() > avg){
+			big_routes.push_back(i);
 		}
-		if(cnt == cur_sn.routes_time.size() && cur_sn.total_time < best_sn.total_time){
-			best_sn = cur_sn;
+		else{
+			small_routes.push_back(i);
 		}
 	}
-	return best_sn;
+ 	//
+	// TODO: inter-route shift(1,0)
+	//
+	for(int i = 0;i < big_routes.size();i++){
+		vector<int> route = rt[big_routes[i]];
+		int route_len = route.size();
+		for(int j = 0;j < route_len;j++){
+			vector<int> route_i = route;
+			int n = route[j];
+			route_i.erase(route_i.begin()+j);
+			for(int k = 0;k < small_routes.size();k++){
+				if(i == k) continue;
+				for(int l = 0;l <= rt[small_routes[k]].size();l++){
+					vector<int> route_k = rt[small_routes[k]];
+					route_k.insert(route_k.begin()+l,n);
+					vector< vector<int> > tmp_rt = rt;
+					tmp_rt[small_routes[k]] = route_k;
+					if(route_i.size() > 0){
+						tmp_rt[big_routes[i]] = route_i;
+					}
+					else{
+						tmp_rt.erase(tmp_rt.begin()+i);
+					}
+					SolutionNode tmp_sn(tmp_rt,customer_points,exch_point);
+					sn_vec.push_back(tmp_sn);
+				}
+			}
+		}
+	}
+	return sn_vec;
+}
+vector<SolutionNode> GVNS::VNDI_ns2(SolutionNode cur_sn){
+	vector<SolutionNode> sn_vec;
+	vector< vector<int> > rt = cur_sn.routes_table;
+	int route_num = rt.size();
+	
+	// find big(over avg) & small(under avg) route numbers
+	vector<int> big_routes;
+	vector<int> small_routes;
+	float avg = 0.0;
+	for(int i = 0;i < route_num;i++){
+		avg += rt[i].size();
+	}
+	avg /= rt.size();
+	for(int i = 0;i < route_num;i++){
+		if(rt[i].size() > avg && rt[i].size() > 2){
+			big_routes.push_back(i);
+		}
+		else{
+			small_routes.push_back(i);
+		}
+	}
+ 	//
+	// TODO: inter-route shift(2,0)
+	//
+	for(int i = 0;i < big_routes.size();i++){
+		vector<int> route = rt[big_routes[i]];
+		int route_len = route.size();
+		for(int j = 0;j < route_len-1;j++){
+			vector<int> route_i = route;
+			int n1 = route[j];
+			int n2 = route[j+1];
+			route_i.erase(route_i.begin()+j,route_i.begin()+j+2);
+			for(int k = 0;k < small_routes.size();k++){
+				if(i == k) continue;
+				for(int l = 0;l <= rt[small_routes[k]].size();l++){
+					vector<int> route_k = rt[small_routes[k]];
+					route_k.insert(route_k.begin()+l,n1);
+					route_k.insert(route_k.begin()+l+1,n2);
+					vector< vector<int> > tmp_rt = rt;
+					tmp_rt[small_routes[k]] = route_k;
+					if(route_i.size() > 0){
+						tmp_rt[big_routes[i]] = route_i;
+					}
+					else{
+						tmp_rt.erase(tmp_rt.begin()+i);
+					}
+					SolutionNode tmp_sn(tmp_rt,customer_points,exch_point);
+					sn_vec.push_back(tmp_sn);
+				}
+			}
+		}
+	}
+	return sn_vec;
+}
+vector<SolutionNode> GVNS::build_VNDI_ns(SolutionNode cur_sn,int m){
+	vector<SolutionNode> sn_vec;
+	switch(m){
+		case 1:
+			// do inter-route shift(1,0)
+			sn_vec = VNDI_ns1(cur_sn);
+			break;
+		case 2:
+			// do inter-route shift(2,0)
+			sn_vec = VNDI_ns2(cur_sn);
+			break;
+		case 3:
+			// do intra-route 2-opt
+			// use the same function as VND
+			sn_vec = VND_ns1(cur_sn);
+			break;
+		case 4:
+			// do intra-route or-opt
+			// use the same function as VND
+			sn_vec = VND_ns2(cur_sn);
+			break;
+		case 5:
+			// do intra-route 3-opt
+			// use the same function as VND
+			sn_vec = VND_ns3(cur_sn);
+			break;
+	}
+	return sn_vec;
+}
+SolutionNode GVNS::do_shake(int k){
+	// get neighborhood structures of shaking
+	vector<SolutionNode> ns = build_shake_ns(k);
+	
+	// randomly choose one solution from neighborhood structure of k
+	int n = ns.size();
+	int rand_num = rand()%n;
+
+	// return result
+	return ns[rand_num];
+}
+vector<SolutionNode> GVNS::build_shake_ns(int k){
+	vector<SolutionNode> sn_vec;
+	switch(k){
+		case 1:
+			// do intra-route Or-opt
+			sn_vec = shake_ns1();
+			break;
+		case 2:
+			// do intra-route double-bridge
+			sn_vec = shake_ns2();
+			break;
+		case 3:
+			// do inter-route Or-opt
+			sn_vec = shake_ns3();
+			break;
+		case 4:
+			// do inter-route cross-exchange
+			sn_vec = shake_ns4();
+			break;
+		case 5:
+			// do inter-route icross-exchange
+			sn_vec = shake_ns5();
+			break;
+	}
+	return sn_vec;
 }
 SolutionNode GVNS::do_VND(SolutionNode sn1){
 	SolutionNode cur_sn = sn1;
@@ -133,19 +310,6 @@ SolutionNode GVNS::do_VND(SolutionNode sn1){
 	// result result
 	return cur_sn;
 }
-
-SolutionNode GVNS::do_shake(int k){
-	// get neighborhood structures of shaking
-	vector<SolutionNode> ns = build_shake_ns(k);
-	
-	// randomly choose one solution from neighborhood structure of k
-	int n = ns.size();
-	int rand_num = rand()%n;
-
-	// return result
-	return ns[rand_num];
-}
-
 vector<SolutionNode> GVNS::build_VND_ns(SolutionNode cur_sn, int l){
 	vector<SolutionNode> sn_vec;
 	switch(l){
@@ -176,7 +340,31 @@ vector<SolutionNode> GVNS::build_VND_ns(SolutionNode cur_sn, int l){
 	}
 	return sn_vec;
 }
-
+bool GVNS::is_better_sol(SolutionNode best_sn, SolutionNode sn){
+	if(best_sn.total_time <= sn.total_time)
+		return false;
+	vector<float> r_time = sn.routes_time;
+	for(int i = 0;i < r_time.size();i++){
+		if(r_time[i] > T)
+			return false;
+	}
+	return true;
+}
+SolutionNode GVNS::find_best_neighbor(vector<SolutionNode> ns){
+	SolutionNode best_sn = ns[0];
+	for(int i = 1;i < ns.size();i++){
+		SolutionNode cur_sn = ns[i];
+		int cnt = 0;
+		for(int j = 0;j < cur_sn.routes_time.size();j++){
+			if(cur_sn.routes_time[j] < T)
+				cnt++;
+		}
+		if(cnt == cur_sn.routes_time.size() && cur_sn.total_time < best_sn.total_time){
+			best_sn = cur_sn;
+		}
+	}
+	return best_sn;
+}
 vector<SolutionNode> GVNS::VND_ns1(SolutionNode cur_sn){
 	vector<SolutionNode> sn_vec;
 	vector< vector<int> > rt = cur_sn.routes_table;
@@ -599,33 +787,6 @@ vector<SolutionNode> GVNS::VND_ns8(SolutionNode cur_sn){
 				}
 			}
 		}
-	}
-	return sn_vec;
-}
-
-vector<SolutionNode> GVNS::build_shake_ns(int k){
-	vector<SolutionNode> sn_vec;
-	switch(k){
-		case 1:
-			// do intra-route Or-opt
-			sn_vec = shake_ns1();
-			break;
-		case 2:
-			// do intra-route double-bridge
-			sn_vec = shake_ns2();
-			break;
-		case 3:
-			// do inter-route Or-opt
-			sn_vec = shake_ns3();
-			break;
-		case 4:
-			// do inter-route cross-exchange
-			sn_vec = shake_ns4();
-			break;
-		case 5:
-			// do inter-route icross-exchange
-			sn_vec = shake_ns5();
-			break;
 	}
 	return sn_vec;
 }
