@@ -30,7 +30,7 @@ public:
 	static const int k_max = 5;
 	static const int l_max = 8;
 	static const int m_max = 5;
-	const float delta_1 = 0.5;
+	const float delta_1 = 0.1;
 public:
 	GVNS();
 	GVNS(SolutionNode sn, vector<Node> cps, Node ep);
@@ -79,20 +79,21 @@ void GVNS::run(){
 	t = 0;
 	start_t = time(NULL);
 	// step 2, 3: improve initial routes
-	// while(t < t_max){
-	// 	for(int k = 1;k <= k_max;k++){
-	// 		SolutionNode sn1, sn2;
-	// 		sn1 = do_shake(k);
-	// 		sn2 = do_VND(sn1);
-	// 		if(is_better_sol(solution,sn2)){
-	// 			solution = sn2;
-	// 			k = 1;
-	// 		}
-	// 	}
-	// 	end_t = time(NULL);
-	// 	t = end_t - start_t;
-	// }
-	// cout << "Total time(after step2,3) = " << solution.total_time << endl;
+	while(t < t_max){
+		for(int k = 1;k <= k_max;k++){
+			SolutionNode sn1, sn2;
+			sn1 = do_shake(k);
+			sn2 = do_VND(sn1);
+			if(is_better_sol(solution,sn2)){
+				solution = sn2;
+				k = 1;
+			}
+		}
+		end_t = time(NULL);
+		t = end_t - start_t;
+	}
+	cout << "Total time(after step2,3) = " << solution.total_time << endl;
+	solution.show();
 	cout << "-----------" << endl;
 	// step 4,5: workload balance
 	do_work_balance();
@@ -103,11 +104,13 @@ void GVNS::do_work_balance(){
 	// get neighborhood structures m of current solution node in VND-I
 	SolutionNode cur_sn = solution;
 	int m = 1;
-	while(m <= m_max){
+	time_t t = 0;
+	time_t start,end;
+	start = time(NULL);
+	while(m <= m_max && t < t_max){
 		vector<SolutionNode> ns = build_VNDI_ns(cur_sn,m);
 		// best best neighbor
 		SolutionNode best_neighbor = find_best_neighbor(ns);
-		cout << best_neighbor.total_time << endl;
 		if(cur_sn.total_time*(1+delta_1) > best_neighbor.total_time){
 			cur_sn = best_neighbor;
 			m = 1;
@@ -115,6 +118,8 @@ void GVNS::do_work_balance(){
 		else{
 			m = m + 1;
 		}
+		end = time(NULL);
+		t = end - start;
 	}
 	solution = cur_sn;
 }
@@ -139,6 +144,7 @@ vector<SolutionNode> GVNS::VNDI_ns1(SolutionNode cur_sn){
 			small_routes.push_back(i);
 		}
 	}
+	cout << "big: " << big_routes.size() << endl;
  	//
 	// TODO: inter-route shift(1,0)
 	//
