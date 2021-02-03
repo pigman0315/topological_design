@@ -1,6 +1,8 @@
 #include <iostream>
+#include <climits>
 #include <string>
 #include <map>
+#include <cfloat>
 #include <set>
 #include <vector>
 #include <math.h>
@@ -110,13 +112,38 @@ void GVNS::do_work_balance(){
 	time_t start,end;
 	start = time(NULL);
 	int best_time = solution.total_time;
-	int diff;
-	while(m <= m_max && t < 300){
+	float diff;
+	float max = 0.0;
+	float min = FLT_MAX;
+	for(int i = 0;i < cur_sn.route_num;i++){
+		if(cur_sn.routes_time[i] > max){
+			max = cur_sn.routes_time[i];
+		}
+		if(cur_sn.routes_time[i] < min){
+			min = cur_sn.routes_time[i];
+		}
+	}
+	diff = max - min;
+	while(m <= m_max && t < t_max){
 		// cout << "m: " << m << endl;
 		vector<SolutionNode> ns = build_VNDI_ns(cur_sn,m); 
 		// best balance neighbor
 		SolutionNode balance_neighbor = find_balance_neighbor(ns);
-		if(solution.total_time*(1+delta_1) > balance_neighbor.total_time){
+		max = 0.0;
+		min = FLT_MAX;
+		float cur_diff;
+		for(int i = 0;i < balance_neighbor.route_num;i++){
+			if(balance_neighbor.routes_time[i] > max){
+				max = balance_neighbor.routes_time[i];
+			}
+			if(balance_neighbor.routes_time[i] < min){
+				min = balance_neighbor.routes_time[i];
+			}
+		}
+		cur_diff = max - min;
+		cout << "cur diff: " << cur_diff << ", best diff: " << diff << endl;
+		if(solution.total_time*(1+delta_1) > balance_neighbor.total_time && cur_diff < diff){
+			diff = cur_diff;
 			cur_sn = balance_neighbor;
 			m = 1;
 		}
@@ -141,20 +168,19 @@ SolutionNode GVNS::find_balance_neighbor(vector<SolutionNode> ns){
 			illegal_ns.push_back(cur_sn);
 		}
 	}
-	SolutionNode best_sn = illegal_ns[0];
-	int diff = INT_MAX;
-	for(int i = 1;i < illegal_ns.size();i++){
+	float diff = FLT_MAX;
+	SolutionNode best_sn;
+	for(int i = 0;i < illegal_ns.size();i++){
 		SolutionNode cur_sn = illegal_ns[i];
-		int cnt = 0;
-		int min = INT_MAX;
-		int max = 0;
+		float min = FLT_MAX;
+		float max = 0.0;
 		for(int j = 0;j < cur_sn.routes_time.size();j++){
 			if(cur_sn.routes_time[j] > max)
 				max = cur_sn.routes_time[j];
 			if(cur_sn.routes_time[j] < min)
 				min = cur_sn.routes_time[j];
 		}
-		int cur_diff = max - min;
+		float cur_diff = max - min;
 		if(cur_diff < diff){
 			diff = cur_diff;
 			best_sn = cur_sn;
@@ -183,7 +209,6 @@ vector<SolutionNode> GVNS::VNDI_ns1(SolutionNode cur_sn){
 			small_routes.push_back(i);
 		}
 	}
-	// cout << "big1: " << big_routes.size() << endl;
  	//
 	// TODO: inter-route shift(1,0)
 	//
@@ -220,16 +245,16 @@ vector<SolutionNode> GVNS::VNDI_ns2(SolutionNode cur_sn){
 	vector< vector<int> > rt = cur_sn.routes_table;
 	int route_num = rt.size();
 	
-	// find big(over avg) & small(under avg) route numbers
+	// find big & small route
 	vector<int> big_routes;
 	vector<int> small_routes;
 	float avg = 0.0;
 	for(int i = 0;i < route_num;i++){
-		avg += rt[i].size();
+		avg += cur_sn.routes_time[i];
 	}
 	avg /= rt.size();
 	for(int i = 0;i < route_num;i++){
-		if(rt[i].size() > avg && rt[i].size() > 2){
+		if(cur_sn.routes_time[i] >= avg){
 			big_routes.push_back(i);
 		}
 		else{
