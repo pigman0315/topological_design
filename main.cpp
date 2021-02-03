@@ -35,7 +35,6 @@ int main(){
 	sa.run();
 
 	// do GVNS
-	cout << "------------\n";
 	srand(time(NULL));
 	SolutionNode sn = sa.get_solution();
 	GVNS gvns(sn,cur_custormers,cur_exch_point);

@@ -30,7 +30,7 @@ public:
 	static const int k_max = 5;
 	static const int l_max = 8;
 	static const int m_max = 5;
-	const float delta_1 = 0.1;
+	const float delta_1 = 0.08;
 public:
 	GVNS();
 	GVNS(SolutionNode sn, vector<Node> cps, Node ep);
@@ -66,6 +66,7 @@ public:
 	vector<SolutionNode> VNDI_ns1(SolutionNode cur_sn); // VND-I phase'sneighborhood structure 1: inter-route shift(1,0)
 	vector<SolutionNode> VNDI_ns2(SolutionNode cur_sn); // VND-I phase'sneighborhood structure 2: inter-route shift(2,0)
 	vector<SolutionNode> build_VNDI_ns(SolutionNode cur_sn, int m);
+	SolutionNode find_balance_neighbor(vector<SolutionNode> ns);
 };
 GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep){
 	exch_point = ep;
@@ -75,6 +76,7 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep){
 }
 void GVNS::run(){
 	cout << "Total time(initial) = " << solution.total_time << endl;
+	cout << "-----------" << endl;
 	time_t t, start_t, end_t;
 	t = 0;
 	start_t = time(NULL);
@@ -92,13 +94,13 @@ void GVNS::run(){
 		end_t = time(NULL);
 		t = end_t - start_t;
 	}
-	cout << "Total time(after step2,3) = " << solution.total_time << endl;
 	solution.show();
+	cout << "Total time(after step2,3) = " << solution.total_time << endl;
 	cout << "-----------" << endl;
 	// step 4,5: workload balance
 	do_work_balance();
-	cout << "Total time(after step4,5) = " << solution.total_time << endl;
 	solution.show();
+	cout << "Total time(after step4,5) = " << solution.total_time << endl;
 }
 void GVNS::do_work_balance(){
 	// get neighborhood structures m of current solution node in VND-I
@@ -107,12 +109,15 @@ void GVNS::do_work_balance(){
 	time_t t = 0;
 	time_t start,end;
 	start = time(NULL);
-	while(m <= m_max && t < t_max){
-		vector<SolutionNode> ns = build_VNDI_ns(cur_sn,m);
-		// best best neighbor
-		SolutionNode best_neighbor = find_best_neighbor(ns);
-		if(cur_sn.total_time*(1+delta_1) > best_neighbor.total_time){
-			cur_sn = best_neighbor;
+	int best_time = solution.total_time;
+	int diff;
+	while(m <= m_max && t < 300){
+		// cout << "m: " << m << endl;
+		vector<SolutionNode> ns = build_VNDI_ns(cur_sn,m); 
+		// best balance neighbor
+		SolutionNode balance_neighbor = find_balance_neighbor(ns);
+		if(solution.total_time*(1+delta_1) > balance_neighbor.total_time){
+			cur_sn = balance_neighbor;
 			m = 1;
 		}
 		else{
@@ -122,6 +127,40 @@ void GVNS::do_work_balance(){
 		t = end - start;
 	}
 	solution = cur_sn;
+}
+SolutionNode GVNS::find_balance_neighbor(vector<SolutionNode> ns){
+	vector<SolutionNode> illegal_ns;
+	for(int i = 0;i < ns.size();i++){
+		int cnt = 0;
+		SolutionNode cur_sn = ns[i];
+		for(int j = 0;j < cur_sn.routes_time.size();j++){
+			if(cur_sn.routes_time[j] < T)
+				cnt++;
+		}
+		if(cnt == cur_sn.routes_time.size()){
+			illegal_ns.push_back(cur_sn);
+		}
+	}
+	SolutionNode best_sn = illegal_ns[0];
+	int diff = INT_MAX;
+	for(int i = 1;i < illegal_ns.size();i++){
+		SolutionNode cur_sn = illegal_ns[i];
+		int cnt = 0;
+		int min = INT_MAX;
+		int max = 0;
+		for(int j = 0;j < cur_sn.routes_time.size();j++){
+			if(cur_sn.routes_time[j] > max)
+				max = cur_sn.routes_time[j];
+			if(cur_sn.routes_time[j] < min)
+				min = cur_sn.routes_time[j];
+		}
+		int cur_diff = max - min;
+		if(cur_diff < diff){
+			diff = cur_diff;
+			best_sn = cur_sn;
+		}
+	}
+	return best_sn;
 }
 vector<SolutionNode> GVNS::VNDI_ns1(SolutionNode cur_sn){
 	vector<SolutionNode> sn_vec;
@@ -133,18 +172,18 @@ vector<SolutionNode> GVNS::VNDI_ns1(SolutionNode cur_sn){
 	vector<int> small_routes;
 	float avg = 0.0;
 	for(int i = 0;i < route_num;i++){
-		avg += rt[i].size();
+		avg += cur_sn.routes_time[i];
 	}
 	avg /= rt.size();
 	for(int i = 0;i < route_num;i++){
-		if(rt[i].size() > avg){
+		if(cur_sn.routes_time[i] >= avg){
 			big_routes.push_back(i);
 		}
 		else{
 			small_routes.push_back(i);
 		}
 	}
-	cout << "big: " << big_routes.size() << endl;
+	// cout << "big1: " << big_routes.size() << endl;
  	//
 	// TODO: inter-route shift(1,0)
 	//
@@ -156,7 +195,7 @@ vector<SolutionNode> GVNS::VNDI_ns1(SolutionNode cur_sn){
 			int n = route[j];
 			route_i.erase(route_i.begin()+j);
 			for(int k = 0;k < small_routes.size();k++){
-				if(i == k) continue;
+				if(big_routes[i] == small_routes[k]) continue;
 				for(int l = 0;l <= rt[small_routes[k]].size();l++){
 					vector<int> route_k = rt[small_routes[k]];
 					route_k.insert(route_k.begin()+l,n);
@@ -166,7 +205,7 @@ vector<SolutionNode> GVNS::VNDI_ns1(SolutionNode cur_sn){
 						tmp_rt[big_routes[i]] = route_i;
 					}
 					else{
-						tmp_rt.erase(tmp_rt.begin()+i);
+						tmp_rt.erase(tmp_rt.begin()+big_routes[i]);
 					}
 					SolutionNode tmp_sn(tmp_rt,customer_points,exch_point);
 					sn_vec.push_back(tmp_sn);
@@ -197,6 +236,7 @@ vector<SolutionNode> GVNS::VNDI_ns2(SolutionNode cur_sn){
 			small_routes.push_back(i);
 		}
 	}
+	// cout << "big2: " << big_routes.size() << endl;
  	//
 	// TODO: inter-route shift(2,0)
 	//
@@ -209,7 +249,7 @@ vector<SolutionNode> GVNS::VNDI_ns2(SolutionNode cur_sn){
 			int n2 = route[j+1];
 			route_i.erase(route_i.begin()+j,route_i.begin()+j+2);
 			for(int k = 0;k < small_routes.size();k++){
-				if(i == k) continue;
+				if(big_routes[i] == small_routes[k]) continue;
 				for(int l = 0;l <= rt[small_routes[k]].size();l++){
 					vector<int> route_k = rt[small_routes[k]];
 					route_k.insert(route_k.begin()+l,n1);
@@ -220,7 +260,7 @@ vector<SolutionNode> GVNS::VNDI_ns2(SolutionNode cur_sn){
 						tmp_rt[big_routes[i]] = route_i;
 					}
 					else{
-						tmp_rt.erase(tmp_rt.begin()+i);
+						tmp_rt.erase(tmp_rt.begin()+big_routes[i]);
 					}
 					SolutionNode tmp_sn(tmp_rt,customer_points,exch_point);
 					sn_vec.push_back(tmp_sn);
