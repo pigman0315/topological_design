@@ -32,7 +32,7 @@ public:
 	static const int k_max = 5;
 	static const int l_max = 8;
 	static const int m_max = 5;
-	const float delta_1 = 0.08;
+	float delta_1;
 public:
 	GVNS();
 	GVNS(SolutionNode sn, vector<Node> cps, Node ep);
@@ -75,6 +75,7 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep){
 	customer_points = cps;
 	solution = sn;
 	customer_num = customer_points.size();
+	delta_1 = 0.05;
 }
 void GVNS::run(){
 	cout << "Total time(initial) = " << solution.total_time << endl;
@@ -96,12 +97,12 @@ void GVNS::run(){
 		end_t = time(NULL);
 		t = end_t - start_t;
 	}
-	solution.show();
+	// solution.show();
 	cout << "Total time(after step2,3) = " << solution.total_time << endl;
 	cout << "-----------" << endl;
 	// step 4,5: workload balance
 	do_work_balance();
-	solution.show();
+	// solution.show();
 	cout << "Total time(after step4,5) = " << solution.total_time << endl;
 }
 void GVNS::do_work_balance(){
@@ -141,7 +142,7 @@ void GVNS::do_work_balance(){
 			}
 		}
 		cur_diff = max - min;
-		cout << "cur diff: " << cur_diff << ", best diff: " << diff << endl;
+		//cout << "cur diff: " << cur_diff << ", best diff: " << diff << endl;
 		if(solution.total_time*(1+delta_1) > balance_neighbor.total_time && cur_diff < diff){
 			diff = cur_diff;
 			cur_sn = balance_neighbor;

@@ -99,7 +99,7 @@ void SavingsAlgo::run(){
 	// try to minimize the number of routes
 	minimize_routes();
 	// show routes
-	show_routes();
+	// show_routes();
 }
 void SavingsAlgo::initial(){
 	routes_table.clear();
