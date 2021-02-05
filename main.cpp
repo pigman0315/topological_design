@@ -42,15 +42,34 @@ int main(){
  	vector<Node> district_customers = district_customers_1st[0];
  	vector< vector<Node> > cur_customers; // different time period's customer points
  	const int CUS_NUM_PERIOD = district_customers_1st[0].size() / time_period;
-
+ 	int peak_time1 = 4;
+ 	int peak_time2 = 5;
+ 	int nonpeak_time1 = 2;
+ 	int nonpeak_time2 = 7;
  	for(int i = 0;i < time_period;i++){
  		vector<Node> tmp;
  		if(i < time_period -1){
- 			for(int j = 0;j < CUS_NUM_PERIOD;j++){
-	 			if(i*CUS_NUM_PERIOD+j < district_customers.size()){
-	 				tmp.push_back(district_customers[i*CUS_NUM_PERIOD+j]);
-	 			}
-	 		}
+ 			if(i == peak_time1 || i == peak_time2){
+ 				for(int j = 0;j < CUS_NUM_PERIOD*2;j++){
+		 			if(i*CUS_NUM_PERIOD+j < district_customers.size()){
+		 				tmp.push_back(district_customers[i*CUS_NUM_PERIOD+j]);
+		 			}
+		 		}
+ 			}
+ 			else if(i == nonpeak_time1 || i == nonpeak_time2){
+ 				for(int j = 0;j < CUS_NUM_PERIOD/2;j++){
+		 			if(i*CUS_NUM_PERIOD+j < district_customers.size()){
+		 				tmp.push_back(district_customers[i*CUS_NUM_PERIOD+j]);
+		 			}
+		 		}
+ 			}
+ 			else{
+ 				for(int j = 0;j < CUS_NUM_PERIOD;j++){
+		 			if(i*CUS_NUM_PERIOD+j < district_customers.size()){
+		 				tmp.push_back(district_customers[i*CUS_NUM_PERIOD+j]);
+		 			}
+		 		}
+ 			}
  		}
  		else{
  			for(int j = 0;i*CUS_NUM_PERIOD+j < district_customers.size();j++){
@@ -59,25 +78,27 @@ int main(){
  		}
  		cur_customers.push_back(tmp);
  	}
-
- 	for(int i = 0; i < time_period;i++){
- 		cout << "\n-------- Time period " << i << " --------"<< endl;
- 		//
-		// do randomized savings algo.
-		//
-		SavingsAlgo sa(cur_customers[i],cur_exch_point);
-		sa.run();
-
-
-		//
-		// do GVNS
-		//
-		srand(time(NULL));
-		SolutionNode sn = sa.get_solution();
-		GVNS gvns(sn,cur_customers[i],cur_exch_point);
-		gvns.run();
-		cout << "route num: " << gvns.solution.route_num << endl;
+ 	for(int i = 0;i < 10;i++){
+ 		cout << cur_customers[i].size() << endl;
  	}
+ 	// for(int i = 0; i < time_period;i++){
+ 	// 	cout << "\n-------- Time period " << i << " --------"<< endl;
+ 	// 	//
+		// // do randomized savings algo.
+		// //
+		// SavingsAlgo sa(cur_customers[i],cur_exch_point);
+		// sa.run();
+
+
+		// //
+		// // do GVNS
+		// //
+		// srand(time(NULL));
+		// SolutionNode sn = sa.get_solution();
+		// GVNS gvns(sn,cur_customers[i],cur_exch_point);
+		// gvns.run();
+		// cout << "route num: " << gvns.solution.route_num << endl;
+ 	// }
 	// main function's return value
 	return 0;
 }
