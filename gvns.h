@@ -97,12 +97,12 @@ void GVNS::run(){
 		end_t = time(NULL);
 		t = end_t - start_t;
 	}
-	// solution.show();
+	solution.show();
 	cout << "Total time(after step2,3) = " << solution.total_time << endl;
 	cout << "-----------" << endl;
 	// step 4,5: workload balance
 	do_work_balance();
-	// solution.show();
+	solution.show();
 	cout << "Total time(after step4,5) = " << solution.total_time << endl;
 }
 void GVNS::do_work_balance(){
@@ -269,6 +269,8 @@ vector<SolutionNode> GVNS::VNDI_ns2(SolutionNode cur_sn){
 	for(int i = 0;i < big_routes.size();i++){
 		vector<int> route = rt[big_routes[i]];
 		int route_len = route.size();
+		if(route_len < 2)
+			continue;
 		for(int j = 0;j < route_len-1;j++){
 			vector<int> route_i = route;
 			int n1 = route[j];
