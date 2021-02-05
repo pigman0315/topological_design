@@ -10,6 +10,9 @@ vector< vector<Node> > district_customers_1st;
 vector< vector< vector<Node> > > district_customers_2nd;
 vector<Node> exch_points_1st;
 vector< vector<Node> > exch_points_2nd;
+int total_postal_num;
+int total_cust_num;
+vector<int> cust_postal_num;
 const float H = 2.0;
 float T; // unit: hr
 const float SPEED = 40000; // unit: km/hr
@@ -35,7 +38,10 @@ int main(){
 	cout << "Customer numbers(in one time period): " << district_customers_1st[0].size() / time_period << endl;
 	cout << "T: " << T << endl; 
 	cout << "Time period: " << time_period << endl;
-
+	cout << "total postal num: " << total_postal_num << endl;
+	cout << cust_postal_num.size() << endl;
+	cout << cust_postal_num[1] << endl;
+	return 0;
 	//
 	// Split customer points into different time period
  	//
@@ -79,21 +85,13 @@ int main(){
  		}
  		cur_customers.push_back(tmp);
  	}
- 	//
-	// do randomized savings algo.
-	//
-	SavingsAlgo sa(cur_customers[7],cur_exch_point);
-	sa.run();
 
- 	for(int i = 0;i < 10;i++){
- 		cout << cur_customers[i].size() << endl;
- 	}
  	for(int i = 0; i < time_period;i++){
  		cout << "\n-------- Time period " << i << " --------"<< endl;
  		//
 		// do randomized savings algo.
 		//
-		SavingsAlgo sa(cur_customers[i],cur_exch_point);
+		SavingsAlgo sa(cur_customers[7],cur_exch_point);
 		sa.run();
 
 
@@ -101,7 +99,7 @@ int main(){
 		// do GVNS
 		//
 		SolutionNode sn = sa.get_solution();
-		GVNS gvns(sn,cur_customers[i],cur_exch_point);
+		GVNS gvns(sn,cur_customers[7],cur_exch_point);
 		gvns.run();
 		cout << "route num: " << gvns.solution.route_num << endl;
  	}

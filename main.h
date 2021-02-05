@@ -16,6 +16,9 @@ extern vector< vector<Node> > district_customers_1st;
 extern vector< vector< vector<Node> > > district_customers_2nd;
 extern vector<Node> exch_points_1st;
 extern vector< vector<Node> > exch_points_2nd;
+extern int total_postal_num;
+extern int total_cust_num;
+extern vector<int> cust_postal_num;
 extern float T;
 extern const float SPEED;
 //
@@ -135,6 +138,18 @@ public:
 				}
 				exch_points_2nd.push_back(tmp_v);
 			}
+		}
+		file.close();
+
+		// read district number
+		file.open("cust_postal_num.txt");
+		getline(file,str);
+		total_postal_num = stoi(str);
+		getline(file,str);
+		total_cust_num = stoi(str);
+		for(int i = 0;i < total_cust_num;i++){
+			getline(file,str);
+			cust_postal_num.push_back(stoi(str));
 		}
 		file.close();
 	}
