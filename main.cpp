@@ -78,27 +78,27 @@ int main(){
  		}
  		cur_customers.push_back(tmp);
  	}
- 	for(int i = 0;i < 10;i++){
- 		cout << cur_customers[i].size() << endl;
- 	}
- 	// for(int i = 0; i < time_period;i++){
- 	// 	cout << "\n-------- Time period " << i << " --------"<< endl;
- 	// 	//
-		// // do randomized savings algo.
-		// //
-		// SavingsAlgo sa(cur_customers[i],cur_exch_point);
-		// sa.run();
-
-
-		// //
-		// // do GVNS
-		// //
-		// srand(time(NULL));
-		// SolutionNode sn = sa.get_solution();
-		// GVNS gvns(sn,cur_customers[i],cur_exch_point);
-		// gvns.run();
-		// cout << "route num: " << gvns.solution.route_num << endl;
+ 	// for(int i = 0;i < 10;i++){
+ 	// 	cout << cur_customers[i].size() << endl;
  	// }
+ 	for(int i = 0; i < time_period;i++){
+ 		cout << "\n-------- Time period " << i << " --------"<< endl;
+ 		//
+		// do randomized savings algo.
+		//
+		SavingsAlgo sa(cur_customers[i],cur_exch_point);
+		sa.run();
+
+
+		//
+		// do GVNS
+		//
+		srand(time(NULL));
+		SolutionNode sn = sa.get_solution();
+		GVNS gvns(sn,cur_customers[i],cur_exch_point);
+		gvns.run();
+		cout << "route num: " << gvns.solution.route_num << endl;
+ 	}
 	// main function's return value
 	return 0;
 }
