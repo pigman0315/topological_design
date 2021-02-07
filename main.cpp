@@ -34,14 +34,14 @@ int main(){
  	//
 	T = H / (0.5+m_I+2*(w-1)*m_O);
 	cout << "------------\n";
-	cout << "Customer numbers: " << district_customers_1st[0].size() << endl;
-	cout << "Customer numbers(in one time period): " << district_customers_1st[0].size() / time_period << endl;
+	cout << "Customer numbers(total): " << total_cust_num << endl;
+	cout << "Customer numbers(one region): " << district_customers_1st[0].size() << endl;
+	cout << "Customer numbers(one region & one time period): " << district_customers_1st[0].size() / time_period << endl;
 	cout << "T: " << T << endl; 
 	cout << "Time period: " << time_period << endl;
 	cout << "total postal num: " << total_postal_num << endl;
-	cout << cust_postal_num.size() << endl;
-	cout << cust_postal_num[1] << endl;
-	return 0;
+	
+
 	//
 	// Split customer points into different time period
  	//
@@ -49,10 +49,12 @@ int main(){
  	vector<Node> district_customers = district_customers_1st[0];
  	vector< vector<Node> > cur_customers; // different time period's customer points
  	const int CUS_NUM_PERIOD = district_customers_1st[0].size() / time_period;
+ 	const int PEAK_NUM = 2;
  	int peak_time1 = 4;
  	int peak_time2 = 5;
  	int nonpeak_time1 = 2;
  	int nonpeak_time2 = 7;
+ 	int owned_courier_num;
  	for(int i = 0;i < time_period;i++){
  		vector<Node> tmp;
  		if(i < time_period -1){
@@ -85,24 +87,47 @@ int main(){
  		}
  		cur_customers.push_back(tmp);
  	}
-
+ 	cout << "\n--------------- Get improved solution ---------------" << endl;
+ 	vector<int> courier_num_vec;
+ 	vector<SolutionNode> solution_vec;
  	for(int i = 0; i < time_period;i++){
  		cout << "\n-------- Time period " << i << " --------"<< endl;
  		//
 		// do randomized savings algo.
 		//
-		SavingsAlgo sa(cur_customers[7],cur_exch_point);
+		SavingsAlgo sa(cur_customers[i],cur_exch_point);
 		sa.run();
-
+		cout << "--- initial --- " << endl;
+		sa.get_solution().show();
 
 		//
 		// do GVNS
 		//
 		SolutionNode sn = sa.get_solution();
-		GVNS gvns(sn,cur_customers[7],cur_exch_point);
+		GVNS gvns(sn,cur_customers[i],cur_exch_point);
 		gvns.run();
-		cout << "route num: " << gvns.solution.route_num << endl;
+		cout << "--- step 2 --- " << endl;
+		gvns.solution.show();
+		solution_vec.push_back(gvns.solution);
+		courier_num_vec.push_back(gvns.solution.route_num);
  	}
+ 	sort(courier_num_vec.begin(),courier_num_vec.end());
+ 	owned_courier_num = courier_num_vec[courier_num_vec.size()-1-PEAK_NUM];
+ 	cout << "\n--------------- Use fixed number of owned routing couriers ---------------" << endl;
+	for(int i = 0;i < time_period;i++){
+		cout << "\n-------- Time period " << i << " --------"<< endl;
+		//
+		// do fixed courier number GVNS
+		//
+		SolutionNode sn = solution_vec[i];
+		if(sn.routes_table.size() < owned_courier_num){
+			GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
+			gvns.run();
+			cout << "--- step 3 --- " << endl;
+			gvns.solution.show();
+			solution_vec[i] = gvns.solution;
+		}
+	}
 	// main function's return value
 	return 0;
 }
