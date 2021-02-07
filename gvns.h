@@ -189,8 +189,15 @@ SolutionNode GVNS::find_balance_neighbor(vector<SolutionNode> ns){
 			if(cur_sn.routes_time[j] < T)
 				cnt++;
 		}
-		if(cnt == cur_sn.routes_time.size() && cur_sn.routes_table.size() == owned_courier_num){
-			illegal_ns.push_back(cur_sn);
+		if(owned_courier_num != -1){
+			if(cnt == cur_sn.routes_time.size() && cur_sn.routes_table.size() == owned_courier_num){
+				illegal_ns.push_back(cur_sn);	
+			}
+		}	
+		else{
+			if(cnt == cur_sn.routes_time.size()){
+				illegal_ns.push_back(cur_sn);	
+			}
 		}
 	}
 	float diff = FLT_MAX;
@@ -217,16 +224,19 @@ vector<SolutionNode> GVNS::VNDI_ns1(SolutionNode cur_sn){
 	vector<SolutionNode> sn_vec;
 	vector< vector<int> > rt = cur_sn.routes_table;
 	int route_num = rt.size();
-	
+	//
+	//
+	SolutionNode tmp_sn(rt,customer_points,exch_point);
+	sn_vec.push_back(tmp_sn);
 	// find big & small route
 	vector<int> big_routes;
 	vector<int> small_routes;
 	float avg = 0.0;
-	for(int i = 0;i < route_num;i++){
+	for(int i = 0;i < rt.size();i++){
 		avg += cur_sn.routes_time[i];
 	}
 	avg /= rt.size();
-	for(int i = 0;i < route_num;i++){
+	for(int i = 0;i < rt.size();i++){
 		if(cur_sn.routes_time[i] >= avg){
 			big_routes.push_back(i);
 		}
@@ -269,16 +279,19 @@ vector<SolutionNode> GVNS::VNDI_ns2(SolutionNode cur_sn){
 	vector<SolutionNode> sn_vec;
 	vector< vector<int> > rt = cur_sn.routes_table;
 	int route_num = rt.size();
-	
+	//
+	//
+	SolutionNode tmp_sn(rt,customer_points,exch_point);
+	sn_vec.push_back(tmp_sn);
 	// find big & small route
 	vector<int> big_routes;
 	vector<int> small_routes;
 	float avg = 0.0;
-	for(int i = 0;i < route_num;i++){
+	for(int i = 0;i < rt.size();i++){
 		avg += cur_sn.routes_time[i];
 	}
 	avg /= rt.size();
-	for(int i = 0;i < route_num;i++){
+	for(int i = 0;i < rt.size();i++){
 		if(cur_sn.routes_time[i] >= avg){
 			big_routes.push_back(i);
 		}

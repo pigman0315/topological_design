@@ -105,7 +105,7 @@ int main(){
 		//
 		SolutionNode sn = sa.get_solution();
 		GVNS gvns(sn,cur_customers[i],cur_exch_point);
-		gvns.run();
+		// gvns.run();
 		cout << "--- step 2 --- " << endl;
 		gvns.solution.show();
 		solution_vec.push_back(gvns.solution);
@@ -126,7 +126,7 @@ int main(){
 		if(sn.routes_table.size() < owned_courier_num){
 			cout << "--- step 3 --- " << endl;
 			GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
-			gvns.run();
+			// gvns.run();
 			gvns.solution.show();
 			solution_vec[i] = gvns.solution;
 		}
@@ -139,9 +139,17 @@ int main(){
 		//
 		SolutionNode sn = solution_vec[i];
 		cout << "--- step 4,5 --- " << endl;
-		GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
-		gvns.do_work_balance();
-		gvns.solution.show();
+		if(sn.routes_table.size() <= owned_courier_num){
+			GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
+			gvns.do_work_balance();
+			gvns.solution.show();
+		}
+		else{
+			GVNS gvns(sn,cur_customers[i],cur_exch_point);
+			gvns.do_work_balance();
+			gvns.solution.show();
+		}
+		
 	}
 	// main function's return value
 	return 0;
