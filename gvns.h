@@ -127,9 +127,6 @@ void GVNS::run(){
 		end_t = time(NULL);
 		t = end_t - start_t;
 	}
-	// step 4,5: workload balance
-	do_work_balance();
-	// cout << "Total time(after step4,5) = " << solution.total_time << endl;
 }
 void GVNS::do_work_balance(){
 	// get neighborhood structures m of current solution node in VND-I
@@ -192,7 +189,7 @@ SolutionNode GVNS::find_balance_neighbor(vector<SolutionNode> ns){
 			if(cur_sn.routes_time[j] < T)
 				cnt++;
 		}
-		if(cnt == cur_sn.routes_time.size()){
+		if(cnt == cur_sn.routes_time.size() && cur_sn.routes_table.size() == owned_courier_num){
 			illegal_ns.push_back(cur_sn);
 		}
 	}

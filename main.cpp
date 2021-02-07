@@ -111,9 +111,11 @@ int main(){
 		solution_vec.push_back(gvns.solution);
 		courier_num_vec.push_back(gvns.solution.route_num);
  	}
+ 	// find the fixed number of routing couriers
  	sort(courier_num_vec.begin(),courier_num_vec.end());
  	owned_courier_num = courier_num_vec[courier_num_vec.size()-1-PEAK_NUM];
  	cout << "Fixed number of routing couriers: " << owned_courier_num << endl;
+ 	//
  	cout << "\n--------------- Use fixed number of owned routing couriers ---------------" << endl;
 	for(int i = 0;i < time_period;i++){
 		cout << "\n-------- Time period " << i << " --------"<< endl;
@@ -128,6 +130,18 @@ int main(){
 			gvns.solution.show();
 			solution_vec[i] = gvns.solution;
 		}
+	}
+	cout << "\n--------------- Balance the workload ---------------" << endl;
+	for(int i = 0;i < time_period;i++){
+		cout << "\n-------- Time period " << i << " --------"<< endl;
+		//
+		// do fixed courier number GVNS
+		//
+		SolutionNode sn = solution_vec[i];
+		cout << "--- step 4,5 --- " << endl;
+		GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
+		gvns.do_work_balance();
+		gvns.solution.show();
 	}
 	// main function's return value
 	return 0;

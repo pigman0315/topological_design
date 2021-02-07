@@ -120,7 +120,7 @@ public:
 	}
 	void show(){
 		int cnt = 0;
-		for(int i = 0;i < route_num;i++){
+		for(int i = 0;i < routes_table.size();i++){
 			for(int j = 0;j < routes_table[i].size();j++){
 				cnt++;
 				cout << routes_table[i][j] << " ";
