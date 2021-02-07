@@ -3,7 +3,7 @@ import os
 #### Constant
 SIDE_LENGTH = 20000
 INTERVAL = 100
-CUSTOMER_NUM = 3000
+CUSTOMER_NUM = 1000
 DISTRICT_INTERVAL = INTERVAL*20
 #### open files
 curPath = os.path.dirname(os.path.abspath(__file__))

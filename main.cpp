@@ -113,6 +113,7 @@ int main(){
  	}
  	sort(courier_num_vec.begin(),courier_num_vec.end());
  	owned_courier_num = courier_num_vec[courier_num_vec.size()-1-PEAK_NUM];
+ 	cout << "Fixed number of routing couriers: " << owned_courier_num << endl;
  	cout << "\n--------------- Use fixed number of owned routing couriers ---------------" << endl;
 	for(int i = 0;i < time_period;i++){
 		cout << "\n-------- Time period " << i << " --------"<< endl;
@@ -121,9 +122,9 @@ int main(){
 		//
 		SolutionNode sn = solution_vec[i];
 		if(sn.routes_table.size() < owned_courier_num){
+			cout << "--- step 3 --- " << endl;
 			GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
 			gvns.run();
-			cout << "--- step 3 --- " << endl;
 			gvns.solution.show();
 			solution_vec[i] = gvns.solution;
 		}
