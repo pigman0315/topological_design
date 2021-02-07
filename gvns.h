@@ -87,6 +87,24 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep,int _owned_courier_num){
 	customer_num = customer_points.size();
 	delta_1 = 0.05;
 	owned_courier_num = _owned_courier_num;
+	// fill up the routes number
+	vector< vector<int> > rt = solution.routes_table;
+	while(rt.size() < owned_courier_num){
+		vector<int> route;
+		for(int i = 0;i < rt.size();i++){
+			if(rt[i].size() >= 2){
+				vector<int> tmp_route = rt[i];
+				int n = tmp_route.back();
+				tmp_route.pop_back();
+				route.push_back(n);
+				vector< vector<int> > tmp_rt;
+				tmp_rt[i] = tmp_route;
+				tmp_rt.push_back(route);
+				solution.routes_table = tmp_rt;
+				rt = tmp_rt;
+			}
+		}
+	}
 }
 void GVNS::run(){
 	time_t t, start_t, end_t;
@@ -352,6 +370,9 @@ SolutionNode GVNS::do_shake(int k){
 	}
 
 	// randomly choose one solution from neighborhood structure of k
+	if(owned_courier_num != -1){
+		cout << "illegal_ns size in shake: " << illegal_ns.size() << endl;
+	}
 	int n = illegal_ns.size();
 	int rand_num = rand()%n;
 

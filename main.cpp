@@ -123,6 +123,8 @@ int main(){
 		SolutionNode sn = solution_vec[i];
 		if(sn.routes_table.size() < owned_courier_num){
 			cout << "--- step 3 --- " << endl;
+			vector<int> route;
+			sn.routes_table.push_back(route);
 			GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
 			gvns.run();
 			gvns.solution.show();
