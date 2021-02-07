@@ -477,7 +477,7 @@ vector<SolutionNode> GVNS::VND_ns1(SolutionNode cur_sn){
 	vector< vector<int> > rt = cur_sn.routes_table;
 	const int NUM_OF_NODE = 2;
 	//
-	// TODO: 2-opt
+	// TODO: intra-route 2-opt
 	// 
 	for(int i = 0; i < rt.size();i++){
 		// get all combinations of C(n,k)
@@ -919,6 +919,9 @@ bool GVNS::check_comb(vector<int> vec){
 }
 
 vector<SolutionNode> GVNS::shake_ns1(){
+	//
+	// intra-route Or-opt (# of nodes = 4)
+	//
 	vector<SolutionNode> sn_vec;
 	const int NUM_OF_NODE = 4;
 	vector< vector<int> > rt = solution.routes_table;
@@ -945,6 +948,9 @@ vector<SolutionNode> GVNS::shake_ns1(){
 }
 
 vector<SolutionNode> GVNS::shake_ns2(){
+	//
+	// intra-route Double-bridge (# of nodes = 4)
+	//
 	vector<SolutionNode> sn_vec;
 	const int NUM_OF_NODE = 4;
 	vector< vector<int> > rt = solution.routes_table;
@@ -986,6 +992,9 @@ vector<SolutionNode> GVNS::shake_ns2(){
 }
 
 vector<SolutionNode> GVNS::shake_ns3(){
+	//
+	// inter-route Or-opt (# of nodes = 4~6)
+	//
 	vector<SolutionNode> sn_vec;
 	vector< vector<int> > rt = solution.routes_table;
 	for(int i = 0;i < solution.route_num;i++){
@@ -1031,6 +1040,9 @@ vector<SolutionNode> GVNS::shake_ns3(){
 }
 
 vector<SolutionNode> GVNS::shake_ns4(){
+	//
+	// inter-route Cross-exchange (# of nodes = 4~6)
+	//
 	vector<SolutionNode> sn_vec;
 	vector< vector<int> > rt = solution.routes_table;
 	for(int i = 0;i < solution.route_num;i++){
@@ -1040,12 +1052,11 @@ vector<SolutionNode> GVNS::shake_ns4(){
 		const int MAX_LEN = 6;
 		int NUM_OF_NODE1;
 		if(rt[i].size() > MIN_LEN){
-			if(rt[i].size() >= MAX_LEN){
-				NUM_OF_NODE1 = rand() % 3 + MIN_LEN;
-			}
-			else{
-				NUM_OF_NODE1 = rand() % 2 + MIN_LEN;
-			}
+
+			if(rt[i].size() == 4){ NUM_OF_NODE1 = 4; }
+			else if(rt[i].size() == 5){ NUM_OF_NODE1 = rand() % 2 + MIN_LEN; }
+			else{ NUM_OF_NODE1 = rand() % 3 + MIN_LEN; }
+
 			for(int j = 0;j < rt[i].size()-NUM_OF_NODE1+1;j++){
 				vector<int> seg1;
 				seg1.assign(route1.begin()+j,route1.begin()+j+NUM_OF_NODE1);
@@ -1054,12 +1065,11 @@ vector<SolutionNode> GVNS::shake_ns4(){
 						continue;
 					int NUM_OF_NODE2;
 					if(rt[k].size() > MIN_LEN){
-						if(rt[k].size() >= MAX_LEN){
-							NUM_OF_NODE2 = rand() % 3 + MIN_LEN;
-						}
-						else{
-							NUM_OF_NODE2 = rand() % 2 + MIN_LEN;
-						}
+
+						if(rt[k].size() == 4){ NUM_OF_NODE2 = 4; }
+						else if(rt[k].size() == 5){ NUM_OF_NODE2 = rand() % 2 + MIN_LEN; }
+						else{ NUM_OF_NODE2 = rand() % 3 + MIN_LEN; }
+						
 						vector<int> route2 = rt[k];
 						for(int l = 0;l < rt[k].size()-NUM_OF_NODE2+1;l++){
 							vector<int> seg2;
@@ -1090,21 +1100,23 @@ vector<SolutionNode> GVNS::shake_ns4(){
 }
 
 vector<SolutionNode> GVNS::shake_ns5(){
+	//
+	// inter-route iCross-exchange (# of nodes = 4~6)
+	//
 	vector<SolutionNode> sn_vec;
 	vector< vector<int> > rt = solution.routes_table;
-	for(int i = 0;i < solution.route_num;i++){
+	for(int i = 0;i < rt.size();i++){
 		vector<int> route1 = rt[i];
 		// determine the length of segments: [4,min(6,n)]
 		const int MIN_LEN = 4;
 		const int MAX_LEN = 6;
 		int NUM_OF_NODE1;
 		if(rt[i].size() > MIN_LEN){
-			if(rt[i].size() >= MAX_LEN){
-				NUM_OF_NODE1 = rand() % 3 + MIN_LEN;
-			}
-			else{
-				NUM_OF_NODE1 = rand() % 2 + MIN_LEN;
-			}
+
+			if(rt[i].size() == 4){ NUM_OF_NODE1 = 4; }
+			else if(rt[i].size() == 5){ NUM_OF_NODE1 = rand() % 2 + MIN_LEN; }
+			else{ NUM_OF_NODE1 = rand() % 3 + MIN_LEN; }
+
 			for(int j = 0;j < rt[i].size()-NUM_OF_NODE1+1;j++){
 				vector<int> seg1;
 				seg1.assign(route1.begin()+j,route1.begin()+j+NUM_OF_NODE1);
@@ -1113,12 +1125,11 @@ vector<SolutionNode> GVNS::shake_ns5(){
 						continue;
 					int NUM_OF_NODE2;
 					if(rt[k].size() > MIN_LEN){
-						if(rt[k].size() >= MAX_LEN){
-							NUM_OF_NODE2 = rand() % 3 + MIN_LEN;
-						}
-						else{
-							NUM_OF_NODE2 = rand() % 2 + MIN_LEN;
-						}
+
+						if(rt[k].size() == 4){ NUM_OF_NODE2 = 4; }
+						else if(rt[k].size() == 5){ NUM_OF_NODE2 = rand() % 2 + MIN_LEN; }
+						else{ NUM_OF_NODE2 = rand() % 3 + MIN_LEN; }
+
 						vector<int> route2 = rt[k];
 						for(int l = 0;l < rt[k].size()-NUM_OF_NODE2+1;l++){
 							vector<int> seg2;
