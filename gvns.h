@@ -77,18 +77,19 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep){
 	customer_points = cps;
 	solution = sn;
 	customer_num = customer_points.size();
-	delta_1 = 0.05;
+	delta_1 = 0.5;
 	owned_courier_num = -1;
 }
 GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep,int _owned_courier_num){
+
 	exch_point = ep;
 	customer_points = cps;
 	solution = sn;
 	customer_num = customer_points.size();
-	delta_1 = 0.05;
+	delta_1 = 0.5;
 	owned_courier_num = _owned_courier_num;
 	// fill up the routes number
-	vector< vector<int> > rt = solution.routes_table;
+	vector< vector<int> > rt = sn.routes_table;
 	while(rt.size() < owned_courier_num){
 		vector<int> route;
 		for(int i = 0;i < rt.size();i++){
@@ -97,11 +98,13 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep,int _owned_courier_num){
 				int n = tmp_route.back();
 				tmp_route.pop_back();
 				route.push_back(n);
-				vector< vector<int> > tmp_rt;
+				vector< vector<int> > tmp_rt = rt;
 				tmp_rt[i] = tmp_route;
 				tmp_rt.push_back(route);
-				solution.routes_table = tmp_rt;
+				SolutionNode tmp_sn(tmp_rt,customer_points,exch_point);
+				solution = tmp_sn;
 				rt = tmp_rt;
+				break;
 			}
 		}
 	}
@@ -125,8 +128,7 @@ void GVNS::run(){
 		t = end_t - start_t;
 	}
 	// step 4,5: workload balance
-	// do_work_balance();
-	// solution.show();
+	do_work_balance();
 	// cout << "Total time(after step4,5) = " << solution.total_time << endl;
 }
 void GVNS::do_work_balance(){
@@ -370,9 +372,6 @@ SolutionNode GVNS::do_shake(int k){
 	}
 
 	// randomly choose one solution from neighborhood structure of k
-	if(owned_courier_num != -1){
-		cout << "illegal_ns size in shake: " << illegal_ns.size() << endl;
-	}
 	int n = illegal_ns.size();
 	int rand_num = rand()%n;
 
@@ -964,13 +963,17 @@ bool GVNS::check_comb(vector<int> vec){
 }
 
 vector<SolutionNode> GVNS::shake_ns1(){
+	vector<SolutionNode> sn_vec;
+	vector< vector<int> > rt = solution.routes_table;
+	int route_num = rt.size();
+	//
+	SolutionNode tmp_sn(rt,customer_points,exch_point);
+	sn_vec.push_back(tmp_sn);
 	//
 	// intra-route Or-opt (# of nodes = 4)
 	//
-	vector<SolutionNode> sn_vec;
 	const int NUM_OF_NODE = 4;
-	vector< vector<int> > rt = solution.routes_table;
-	for(int i = 0;i < solution.route_num;i++){
+	for(int i = 0;i < rt.size();i++){
 		vector<int> route = rt[i];
 		int route_len = route.size();
 		if(route_len > NUM_OF_NODE){
@@ -993,13 +996,17 @@ vector<SolutionNode> GVNS::shake_ns1(){
 }
 
 vector<SolutionNode> GVNS::shake_ns2(){
+	vector<SolutionNode> sn_vec;
+	vector< vector<int> > rt = solution.routes_table;
+	int route_num = rt.size();
+	//
+	SolutionNode tmp_sn(rt,customer_points,exch_point);
+	sn_vec.push_back(tmp_sn);
 	//
 	// intra-route Double-bridge (# of nodes = 4)
 	//
-	vector<SolutionNode> sn_vec;
 	const int NUM_OF_NODE = 4;
-	vector< vector<int> > rt = solution.routes_table;
-	for(int i = 0;i < solution.route_num;i++){
+	for(int i = 0;i < rt.size();i++){
 		vector<int> route = rt[i];
 		int route_len = route.size();
 		if(route_len > NUM_OF_NODE){
@@ -1037,12 +1044,16 @@ vector<SolutionNode> GVNS::shake_ns2(){
 }
 
 vector<SolutionNode> GVNS::shake_ns3(){
+	vector<SolutionNode> sn_vec;
+	vector< vector<int> > rt = solution.routes_table;
+	int route_num = rt.size();
+	//
+	SolutionNode tmp_sn(rt,customer_points,exch_point);
+	sn_vec.push_back(tmp_sn);
 	//
 	// inter-route Or-opt (# of nodes = 4~6)
 	//
-	vector<SolutionNode> sn_vec;
-	vector< vector<int> > rt = solution.routes_table;
-	for(int i = 0;i < solution.route_num;i++){
+	for(int i = 0;i < rt.size();i++){
 		vector<int> route = rt[i];
 		// determine the length of segments: [4,min(6,n)]
 		int n = rt[i].size();
@@ -1061,7 +1072,7 @@ vector<SolutionNode> GVNS::shake_ns3(){
 				insert_vec.assign(route.begin()+j,route.begin()+j+NUM_OF_NODE);
 				delete_vec = route;
 				delete_vec.erase(delete_vec.begin()+j,delete_vec.begin()+j+NUM_OF_NODE);
-				for(int k = 0;k < solution.route_num;k++){
+				for(int k = 0;k < rt.size();k++){
 					if(k == i)
 						continue;
 					for(int l = 0;l < rt[k].size();l++){
@@ -1085,12 +1096,16 @@ vector<SolutionNode> GVNS::shake_ns3(){
 }
 
 vector<SolutionNode> GVNS::shake_ns4(){
+	vector<SolutionNode> sn_vec;
+	vector< vector<int> > rt = solution.routes_table;
+	int route_num = rt.size();
+	//
+	SolutionNode tmp_sn(rt,customer_points,exch_point);
+	sn_vec.push_back(tmp_sn);
 	//
 	// inter-route Cross-exchange (# of nodes = 4~6)
 	//
-	vector<SolutionNode> sn_vec;
-	vector< vector<int> > rt = solution.routes_table;
-	for(int i = 0;i < solution.route_num;i++){
+	for(int i = 0;i < rt.size();i++){
 		vector<int> route1 = rt[i];
 		// determine the length of segments: [4,min(6,n)]
 		const int MIN_LEN = 4;
@@ -1105,7 +1120,7 @@ vector<SolutionNode> GVNS::shake_ns4(){
 			for(int j = 0;j < rt[i].size()-NUM_OF_NODE1+1;j++){
 				vector<int> seg1;
 				seg1.assign(route1.begin()+j,route1.begin()+j+NUM_OF_NODE1);
-				for(int k = 0;k < solution.route_num;k++){
+				for(int k = 0;k < rt.size();k++){
 					if(k == i)
 						continue;
 					int NUM_OF_NODE2;
@@ -1145,11 +1160,15 @@ vector<SolutionNode> GVNS::shake_ns4(){
 }
 
 vector<SolutionNode> GVNS::shake_ns5(){
+	vector<SolutionNode> sn_vec;
+	vector< vector<int> > rt = solution.routes_table;
+	int route_num = rt.size();
+	//
+	SolutionNode tmp_sn(rt,customer_points,exch_point);
+	sn_vec.push_back(tmp_sn);
 	//
 	// inter-route iCross-exchange (# of nodes = 4~6)
 	//
-	vector<SolutionNode> sn_vec;
-	vector< vector<int> > rt = solution.routes_table;
 	for(int i = 0;i < rt.size();i++){
 		vector<int> route1 = rt[i];
 		// determine the length of segments: [4,min(6,n)]
