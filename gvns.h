@@ -94,7 +94,7 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep){
 	solution = sn;
 	customer_num = customer_points.size();
 	delta_1 = 0.3;
-	delta_2 = 0.3;
+	delta_2 = 0.5;
 	owned_courier_num = -1;
 	hired_courier_num = -1;
 	visit_low_bound = -1;
@@ -106,7 +106,7 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep,int _owned_courier_num){
 	solution = sn;
 	customer_num = customer_points.size();
 	delta_1 = 0.3;
-	delta_2 = 2.0;
+	delta_2 = 0.5;
 	visit_low_bound = -1;
 	if(sn.routes_table.size() > _owned_courier_num){
 		hired_courier_num = sn.routes_table.size();
@@ -240,7 +240,7 @@ SolutionNode GVNS::find_familiar_neighbor(vector<SolutionNode> ns){
 	for(int i = 1;i < illegal_ns.size();i++){
 		SolutionNode cur_sn = illegal_ns[i];
 		int score = get_familiar_score(cur_sn);
-		if(cur_sn.total_time < solution.total_time*delta_2 && score > best_score){
+		if(cur_sn.total_time < solution.total_time*(1+delta_2) && score > best_score){
 			best_score = score;
 			best_ns = cur_sn;
 		}
