@@ -4,7 +4,7 @@ import os
 SIDE_LENGTH = 20000
 INTERVAL = 100
 CUSTOMER_NUM = 1000
-DISTRICT_INTERVAL = INTERVAL*20
+DISTRICT_INTERVAL = INTERVAL*50
 #### open files
 curPath = os.path.dirname(os.path.abspath(__file__))
 fileBound = open(curPath+"/boundaries.txt", "w")
@@ -42,7 +42,7 @@ for i in range(CUSTOMER_NUM):
 	fileCust.write(str(y))
 	fileCust.write("\n")
 	if(x//DISTRICT_INTERVAL != 0):
-		fileCustDistrict.write(str(x//DISTRICT_INTERVAL)+str(y//DISTRICT_INTERVAL)+"\n")
+		fileCustDistrict.write(str((x//DISTRICT_INTERVAL)*SIDE_LENGTH//DISTRICT_INTERVAL+y//DISTRICT_INTERVAL)+"\n")
 	else:
 		fileCustDistrict.write(str(y//DISTRICT_INTERVAL)+"\n")
 #### close file

@@ -59,7 +59,7 @@ int main(){
  		vector<Node> tmp;
  		if(i < time_period -1){
  			if(i == peak_time1 || i == peak_time2){
- 				for(int j = 0;j < CUS_NUM_PERIOD*2;j++){
+ 				for(int j = 0;j < CUS_NUM_PERIOD*1.5;j++){
 		 			if(i*CUS_NUM_PERIOD+j < district_customers.size()){
 		 				tmp.push_back(district_customers[i*CUS_NUM_PERIOD+j]);
 		 			}
@@ -110,7 +110,7 @@ int main(){
 		//
 		SolutionNode sn = sa.get_solution();
 		GVNS gvns(sn,cur_customers[i],cur_exch_point);
-		gvns.run();
+		// gvns.run();
 		cout << "--- step 2 --- " << endl;
 		gvns.solution.show();
 		solution_vec.push_back(gvns.solution);
@@ -138,7 +138,7 @@ int main(){
 		if(sn.routes_table.size() < owned_courier_num){
 			cout << "--- step 3 --- " << endl;
 			GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
-			gvns.run();
+			// gvns.run();
 			gvns.solution.show();
 			solution_vec[i] = gvns.solution;
 		}
@@ -162,11 +162,51 @@ int main(){
 		SolutionNode sn = solution_vec[i];
 		cout << "--- step 4,5 --- " << endl;
 		GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
-		gvns.do_work_balance(LAST_N, FIRST_M);
+		// gvns.do_work_balance(LAST_N, FIRST_M);
 		gvns.solution.show();
+		solution_vec[i] = gvns.solution;
 		
 	}
 
+	//
+	// Get visit time of each routing courier in all time
+	//
+	vector< vector<int> > visit_time_vec;
+	for(int i = 0;i < owned_courier_num;i++){
+		vector<int> tmp(total_postal_num);
+		for(int j = 0;j < total_postal_num;j++){
+			tmp[j] = 0;
+		}
+		visit_time_vec.push_back(tmp);
+		
+	}
+	int cur_cnt = 0;
+	for(int i = 0;i < time_period;i++){
+		vector< vector<int> > rt = solution_vec[i].routes_table;
+		int tmp_cnt = 0;
+		for(int j = 0;j < owned_courier_num;j++){
+			for(int k = 0;k < rt[j].size();k++){
+				int pn = cust_postal_num[rt[j][k]+cur_cnt];
+				visit_time_vec[j][pn]++;
+				tmp_cnt++;
+			}
+		}
+		cur_cnt += tmp_cnt;
+	}
+	cout << endl;
+	for(int i = 0;i < owned_courier_num;i++){
+		for(int j = 0;j < total_postal_num;j++){
+			cout << visit_time_vec[i][j] << " ";
+		}
+		cout << endl;
+	}
+
+
+	//
+	// Increase the familiarity
+	//
+	for(int i = 0;i < time_period;i++){
+	}
 	// main function's return value
 	return 0;
 }
