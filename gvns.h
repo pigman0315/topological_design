@@ -106,7 +106,7 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep,int _owned_courier_num){
 	solution = sn;
 	customer_num = customer_points.size();
 	delta_1 = 0.3;
-	delta_2 = 0.3;
+	delta_2 = 2.0;
 	visit_low_bound = -1;
 	if(sn.routes_table.size() > _owned_courier_num){
 		hired_courier_num = sn.routes_table.size();
@@ -199,11 +199,8 @@ void GVNS::increase_familiarity(const int b){
 	SolutionNode cur_sn = solution;
 	int best_score = get_familiar_score(cur_sn);
 	while(m <= m_max && t <= t_max){
-		cout << "m: " << m << endl;
 		vector<SolutionNode> ns = build_VNDII_ns(cur_sn,m);
-		cout << "ns size: " << ns.size() << endl;
 		SolutionNode familiar_neighbor = find_familiar_neighbor(ns);
-		cout << "b\n";
 		int tmp_score = get_familiar_score(familiar_neighbor);
 		if(best_score < tmp_score){
 			m = 1;

@@ -115,7 +115,7 @@ int main(){
 		//
 		SolutionNode sn = sa.get_solution();
 		GVNS gvns(sn,cur_customers[i],cur_exch_point);
-		// gvns.run();
+		gvns.run();
 		cout << "--- step 2 --- " << endl;
 		gvns.solution.show();
 		solution_vec.push_back(gvns.solution);
@@ -167,7 +167,7 @@ int main(){
 		SolutionNode sn = solution_vec[i];
 		cout << "--- step 4,5 --- " << endl;
 		GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
-		// gvns.do_work_balance(LAST_N, FIRST_M);
+		gvns.do_work_balance(LAST_N, FIRST_M);
 		gvns.solution.show();
 		solution_vec[i] = gvns.solution;
 		
