@@ -29,6 +29,7 @@ public:
 	Node exch_point;
 	int customer_num;
 	int owned_courier_num;
+	int hired_courier_num;
 	static const time_t t_max = 30;
 	static const int k_max = 5;
 	static const int l_max = 8;
@@ -66,10 +67,10 @@ public:
 	vector<SolutionNode> VND_ns7(SolutionNode cur_sn); // VND phase's neighborhood structure 7: inter-route cross-exchange
 	vector<SolutionNode> VND_ns8(SolutionNode cur_sn); // VND phase's neighborhood structure 8: inter-route icross-exchange
 	// for workload balance
-	void do_work_balance();
-	vector<SolutionNode> VNDI_ns1(SolutionNode cur_sn); // VND-I phase'sneighborhood structure 1: inter-route shift(1,0)
-	vector<SolutionNode> VNDI_ns2(SolutionNode cur_sn); // VND-I phase'sneighborhood structure 2: inter-route shift(2,0)
-	vector<SolutionNode> build_VNDI_ns(SolutionNode cur_sn, int m);
+	void do_work_balance(const int LAST_N, const int FIRST_M);
+	vector<SolutionNode> VNDI_ns1(SolutionNode cur_sn, const int LAST_N, const int FIRST_M); // VND-I phase'sneighborhood structure 1: inter-route shift(1,0)
+	vector<SolutionNode> VNDI_ns2(SolutionNode cur_sn, const int LAST_N, const int FIRST_M); // VND-I phase'sneighborhood structure 2: inter-route shift(2,0)
+	vector<SolutionNode> build_VNDI_ns(SolutionNode cur_sn, int m, const int LAST_N, const int FIRST_M);
 	SolutionNode find_balance_neighbor(vector<SolutionNode> ns);
 };
 GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep){
@@ -77,8 +78,9 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep){
 	customer_points = cps;
 	solution = sn;
 	customer_num = customer_points.size();
-	delta_1 = 0.5;
+	delta_1 = 0.3;
 	owned_courier_num = -1;
+	hired_courier_num = -1;
 }
 GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep,int _owned_courier_num){
 
@@ -86,8 +88,15 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep,int _owned_courier_num){
 	customer_points = cps;
 	solution = sn;
 	customer_num = customer_points.size();
-	delta_1 = 0.5;
-	owned_courier_num = _owned_courier_num;
+	delta_1 = 0.3;
+	if(sn.routes_table.size() > _owned_courier_num){
+		hired_courier_num = sn.routes_table.size();
+		owned_courier_num = _owned_courier_num;
+	}
+	else{
+		hired_courier_num = _owned_courier_num;
+		owned_courier_num = _owned_courier_num;
+	}
 	// fill up the routes number
 	vector< vector<int> > rt = sn.routes_table;
 	while(rt.size() < owned_courier_num){
@@ -128,7 +137,7 @@ void GVNS::run(){
 		t = end_t - start_t;
 	}
 }
-void GVNS::do_work_balance(){
+void GVNS::do_work_balance(const int LAST_N, const int FIRST_M){
 	// get neighborhood structures m of current solution node in VND-I
 	SolutionNode cur_sn = solution;
 	int m = 1;
@@ -150,13 +159,13 @@ void GVNS::do_work_balance(){
 	diff = max - min;
 	while(m <= m_max && t < t_max){
 		// cout << "m: " << m << endl;
-		vector<SolutionNode> ns = build_VNDI_ns(cur_sn,m); 
+		vector<SolutionNode> ns = build_VNDI_ns(cur_sn,m, LAST_N, FIRST_M); 
 		// best balance neighbor
 		SolutionNode balance_neighbor = find_balance_neighbor(ns);
 		max = 0.0;
 		min = FLT_MAX;
 		float cur_diff;
-		int route_len = balance_neighbor.routes_table.size();
+		int route_len = owned_courier_num;
 		for(int i = 0;i < route_len;i++){
 			if(balance_neighbor.routes_time[i] > max){
 				max = balance_neighbor.routes_time[i];
@@ -167,7 +176,7 @@ void GVNS::do_work_balance(){
 		}
 		cur_diff = max - min;
 		//cout << "cur diff: " << cur_diff << ", best diff: " << diff << endl;
-		if(solution.total_time*(1+delta_1) > balance_neighbor.total_time && cur_diff < diff){
+		if(cur_diff < diff){
 			diff = cur_diff;
 			cur_sn = balance_neighbor;
 			m = 1;
@@ -189,8 +198,8 @@ SolutionNode GVNS::find_balance_neighbor(vector<SolutionNode> ns){
 			if(cur_sn.routes_time[j] < T)
 				cnt++;
 		}
-		if(owned_courier_num != -1){
-			if(cnt == cur_sn.routes_time.size() && cur_sn.routes_table.size() == owned_courier_num){
+		if(hired_courier_num != -1){
+			if(cnt == cur_sn.routes_time.size() && cur_sn.routes_table.size() == hired_courier_num){
 				illegal_ns.push_back(cur_sn);	
 			}
 		}	
@@ -206,23 +215,24 @@ SolutionNode GVNS::find_balance_neighbor(vector<SolutionNode> ns){
 		SolutionNode cur_sn = illegal_ns[i];
 		float min = FLT_MAX;
 		float max = 0.0;
-		for(int j = 0;j < cur_sn.routes_time.size();j++){
+		for(int j = 0;j < owned_courier_num;j++){
 			if(cur_sn.routes_time[j] > max)
 				max = cur_sn.routes_time[j];
 			if(cur_sn.routes_time[j] < min)
 				min = cur_sn.routes_time[j];
 		}
 		float cur_diff = max - min;
-		if(cur_diff < diff){
+		if(solution.total_time*(1+delta_1) > cur_sn.total_time && cur_diff < diff){
 			diff = cur_diff;
 			best_sn = cur_sn;
 		}
 	}
 	return best_sn;
 }
-vector<SolutionNode> GVNS::VNDI_ns1(SolutionNode cur_sn){
+vector<SolutionNode> GVNS::VNDI_ns1(SolutionNode cur_sn, const int LAST_N, const int FIRST_M){
 	vector<SolutionNode> sn_vec;
 	vector< vector<int> > rt = cur_sn.routes_table;
+	vector<float> routes_time = cur_sn.routes_time;;
 	int route_num = rt.size();
 	//
 	//
@@ -231,18 +241,25 @@ vector<SolutionNode> GVNS::VNDI_ns1(SolutionNode cur_sn){
 	// find big & small route
 	vector<int> big_routes;
 	vector<int> small_routes;
-	float avg = 0.0;
-	for(int i = 0;i < rt.size();i++){
-		avg += cur_sn.routes_time[i];
+	vector<int> sort_vec;
+	vector<float> time_vec;
+	for(int i = 0;i < owned_courier_num;i++){
+		sort_vec.push_back(i);
+		time_vec.push_back(routes_time[i]);
 	}
-	avg /= rt.size();
-	for(int i = 0;i < rt.size();i++){
-		if(cur_sn.routes_time[i] >= avg){
-			big_routes.push_back(i);
+	for(int i = 0;i < owned_courier_num-1;i++){
+		for(int j = i+1;j < owned_courier_num;j++){
+			if(time_vec[i] > time_vec[j]){
+				swap(sort_vec[i],sort_vec[j]);
+				swap(time_vec[i],time_vec[j]);
+			}
 		}
-		else{
-			small_routes.push_back(i);
-		}
+	}
+	for(int i = 0;i < FIRST_M;i++){
+		small_routes.push_back(sort_vec[i]);
+	}
+	for(int i = 0;i < LAST_N;i++){
+		big_routes.push_back(sort_vec[sort_vec.size()-1-i]);
 	}
  	//
 	// TODO: inter-route shift(1,0)
@@ -275,9 +292,10 @@ vector<SolutionNode> GVNS::VNDI_ns1(SolutionNode cur_sn){
 	}
 	return sn_vec;
 }
-vector<SolutionNode> GVNS::VNDI_ns2(SolutionNode cur_sn){
+vector<SolutionNode> GVNS::VNDI_ns2(SolutionNode cur_sn, const int LAST_N, const int FIRST_M){
 	vector<SolutionNode> sn_vec;
 	vector< vector<int> > rt = cur_sn.routes_table;
+	vector<float> routes_time = cur_sn.routes_time;
 	int route_num = rt.size();
 	//
 	//
@@ -286,18 +304,25 @@ vector<SolutionNode> GVNS::VNDI_ns2(SolutionNode cur_sn){
 	// find big & small route
 	vector<int> big_routes;
 	vector<int> small_routes;
-	float avg = 0.0;
-	for(int i = 0;i < rt.size();i++){
-		avg += cur_sn.routes_time[i];
+	vector<int> sort_vec;
+	vector<float> time_vec;
+	for(int i = 0;i < owned_courier_num;i++){
+		sort_vec.push_back(i);
+		time_vec.push_back(routes_time[i]);
 	}
-	avg /= rt.size();
-	for(int i = 0;i < rt.size();i++){
-		if(cur_sn.routes_time[i] >= avg){
-			big_routes.push_back(i);
+	for(int i = 0;i < owned_courier_num-1;i++){
+		for(int j = i+1;j < owned_courier_num;j++){
+			if(time_vec[i] > time_vec[j]){
+				swap(sort_vec[i],sort_vec[j]);
+				swap(time_vec[i],time_vec[j]);
+			}
 		}
-		else{
-			small_routes.push_back(i);
-		}
+	}
+	for(int i = 0;i < FIRST_M;i++){
+		small_routes.push_back(sort_vec[i]);
+	}
+	for(int i = 0;i < LAST_N;i++){
+		big_routes.push_back(sort_vec[sort_vec.size()-1-i]);
 	}
 	// cout << "big2: " << big_routes.size() << endl;
  	//
@@ -335,16 +360,16 @@ vector<SolutionNode> GVNS::VNDI_ns2(SolutionNode cur_sn){
 	}
 	return sn_vec;
 }
-vector<SolutionNode> GVNS::build_VNDI_ns(SolutionNode cur_sn,int m){
+vector<SolutionNode> GVNS::build_VNDI_ns(SolutionNode cur_sn,int m,const int LAST_N, const int FIRST_M){
 	vector<SolutionNode> sn_vec;
 	switch(m){
 		case 1:
 			// do inter-route shift(1,0)
-			sn_vec = VNDI_ns1(cur_sn);
+			sn_vec = VNDI_ns1(cur_sn,LAST_N, FIRST_M);
 			break;
 		case 2:
 			// do inter-route shift(2,0)
-			sn_vec = VNDI_ns2(cur_sn);
+			sn_vec = VNDI_ns2(cur_sn,LAST_N, FIRST_M);
 			break;
 		case 3:
 			// do intra-route 2-opt
@@ -477,15 +502,15 @@ bool GVNS::is_better_sol(SolutionNode best_sn, SolutionNode sn){
 SolutionNode GVNS::find_best_neighbor(vector<SolutionNode> ns){
 	// find illegal ns (routes number > owned courier route number)
 	vector<SolutionNode> illegal_ns;
-	if(owned_courier_num == -1){
-		illegal_ns = ns;
-	}
-	else{
+	if(hired_courier_num != -1){
 		for(int i = 0;i < ns.size();i++){
-			if(ns[i].routes_table.size() == owned_courier_num){
+			if(ns[i].routes_table.size() == hired_courier_num){
 				illegal_ns.push_back(ns[i]);
 			}
 		}
+	}
+	else{
+		illegal_ns = ns;
 	}
 	//
 	SolutionNode best_sn = illegal_ns[0];
