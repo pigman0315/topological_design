@@ -20,12 +20,16 @@
 extern int w, m_I, m_O, best_rot_deg;
 extern float T;
 extern const float SPEED;
+extern int total_postal_num;
+extern vector<int> cust_postal_num;
+extern vector< vector<int> > visit_time_vec;
 //
 class GVNS{
 public:
 	// variables
 	SolutionNode solution;
 	vector<Node> customer_points;
+	vector<int> postal_num;
 	Node exch_point;
 	int customer_num;
 	int owned_courier_num;
@@ -34,7 +38,9 @@ public:
 	static const int k_max = 5;
 	static const int l_max = 8;
 	static const int m_max = 5;
+	int visit_low_bound;
 	float delta_1;
+	float delta_2;
 public:
 	GVNS();
 	GVNS(SolutionNode sn, vector<Node> cps, Node ep);
@@ -72,6 +78,15 @@ public:
 	vector<SolutionNode> VNDI_ns2(SolutionNode cur_sn, const int LAST_N, const int FIRST_M); // VND-I phase'sneighborhood structure 2: inter-route shift(2,0)
 	vector<SolutionNode> build_VNDI_ns(SolutionNode cur_sn, int m, const int LAST_N, const int FIRST_M);
 	SolutionNode find_balance_neighbor(vector<SolutionNode> ns);
+	// for increasing familiarity
+	void increase_familiarity(const int b);
+	vector<SolutionNode> build_VNDII_ns(SolutionNode cur_sn, int m);
+	vector<SolutionNode> VNDII_ns1(SolutionNode cur_sn);
+	vector<SolutionNode> VNDII_ns2(SolutionNode cur_sn);
+	void read_postal_num(vector<int> distr_postal_num);
+	SolutionNode find_familiar_neighbor(vector<SolutionNode> ns);
+	int get_familiar_score(SolutionNode sn);
+	int get_score();
 };
 GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep){
 	exch_point = ep;
@@ -79,8 +94,10 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep){
 	solution = sn;
 	customer_num = customer_points.size();
 	delta_1 = 0.3;
+	delta_2 = 0.3;
 	owned_courier_num = -1;
 	hired_courier_num = -1;
+	visit_low_bound = -1;
 }
 GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep,int _owned_courier_num){
 
@@ -89,6 +106,8 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep,int _owned_courier_num){
 	solution = sn;
 	customer_num = customer_points.size();
 	delta_1 = 0.3;
+	delta_2 = 0.3;
+	visit_low_bound = -1;
 	if(sn.routes_table.size() > _owned_courier_num){
 		hired_courier_num = sn.routes_table.size();
 		owned_courier_num = _owned_courier_num;
@@ -117,6 +136,259 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep,int _owned_courier_num){
 			}
 		}
 	}
+}
+int GVNS::get_score(){
+	// calculate small visit time vector
+	vector< vector<int> > vtv; // small visit time vector
+	for(int i = 0;i < owned_courier_num;i++){
+		vector<int> tmp(total_postal_num);
+		for(int j = 0;j < total_postal_num;j++){
+			tmp[j] = 0;
+		}
+		vtv.push_back(tmp);		
+	}
+	vector< vector<int> > rt = solution.routes_table;
+	for(int i = 0;i < owned_courier_num;i++){
+		for(int j = 0;j < rt[i].size();j++){
+			int pn = postal_num[rt[i][j]];
+			vtv[i][pn]++;
+		}
+	}
+	int score = 0;
+	for(int i = 0;i < owned_courier_num;i++){
+		for(int j = 0;j < total_postal_num;j++){
+			score += vtv[i][j]*vtv[i][j];
+		}
+	}
+	return score;
+}
+int GVNS::get_familiar_score(SolutionNode sn){
+	// calculate small visit time vector
+	vector< vector<int> > vtv; // small visit time vector
+	for(int i = 0;i < owned_courier_num;i++){
+		vector<int> tmp(total_postal_num);
+		for(int j = 0;j < total_postal_num;j++){
+			tmp[j] = 0;
+		}
+		vtv.push_back(tmp);		
+	}
+	vector< vector<int> > rt = sn.routes_table;
+	for(int i = 0;i < owned_courier_num;i++){
+		for(int j = 0;j < rt[i].size();j++){
+			int pn = postal_num[rt[i][j]];
+			vtv[i][pn]++;
+		}
+	}
+	int score = 0;
+	for(int i = 0;i < owned_courier_num;i++){
+		for(int j = 0;j < total_postal_num;j++){
+			score += vtv[i][j]*vtv[i][j];
+		}
+	}
+	return score;
+}
+void GVNS::read_postal_num(vector<int> distr_postal_num){
+	postal_num = distr_postal_num;
+}
+void GVNS::increase_familiarity(const int b){
+	time_t start,end;
+	time_t t = 0;
+	int m = 1;
+	start = time(NULL);
+	visit_low_bound = b;
+	SolutionNode cur_sn = solution;
+	int best_score = get_familiar_score(cur_sn);
+	while(m <= m_max && t <= t_max){
+		cout << "m: " << m << endl;
+		vector<SolutionNode> ns = build_VNDII_ns(cur_sn,m);
+		cout << "ns size: " << ns.size() << endl;
+		SolutionNode familiar_neighbor = find_familiar_neighbor(ns);
+		cout << "b\n";
+		int tmp_score = get_familiar_score(familiar_neighbor);
+		if(best_score < tmp_score){
+			m = 1;
+			best_score = tmp_score;
+			cur_sn = familiar_neighbor;
+		}
+		else{
+			m = m+1;
+		}
+		end = time(NULL);
+		t = end - start;
+	}
+	solution = cur_sn;
+}
+SolutionNode GVNS::find_familiar_neighbor(vector<SolutionNode> ns){
+	vector<SolutionNode> illegal_ns;
+	for(int i = 0;i < ns.size();i++){
+		int cnt = 0;
+		SolutionNode cur_sn = ns[i];
+		for(int j = 0;j < cur_sn.routes_time.size();j++){
+			if(cur_sn.routes_time[j] < T)
+				cnt++;
+		}
+		if(hired_courier_num != -1){
+			if(cnt == cur_sn.routes_time.size() && cur_sn.routes_table.size() == hired_courier_num){
+				illegal_ns.push_back(cur_sn);	
+			}
+		}	
+		else{
+			if(cnt == cur_sn.routes_time.size()){
+				illegal_ns.push_back(cur_sn);	
+			}
+		}
+	}
+	SolutionNode best_ns = illegal_ns[0];
+	int best_score = get_familiar_score(best_ns);
+	for(int i = 1;i < illegal_ns.size();i++){
+		SolutionNode cur_sn = illegal_ns[i];
+		int score = get_familiar_score(cur_sn);
+		if(cur_sn.total_time < solution.total_time*delta_2 && score > best_score){
+			best_score = score;
+			best_ns = cur_sn;
+		}
+	}
+	return best_ns;
+}
+vector<SolutionNode> GVNS::build_VNDII_ns(SolutionNode cur_sn, int m){
+	vector<SolutionNode> sn_vec;
+	switch(m){
+		case 1:
+			sn_vec = VNDII_ns1(cur_sn);
+			break;
+		case 2:
+			sn_vec = VNDII_ns2(cur_sn);
+			break;
+		case 3:
+			sn_vec = VND_ns1(cur_sn);
+			break;
+		case 4:
+			sn_vec = VND_ns2(cur_sn);
+			break;
+		case 5:
+			sn_vec = VND_ns3(cur_sn);
+			break;
+	}
+	return sn_vec;
+}
+vector<SolutionNode> GVNS::VNDII_ns1(SolutionNode cur_sn){
+	vector<SolutionNode> sn_vec;
+	vector< vector<int> > rt = cur_sn.routes_table;
+	int route_num = rt.size();
+	
+	// push cur_sn into sn_vec to prevent zero neighborhood
+	sn_vec.push_back(cur_sn);
+	
+	// split familiar/unfamiliar routing courier in each postal district
+	vector< vector<int> > fam_couriers(total_postal_num);
+	vector< vector<int> > unfam_couriers(total_postal_num);
+	for(int i = 0;i < owned_courier_num;i++){
+		for(int j = 0;j < total_postal_num;j++){
+			if(visit_time_vec[i][j] > visit_low_bound){
+				fam_couriers[j].push_back(i);
+			}
+			else{
+				unfam_couriers[j].push_back(i);
+			}
+		}
+	}
+	
+	//
+	// TODO: inter-route shift(1,0)
+	//
+	for(int t = 0;t < total_postal_num;t++){
+		for(int i = 0;i < unfam_couriers[t].size();i++){
+			vector<int> route = rt[unfam_couriers[t][i]];
+			int route_len = route.size();
+			for(int j = 0;j < route_len;j++){
+				vector<int> route_i = route;
+				int n = route[j];
+				if(postal_num[n] == t){
+					route_i.erase(route_i.begin()+j);
+					for(int k = 0;k < fam_couriers[t].size();k++){
+						if(unfam_couriers[t][i] == fam_couriers[t][k]) continue;
+						for(int l = 0;l <= rt[fam_couriers[t][k]].size();l++){
+							vector<int> route_k = rt[fam_couriers[t][k]];
+							route_k.insert(route_k.begin()+l,n);
+							vector< vector<int> > tmp_rt = rt;
+							tmp_rt[fam_couriers[t][k]] = route_k;
+							if(route_i.size() > 0){
+								tmp_rt[unfam_couriers[t][i]] = route_i;
+							}
+							else{
+								tmp_rt.erase(tmp_rt.begin()+unfam_couriers[t][i]);
+							}
+							SolutionNode tmp_sn(tmp_rt,customer_points,exch_point);
+							sn_vec.push_back(tmp_sn);
+						}
+					}
+				}
+			}
+		}
+	}
+	return sn_vec;
+}
+vector<SolutionNode> GVNS::VNDII_ns2(SolutionNode cur_sn){
+	vector<SolutionNode> sn_vec;
+	vector< vector<int> > rt = cur_sn.routes_table;
+	int route_num = rt.size();
+
+	// push cur_sn into sn_vec to prevent zero neighborhood
+	sn_vec.push_back(cur_sn);
+
+	// split familiar/unfamiliar routing courier in each postal district
+	vector< vector<int> > fam_couriers(total_postal_num);
+	vector< vector<int> > unfam_couriers(total_postal_num);
+	for(int i = 0;i < owned_courier_num;i++){
+		for(int j = 0;j < total_postal_num;j++){
+			if(visit_time_vec[i][j] > visit_low_bound){
+				fam_couriers[j].push_back(i);
+			}
+			else{
+				unfam_couriers[j].push_back(i);
+			}
+		}
+	}
+	
+	//
+	// TODO: inter-route shift(2,0)
+	//
+	for(int t = 0;t < total_postal_num;t++){
+		for(int i = 0;i < unfam_couriers[t].size();i++){
+			vector<int> route = rt[unfam_couriers[t][i]];
+			int route_len = route.size();
+			if(route_len < 2)
+				continue;
+			for(int j = 0;j < route_len-1;j++){
+				vector<int> route_i = route;
+				int n1 = route[j];
+				int n2 = route[j+1];
+				if(postal_num[n1] == t && postal_num[n2] == t){
+					route_i.erase(route_i.begin()+j,route_i.begin()+j+2);
+					for(int k = 0;k < fam_couriers[t].size();k++){
+						if(unfam_couriers[t][i] == fam_couriers[t][k]) continue;
+						for(int l = 0;l <= rt[fam_couriers[t][k]].size();l++){
+							vector<int> route_k = rt[fam_couriers[t][k]];
+							route_k.insert(route_k.begin()+l,n1);
+							route_k.insert(route_k.begin()+l+1,n2);
+							vector< vector<int> > tmp_rt = rt;
+							tmp_rt[fam_couriers[t][k]] = route_k;
+							if(route_i.size() > 0){
+								tmp_rt[unfam_couriers[t][i]] = route_i;
+							}
+							else{
+								tmp_rt.erase(tmp_rt.begin()+unfam_couriers[t][i]);
+							}
+							SolutionNode tmp_sn(tmp_rt,customer_points,exch_point);
+							sn_vec.push_back(tmp_sn);
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	return sn_vec;
 }
 void GVNS::run(){
 	time_t t, start_t, end_t;

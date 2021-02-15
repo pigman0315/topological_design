@@ -118,6 +118,15 @@ public:
 			}
 		}
 	}
+	int get_node_num(){
+		int cnt = 0;
+		for(int i = 0;i < routes_table.size();i++){
+			for(int j = 0;j < routes_table[i].size();j++){
+				cnt++;
+			}
+		}
+		return cnt;
+	}
 	void show(){
 		int cnt = 0;
 		for(int i = 0;i < routes_table.size();i++){

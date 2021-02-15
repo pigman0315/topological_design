@@ -13,6 +13,7 @@ vector< vector<Node> > exch_points_2nd;
 int total_postal_num;
 int total_cust_num;
 vector<int> cust_postal_num;
+vector< vector<int> > visit_time_vec;
 const float H = 2.0;
 float T; // unit: hr
 const float SPEED = 40000; // unit: km/hr
@@ -41,6 +42,10 @@ int main(){
 	cout << "Time period: " << time_period << endl;
 	cout << "total postal num: " << total_postal_num << endl;
 	
+	//
+	// outside for loop
+	//
+	static int cur_cnt = 0;
 
 	//
 	// Split customer points into different time period
@@ -122,7 +127,7 @@ int main(){
  	//
  	sort(courier_num_vec.begin(),courier_num_vec.end());
  	owned_courier_num = courier_num_vec[courier_num_vec.size()-1-PEAK_NUM];
- 	cout << "Fixed number of routing couriers: " << owned_courier_num << endl;
+ 	cout << endl << "Fixed number of routing couriers: " << owned_courier_num << endl;
  	
 
  	//
@@ -138,7 +143,7 @@ int main(){
 		if(sn.routes_table.size() < owned_courier_num){
 			cout << "--- step 3 --- " << endl;
 			GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
-			// gvns.run();
+			gvns.run();
 			gvns.solution.show();
 			solution_vec[i] = gvns.solution;
 		}
@@ -171,7 +176,7 @@ int main(){
 	//
 	// Get visit time of each routing courier in all time
 	//
-	vector< vector<int> > visit_time_vec;
+	vector<int> postal_num;
 	for(int i = 0;i < owned_courier_num;i++){
 		vector<int> tmp(total_postal_num);
 		for(int j = 0;j < total_postal_num;j++){
@@ -180,7 +185,6 @@ int main(){
 		visit_time_vec.push_back(tmp);
 		
 	}
-	int cur_cnt = 0;
 	for(int i = 0;i < time_period;i++){
 		vector< vector<int> > rt = solution_vec[i].routes_table;
 		int tmp_cnt = 0;
@@ -191,21 +195,42 @@ int main(){
 				tmp_cnt++;
 			}
 		}
+		for(int j = 0;j < rt.size();j++){
+			for(int k = 0;k < rt[j].size();k++){
+				int pn = cust_postal_num[rt[j][k]+cur_cnt];
+				postal_num.push_back(pn);
+			}
+		}
 		cur_cnt += tmp_cnt;
 	}
-	cout << endl;
-	for(int i = 0;i < owned_courier_num;i++){
-		for(int j = 0;j < total_postal_num;j++){
-			cout << visit_time_vec[i][j] << " ";
-		}
-		cout << endl;
-	}
-
 
 	//
 	// Increase the familiarity
 	//
+	cout << "\n--------------- Increase the familiarity ---------------" << endl;
+	const int VISIT_LOW_BOUND = 3; // b in step 6,7
+	int count = 0;
 	for(int i = 0;i < time_period;i++){
+		SolutionNode sn = solution_vec[i];
+		// get postal number in the district
+		vector<int> distr_postal_num;
+		int n = sn.get_node_num();
+		for(int j = count;j < count+n;j++){
+			distr_postal_num.push_back(postal_num[j]);
+		}
+		//
+		cout << "\n-------- Time period " << i << " --------"<< endl;
+		//
+		// do fixed courier number GVNS
+		//
+		cout << "--- step 6,7 --- " << endl;
+		GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
+		gvns.read_postal_num(distr_postal_num);
+		cout << "score(before): " << gvns.get_score() << endl;
+		gvns.increase_familiarity(VISIT_LOW_BOUND);
+		gvns.solution.show();
+		cout << "score(after): " << gvns.get_score() << endl;
+		solution_vec[i] = gvns.solution;
 	}
 	// main function's return value
 	return 0;
