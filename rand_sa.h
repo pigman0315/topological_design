@@ -192,15 +192,15 @@ void SavingsAlgo::minimize_routes(){
 			
 		}
 	}
-	cout << "Total release node numbers: " << single_node_nums.size() << endl;
+	// cout << "Total release node numbers: " << single_node_nums.size() << endl;
 	vector<int> failed_nodes; // nodes which fail to be inserted into existed routes
 	// insert those single node into current available routes
 	for(int n = 0;n < single_node_nums.size();n++){
-		cout << single_node_nums[n] << endl;
+		//cout << single_node_nums[n] << endl;
 		Node n_insert = customer_points[single_node_nums[n]]; // node we want to insert 
 		if(!insert_node(n_insert, single_node_nums[n])){
 			failed_nodes.push_back(single_node_nums[n]);
-			cout << "insert node " << single_node_nums[n] << " failed." << endl;
+			// cout << "insert node " << single_node_nums[n] << " failed." << endl;
 		}
 	}
 	// rebuild routes for those nodes which cannot be inserted into existed routes

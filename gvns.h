@@ -24,6 +24,13 @@ extern int total_postal_num;
 extern vector<int> cust_postal_num;
 extern vector< vector<int> > visit_time_vec;
 //
+const time_t t_max = 30;
+const int k_max = 5;
+const int l_max = 8;
+const int m_max = 5;
+const float delta_1 = 0.5;
+const float delta_2 = 1.0;
+//
 class GVNS{
 public:
 	// variables
@@ -34,13 +41,8 @@ public:
 	int customer_num;
 	int owned_courier_num;
 	int hired_courier_num;
-	static const time_t t_max = 30;
-	static const int k_max = 5;
-	static const int l_max = 8;
-	static const int m_max = 5;
 	int visit_low_bound;
-	float delta_1;
-	float delta_2;
+	
 public:
 	GVNS();
 	GVNS(SolutionNode sn, vector<Node> cps, Node ep);
@@ -87,14 +89,13 @@ public:
 	SolutionNode find_familiar_neighbor(vector<SolutionNode> ns);
 	int get_familiar_score(SolutionNode sn);
 	int get_score();
+	void show_familiar_table();
 };
 GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep){
 	exch_point = ep;
 	customer_points = cps;
 	solution = sn;
 	customer_num = customer_points.size();
-	delta_1 = 0.3;
-	delta_2 = 0.5;
 	owned_courier_num = -1;
 	hired_courier_num = -1;
 	visit_low_bound = -1;
@@ -105,8 +106,6 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep,int _owned_courier_num){
 	customer_points = cps;
 	solution = sn;
 	customer_num = customer_points.size();
-	delta_1 = 0.3;
-	delta_2 = 0.5;
 	visit_low_bound = -1;
 	if(sn.routes_table.size() > _owned_courier_num){
 		hired_courier_num = sn.routes_table.size();
@@ -186,6 +185,31 @@ int GVNS::get_familiar_score(SolutionNode sn){
 		}
 	}
 	return score;
+}
+void GVNS::show_familiar_table(){
+	// calculate small visit time vector
+	vector< vector<int> > vtv; // small visit time vector
+	for(int i = 0;i < owned_courier_num;i++){
+		vector<int> tmp(total_postal_num);
+		for(int j = 0;j < total_postal_num;j++){
+			tmp[j] = 0;
+		}
+		vtv.push_back(tmp);		
+	}
+	vector< vector<int> > rt = solution.routes_table;
+	for(int i = 0;i < owned_courier_num;i++){
+		for(int j = 0;j < rt[i].size();j++){
+			int pn = postal_num[rt[i][j]];
+			vtv[i][pn]++;
+		}
+	}
+	
+	for(int i = 0;i < owned_courier_num;i++){
+		for(int j = 0;j < total_postal_num;j++){
+			cout << vtv[i][j] << " ";
+		}
+		cout << endl;
+	}
 }
 void GVNS::read_postal_num(vector<int> distr_postal_num){
 	postal_num = distr_postal_num;

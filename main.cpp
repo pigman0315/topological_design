@@ -45,7 +45,7 @@ int main(){
 	//
 	// outside for loop
 	//
-	static int cur_cnt = 0;
+	int cur_cnt = 0;
 
 	//
 	// Split customer points into different time period
@@ -97,6 +97,11 @@ int main(){
  	//
  	// Get improved solution
  	//
+ 	vector<float> time_initial;
+ 	vector<float> time_step2;
+ 	vector<float> time_step3;
+ 	vector<float> time_step45;
+ 	vector<float> time_step67;
  	cout << "\n--------------- Get improved solution ---------------" << endl;
  	vector<int> courier_num_vec;
  	vector<SolutionNode> solution_vec;
@@ -107,17 +112,18 @@ int main(){
 		//
 		SavingsAlgo sa(cur_customers[i],cur_exch_point);
 		sa.run();
-		cout << "--- initial --- " << endl;
-		sa.get_solution().show();
+		cout << "--- initial ok --- " << endl;
+		//sa.get_solution().show();
 
 		//
 		// do GVNS
 		//
 		SolutionNode sn = sa.get_solution();
+		time_initial.push_back(sn.total_time);
 		GVNS gvns(sn,cur_customers[i],cur_exch_point);
 		gvns.run();
-		cout << "--- step 2 --- " << endl;
-		gvns.solution.show();
+		cout << "--- step 2 ok --- " << endl;
+		time_step2.push_back(gvns.solution.total_time);
 		solution_vec.push_back(gvns.solution);
 		courier_num_vec.push_back(gvns.solution.route_num);
  	}
@@ -144,8 +150,13 @@ int main(){
 			cout << "--- step 3 --- " << endl;
 			GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
 			gvns.run();
-			gvns.solution.show();
+			//gvns.solution.show();
+			//cout << gvns.solution.total_time << endl;
+			time_step3.push_back(gvns.solution.total_time);
 			solution_vec[i] = gvns.solution;
+		}
+		else{
+			time_step3.push_back(solution_vec[i].total_time);
 		}
 	}
 
@@ -165,10 +176,12 @@ int main(){
 		// do fixed courier number GVNS
 		//
 		SolutionNode sn = solution_vec[i];
-		cout << "--- step 4,5 --- " << endl;
 		GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
 		gvns.do_work_balance(LAST_N, FIRST_M);
-		gvns.solution.show();
+		cout << "--- step 4,5 ok --- " << endl;
+		// gvns.solution.show();
+		//cout << gvns.solution.total_time << endl;
+		time_step45.push_back(gvns.solution.total_time);
 		solution_vec[i] = gvns.solution;
 		
 	}
@@ -223,14 +236,31 @@ int main(){
 		//
 		// do fixed courier number GVNS
 		//
-		cout << "--- step 6,7 --- " << endl;
+		
 		GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
 		gvns.read_postal_num(distr_postal_num);
-		cout << "score(before): " << gvns.get_score() << endl;
+		cout << "--- step 6,7 ok --- " << endl;
+		cout << "score(before)" << endl;
+		gvns.show_familiar_table();
 		gvns.increase_familiarity(VISIT_LOW_BOUND);
-		gvns.solution.show();
-		cout << "score(after): " << gvns.get_score() << endl;
+		// gvns.solution.show();
+		time_step67.push_back(gvns.solution.total_time);
+		cout << "score(after)" << endl;
+		gvns.show_familiar_table();
 		solution_vec[i] = gvns.solution;
+	}
+
+	//
+	// Show time
+	//
+	cout << "\n--------------- Show time of each step ---------------" << endl;
+	for(int i = 0;i < time_period;i++){
+		cout << "\n-------- Time period " << i << " --------"<< endl;
+		cout << "--- Initial time: " << time_initial[i] << " ---" << endl;
+		cout << "--- Step2 time: " << time_step2[i] << " ---" << endl;
+		cout << "--- Step3 time: " << time_step3[i] << " ---" << endl;
+		cout << "--- Step4,5 time: " << time_step45[i] << " ---" << endl;
+		cout << "--- Step6,7 time: " << time_step67[i] << " ---" << endl;
 	}
 	// main function's return value
 	return 0;
