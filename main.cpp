@@ -17,7 +17,7 @@ vector< vector<int> > visit_time_vec;
 const float H = 2.0;
 float T; // unit: hr
 const float SPEED = 40000; // unit: km/hr
-const int time_period = 10;
+const int time_period = 3;
 
 //
 int main(){
@@ -55,14 +55,14 @@ int main(){
  	vector< vector<Node> > cur_customers; // different time period's customer points
  	const int CUS_NUM_PERIOD = district_customers_1st[0].size() / time_period;
  	const int PEAK_NUM = 2;
- 	int peak_time1 = 4;
- 	int peak_time2 = 5;
- 	int nonpeak_time1 = 2;
- 	int nonpeak_time2 = 7;
+ 	int peak_time1 = 0;
+ 	int peak_time2 = -1;
+ 	int nonpeak_time1 = 1;
+ 	int nonpeak_time2 = -1;
  	int owned_courier_num;
  	for(int i = 0;i < time_period;i++){
  		vector<Node> tmp;
- 		if(i < time_period -1){
+ 		if(i < time_period - 1){
  			if(i == peak_time1 || i == peak_time2){
  				for(int j = 0;j < CUS_NUM_PERIOD*1.5;j++){
 		 			if(i*CUS_NUM_PERIOD+j < district_customers.size()){
@@ -112,8 +112,8 @@ int main(){
 		//
 		SavingsAlgo sa(cur_customers[i],cur_exch_point);
 		sa.run();
+		sa.get_solution().show();
 		cout << "--- initial ok --- " << endl;
-		//sa.get_solution().show();
 
 		//
 		// do GVNS
@@ -122,6 +122,7 @@ int main(){
 		time_initial.push_back(sn.total_time);
 		GVNS gvns(sn,cur_customers[i],cur_exch_point);
 		gvns.run();
+		gvns.solution.show();
 		cout << "--- step 2 ok --- " << endl;
 		time_step2.push_back(gvns.solution.total_time);
 		solution_vec.push_back(gvns.solution);
@@ -132,7 +133,8 @@ int main(){
  	// Find the fixed number of routing couriers
  	//
  	sort(courier_num_vec.begin(),courier_num_vec.end());
- 	owned_courier_num = courier_num_vec[courier_num_vec.size()-1-PEAK_NUM];
+ 	// owned_courier_num = courier_num_vec[courier_num_vec.size()-1-PEAK_NUM];
+ 	owned_courier_num = 2;
  	cout << endl << "Fixed number of routing couriers: " << owned_courier_num << endl;
  	
 
@@ -147,10 +149,10 @@ int main(){
 		//
 		SolutionNode sn = solution_vec[i];
 		if(sn.routes_table.size() < owned_courier_num){
-			cout << "--- step 3 --- " << endl;
 			GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
 			gvns.run();
-			//gvns.solution.show();
+			gvns.solution.show();
+			cout << "--- step 3 ok --- " << endl;
 			//cout << gvns.solution.total_time << endl;
 			time_step3.push_back(gvns.solution.total_time);
 			solution_vec[i] = gvns.solution;
@@ -243,10 +245,10 @@ int main(){
 		cout << "score(before)" << endl;
 		gvns.show_familiar_table();
 		gvns.increase_familiarity(VISIT_LOW_BOUND);
-		// gvns.solution.show();
+		gvns.solution.show();
 		time_step67.push_back(gvns.solution.total_time);
 		cout << "score(after)" << endl;
-		gvns.show_familiar_table();
+		//gvns.show_familiar_table();
 		solution_vec[i] = gvns.solution;
 	}
 
