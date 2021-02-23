@@ -54,7 +54,7 @@ int main(){
  	vector<Node> district_customers = district_customers_1st[0];
  	vector< vector<Node> > cur_customers; // different time period's customer points
  	const int CUS_NUM_PERIOD = district_customers_1st[0].size() / time_period;
- 	const int PEAK_NUM = 2;
+ 	const int PEAK_NUM = 1;
  	int peak_time1 = 0;
  	int peak_time2 = -1;
  	int nonpeak_time1 = 1;
@@ -136,7 +136,7 @@ int main(){
  	cout << "\n--------------- Get improved solution ---------------" << endl;
  	vector<int> courier_num_vec;
  	vector<SolutionNode> solution_vec;
- 	for(int i = 1; i < time_period;i++){
+ 	for(int i = 0; i < time_period;i++){
  		cout << "\n-------- Time period " << i << " --------"<< endl;
  		//
 		// do randomized savings algo.

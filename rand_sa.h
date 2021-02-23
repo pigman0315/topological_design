@@ -238,6 +238,7 @@ void SavingsAlgo::minimize_routes(){
 		failed_nodes.erase(failed_nodes.begin()+min_idx);
 		// do while until number of failed nodes = 0
 		while(failed_nodes.size() > 0){
+			min_idx = -1;
 			for(int i = 0;i < failed_nodes.size();i++){
 				cur_node = failed_nodes[i];
 				cur_dist = get_dist(cur_node,prev_node);
@@ -247,9 +248,10 @@ void SavingsAlgo::minimize_routes(){
 					min_node = cur_node;
 				}
 			}
-			float add_dist = cur_dist + get_dist(min_node, -1) - get_dist(prev_node,-1);
+			float add_dist = cur_dist + get_dist(-1,min_node) - get_dist(-1,prev_node);
 			float add_time = add_dist / SPEED;
-			if((add_time+routes_time[cur_rn]) <= T){
+
+			if((add_time+routes_time[cur_rn]) <= T && min_idx != -1){
 				routes_table[cur_rn].push_back(failed_nodes[min_idx]);
 				routes_map[failed_nodes[min_idx]] = cur_rn;
 				routes_time[cur_rn] += add_time;
