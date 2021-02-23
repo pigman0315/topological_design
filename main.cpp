@@ -17,8 +17,8 @@ vector< vector<int> > visit_time_vec;
 const float H = 2.0;
 float T; // unit: hr
 const float SPEED = 40000; // unit: km/hr
+const float SERV_COST = 0.025; // 1.5 min = 0.025 hr
 const int time_period = 3;
-
 //
 int main(){
 	srand(time(NULL));
@@ -93,6 +93,37 @@ int main(){
  		cur_customers.push_back(tmp);
  	}
 
+ 	//
+	// Calculate travel time between each customer
+	// Based on the Euclidean Distance, we multiply a rate ranging between [1,1.5] with it
+ 	//
+ 	vector< vector< vector<float> > > cur_dist;
+ 	for(int i = 0;i < time_period;i++){
+ 		vector<Node> cus = cur_customers[i];
+ 		vector< vector<float> > tmp_dist;
+ 		int size = cus.size();
+ 		for(int j = 0;j < size;j++){
+ 			vector<float> tmp_v;
+ 			Node n1 = cus[j];
+ 			for(int k = 0;k < size;k++){
+ 				Node n2 = cus[k];
+ 				float dist, rate;
+ 				if(j == k){
+ 					dist = sqrt((cur_exch_point.x-n1.x)*(cur_exch_point.x-n1.x) + (cur_exch_point.y-n1.y)*(cur_exch_point.y-n1.y));
+ 					dist += SERV_COST*SPEED; // add service cost to distance;
+ 				}
+ 				else{
+ 					dist = sqrt((n1.x-n2.x)*(n1.x-n2.x) + (n1.y-n2.y)*(n1.y-n2.y));
+ 					dist += SERV_COST*SPEED*2; // add service cost to distance;
+ 				}
+ 				rate = (rand()/(RAND_MAX*10.0)) + 1.0;
+	 			dist = dist * rate;
+ 				tmp_v.push_back(dist);
+ 			}
+ 			tmp_dist.push_back(tmp_v);
+ 		}
+ 		cur_dist.push_back(tmp_dist);
+ 	}
 
  	//
  	// Get improved solution
@@ -105,12 +136,12 @@ int main(){
  	cout << "\n--------------- Get improved solution ---------------" << endl;
  	vector<int> courier_num_vec;
  	vector<SolutionNode> solution_vec;
- 	for(int i = 0; i < time_period;i++){
+ 	for(int i = 1; i < time_period;i++){
  		cout << "\n-------- Time period " << i << " --------"<< endl;
  		//
 		// do randomized savings algo.
 		//
-		SavingsAlgo sa(cur_customers[i],cur_exch_point);
+		SavingsAlgo sa(cur_customers[i],cur_exch_point,cur_dist[i]);
 		sa.run();
 		sa.get_solution().show();
 		cout << "--- initial ok --- " << endl;
@@ -120,7 +151,7 @@ int main(){
 		//
 		SolutionNode sn = sa.get_solution();
 		time_initial.push_back(sn.total_time);
-		GVNS gvns(sn,cur_customers[i],cur_exch_point);
+		GVNS gvns(sn,cur_customers[i],cur_exch_point,cur_dist[i]);
 		gvns.run();
 		gvns.solution.show();
 		cout << "--- step 2 ok --- " << endl;
@@ -133,8 +164,9 @@ int main(){
  	// Find the fixed number of routing couriers
  	//
  	sort(courier_num_vec.begin(),courier_num_vec.end());
- 	// owned_courier_num = courier_num_vec[courier_num_vec.size()-1-PEAK_NUM];
- 	owned_courier_num = 2;
+ 	owned_courier_num = courier_num_vec[courier_num_vec.size()-1-PEAK_NUM];
+ 	if(owned_courier_num < 2)
+ 		owned_courier_num = 2;
  	cout << endl << "Fixed number of routing couriers: " << owned_courier_num << endl;
  	
 
@@ -149,7 +181,7 @@ int main(){
 		//
 		SolutionNode sn = solution_vec[i];
 		if(sn.routes_table.size() < owned_courier_num){
-			GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
+			GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num,cur_dist[i]);
 			gvns.run();
 			gvns.solution.show();
 			cout << "--- step 3 ok --- " << endl;
@@ -178,7 +210,7 @@ int main(){
 		// do fixed courier number GVNS
 		//
 		SolutionNode sn = solution_vec[i];
-		GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
+		GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num,cur_dist[i]);
 		gvns.do_work_balance(LAST_N, FIRST_M);
 		cout << "--- step 4,5 ok --- " << endl;
 		// gvns.solution.show();
@@ -239,7 +271,7 @@ int main(){
 		// do fixed courier number GVNS
 		//
 		
-		GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num);
+		GVNS gvns(sn,cur_customers[i],cur_exch_point,owned_courier_num,cur_dist[i]);
 		gvns.read_postal_num(distr_postal_num);
 		cout << "--- step 6,7 ok --- " << endl;
 		cout << "score(before)" << endl;

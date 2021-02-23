@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <random>
 #include <chrono>
+#include <cfloat>
 
 #ifndef _NODE_
 #define _NODE_
@@ -31,6 +32,7 @@ extern vector<Node> exch_points_1st;
 extern vector< vector<Node> > exch_points_2nd;
 extern float T;
 extern const float SPEED;
+extern const float SERV_COST;
 //
 // randomized savings algo.
 //
@@ -44,17 +46,18 @@ public:
 	vector<SavingsNode> savings_list;
 	vector<Node> customer_points;
 	int customer_num;
+	vector< vector<float> > dist_table;
 	Node exch_point;
 	static const int RSA_P = 10; // parameter for randomized savings algo.
 	static const int RSA_Q = 10; // parameter for randomized savings algo.
 	static const int RSA_U = 2; // parameter in minimize_routes to optimize randomized savings algo.
 public:
 	// functions
-	SavingsAlgo(vector<Node> cps, Node ep);
+	SavingsAlgo(vector<Node> cps, Node ep, vector< vector<float> >);
 	void initial();
 	void run();
 	void get_savings();
-	float get_dist(Node n1, Node n2);
+	float get_dist(int n1, int n2);
 	bool check_sn(SavingsNode sn);
 	void delete_maxP_sn(int max_p);
 	SavingsNode find_valid_sn();
@@ -68,10 +71,11 @@ public:
 	SolutionNode get_solution();
 };
 // constructor
-SavingsAlgo::SavingsAlgo(vector<Node> cps, Node ep){
+SavingsAlgo::SavingsAlgo(vector<Node> cps, Node ep, vector< vector<float> > dist_table_){
 	customer_points = cps;
 	exch_point = ep;
 	customer_num = customer_points.size();
+	dist_table = dist_table_;
 	routes_table.clear();
 	routes_map.clear();
 	routes_flg.clear();
@@ -130,12 +134,15 @@ void SavingsAlgo::get_routes_time(){
 	for(int i = 0;i < customer_num;i++){
 		float sum = 0.0;
 		if(routes_flg[i] == true){
-			sum += get_dist(exch_point,customer_points[routes_table[i][0]]);
+			// sum += get_dist(exch_point,customer_points[routes_table[i][0]]);
+			sum += get_dist(-1,routes_table[i][0]);
 			for(int j = 0;j < routes_table[i].size();j++){
 				if(j < routes_table[i].size()-1)
-					sum += get_dist(customer_points[routes_table[i][j]],customer_points[routes_table[i][j+1]]);
+					// sum += get_dist(customer_points[routes_table[i][j]],customer_points[routes_table[i][j+1]]);
+					sum += get_dist(routes_table[i][j],routes_table[i][j+1]);
 			}
-			sum += get_dist(customer_points[routes_table[i][routes_table[i].size()-1]],exch_point);
+			// sum += get_dist(customer_points[routes_table[i][routes_table[i].size()-1]],exch_point);
+			sum += get_dist(routes_table[i][routes_table[i].size()-1],-1);
 			sum = sum / SPEED;
 		}
 		routes_time[i] = sum;
@@ -148,17 +155,21 @@ bool SavingsAlgo::insert_node(Node n_insert, int n_insert_num){
 				float add_dist = 0.0;
 				float add_time = 0.0;
 				if(j == routes_table[i].size()){
-					Node n_last = customer_points[routes_table[i][routes_table[i].size()-1]];
-					add_dist = get_dist(exch_point,n_insert)+get_dist(n_insert,n_last)-get_dist(exch_point,n_last);
+					int n_last = routes_table[i][routes_table[i].size()-1];
+					// add_dist = get_dist(exch_point,n_insert)+get_dist(n_insert,n_last)-get_dist(exch_point,n_last);
+					add_dist = get_dist(-1,n_insert_num)+get_dist(n_insert_num,n_last)-get_dist(-1,n_last);
 				}
 				else{
-					Node n_cur = customer_points[routes_table[i][j]]; // current node in routes
+					// Node n_cur = customer_points[routes_table[i][j]]; // current node in routes
+					int n_cur = routes_table[i][j];
 					if(j == 0 || j == routes_table[i].size()){
-						add_dist = get_dist(exch_point,n_insert)+get_dist(n_insert,n_cur)-get_dist(exch_point,n_cur);
+						// add_dist = get_dist(exch_point,n_insert)+get_dist(n_insert,n_cur)-get_dist(exch_point,n_cur);
+						add_dist = get_dist(-1,n_insert_num)+get_dist(n_insert_num,n_cur)-get_dist(-1,n_cur);
 					}
 					else{
-						Node n_prev = customer_points[routes_table[i][j-1]];
-						add_dist = get_dist(n_insert,n_prev)+get_dist(n_insert,n_cur)-get_dist(n_prev,n_cur);
+						// Node n_prev = customer_points[routes_table[i][j-1]];
+						int n_prev = routes_table[i][j-1];
+						add_dist = get_dist(n_insert_num,n_prev)+get_dist(n_insert_num,n_cur)-get_dist(n_prev,n_cur);
 					}
 				}
 				add_time = add_dist / SPEED;
@@ -192,6 +203,7 @@ void SavingsAlgo::minimize_routes(){
 			
 		}
 	}
+
 	// cout << "Total release node numbers: " << single_node_nums.size() << endl;
 	vector<int> failed_nodes; // nodes which fail to be inserted into existed routes
 	// insert those single node into current available routes
@@ -205,17 +217,17 @@ void SavingsAlgo::minimize_routes(){
 	}
 	// rebuild routes for those nodes which cannot be inserted into existed routes
 	if(failed_nodes.size() >= 1){
-		float min_dist = SPEED*T*2;
-		Node prev_node;
-		Node cur_node;
-		Node min_node;
+		float min_dist = FLT_MAX;
+		int prev_node;
+		int cur_node;
+		int min_node;
 		int min_idx;
 		int cur_rn; // current route number
 		float cur_dist;
 		// find a node closest to be first node
 		for(int i = 0;i < failed_nodes.size();i++){
-			cur_node = customer_points[failed_nodes[i]];
-			cur_dist = get_dist(cur_node,exch_point);
+			cur_node = failed_nodes[i];
+			cur_dist = get_dist(cur_node,-1);
 			if(cur_dist < min_dist){
 				min_dist = cur_dist;
 				min_idx = i;
@@ -227,7 +239,7 @@ void SavingsAlgo::minimize_routes(){
 		// do while until number of failed nodes = 0
 		while(failed_nodes.size() > 0){
 			for(int i = 0;i < failed_nodes.size();i++){
-				cur_node = customer_points[failed_nodes[i]];
+				cur_node = failed_nodes[i];
 				cur_dist = get_dist(cur_node,prev_node);
 				if(cur_dist < min_dist){
 					min_dist = cur_dist;
@@ -235,7 +247,7 @@ void SavingsAlgo::minimize_routes(){
 					min_node = cur_node;
 				}
 			}
-			float add_dist = cur_dist + get_dist(min_node, exch_point) - get_dist(prev_node,exch_point);
+			float add_dist = cur_dist + get_dist(min_node, -1) - get_dist(prev_node,-1);
 			float add_time = add_dist / SPEED;
 			if((add_time+routes_time[cur_rn]) <= T){
 				routes_table[cur_rn].push_back(failed_nodes[min_idx]);
@@ -245,10 +257,10 @@ void SavingsAlgo::minimize_routes(){
 			}
 			// find anothor start point if exceed time limit
 			else{
-				min_dist = SPEED*T*2;
+				min_dist = FLT_MAX;
 				for(int i = 0;i < failed_nodes.size();i++){
-					cur_node = customer_points[failed_nodes[i]];
-					cur_dist = get_dist(cur_node,exch_point);
+					cur_node = failed_nodes[i];
+					cur_dist = get_dist(cur_node,-1);
 					if(cur_dist < min_dist){
 						min_dist = cur_dist;
 						min_idx = i;
@@ -277,7 +289,7 @@ void SavingsAlgo::show_routes(){
 	cout << "Total node number: " << cnt << endl;
 }
 void SavingsAlgo::do_savings_algo(){
-	float min_time = SPEED*T*2;
+	float min_time = FLT_MAX;
 	vector< vector<int> > best_routes_table;// be used to record routes with customer index of customer_points
 	map<int,int> best_routes_map; // be used to map customer with his route number
 	vector<bool> best_routes_flg; // to show which routes in map is available
@@ -323,10 +335,14 @@ void SavingsAlgo::do_savings_algo(){
 		routes_map = best_routes_map;
 		routes_flg = best_routes_flg;
 		routes_time = best_routes_time;
-	}	
+	}
 }
-float SavingsAlgo::get_dist(Node n1, Node n2){
-	return sqrt((n1.x-n2.x)*(n1.x-n2.x) + (n1.y-n2.y)*(n1.y-n2.y));
+float SavingsAlgo::get_dist(int n1, int n2){
+	if(n1 == -1)
+		return dist_table[n2][n2];
+	if(n2 == -1)
+		return dist_table[n1][n1];
+	return dist_table[n1][n2];
 }
 bool descend_func(SavingsNode sn1, SavingsNode sn2){
 	return sn1.value > sn2.value;
@@ -349,23 +365,23 @@ bool SavingsAlgo::check_sn(SavingsNode sn){
 	// check time limit after merge 
 	float ri_dist, rj_dist, totoal_dist;
 	float max_dist = SPEED*T;
-	Node ri_start = customer_points[route_i[0]];
-	Node ri_end = customer_points[route_i[route_i.size()-1]];
-	Node rj_start = customer_points[route_j[0]];
-	Node rj_end = customer_points[route_j[route_j.size()-1]];
-	ri_dist = get_dist(ri_start,exch_point);
-	rj_dist = get_dist(rj_end,exch_point);
+	int ri_start = route_i[0];
+	int ri_end = route_i[route_i.size()-1];
+	int rj_start = route_j[0];
+	int rj_end = route_j[route_j.size()-1];
+	ri_dist = get_dist(ri_start,-1);
+	rj_dist = get_dist(rj_end,-1);
 	if(route_i.size() >= 2){
 		for(int i = 0;i < route_i.size()-1;i++){
-			Node n1 = customer_points[route_i[i]];
-			Node n2 = customer_points[route_i[i+1]];
+			int n1 = route_i[i];
+			int n2 = route_i[i+1];
 			ri_dist += get_dist(n1,n2);
 		}
 	} 
 	if(route_j.size() >= 2){
 		for(int i = 0;i < route_j.size()-1;i++){
-			Node n1 = customer_points[route_j[i]];
-			Node n2 = customer_points[route_j[i+1]];
+			int n1 = route_j[i];
+			int n2 = route_j[i+1];
 			rj_dist += get_dist(n1,n2);
 		}
 	}
@@ -389,7 +405,7 @@ void SavingsAlgo::get_savings(){
 			if(i==j) continue;
 			Node ni = customer_points[i];
 			Node nj = customer_points[j];
-			float tmp = get_dist(n0,ni) + get_dist(n0,nj) - get_dist(ni,nj);
+			float tmp = get_dist(-1,i) + get_dist(-1,j) - get_dist(i,j);
 			SavingsNode sn(tmp,i,j,ni,nj);
 			savings_list.push_back(sn);
 		}

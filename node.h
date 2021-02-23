@@ -62,7 +62,8 @@ public:
 	SolutionNode(){}
 	SolutionNode(vector< vector<int> > _routes_table, 
 				 vector<Node> customer_points,
-				 Node exch_point)
+				 Node exch_point,
+				 vector< vector<float> > dist_table)
 	{
 		routes_table = _routes_table;
 		route_num = routes_table.size();
@@ -72,18 +73,21 @@ public:
 			float time = 0.0;
 			for(int j = 0;j < routes_table[i].size();j++){
 				if(j == 0){
-					Node cur_n = customer_points[routes_table[i][j]];
-					dist = sqrt((cur_n.x - exch_point.x)*(cur_n.x - exch_point.x) + (cur_n.y - exch_point.y)*(cur_n.y - exch_point.y));
+					int cur_n = routes_table[i][j];
+					dist = dist_table[cur_n][cur_n]; // distance from cur_n to exchange point
+					// dist = sqrt((cur_n.x - exch_point.x)*(cur_n.x - exch_point.x) + (cur_n.y - exch_point.y)*(cur_n.y - exch_point.y));
 				}
 				else{
-					Node cur_n = customer_points[routes_table[i][j]];
-					Node prev_n = customer_points[routes_table[i][j-1]];
-					dist = sqrt((cur_n.x - prev_n.x)*(cur_n.x - prev_n.x) + (cur_n.y - prev_n.y)*(cur_n.y - prev_n.y));
+					int cur_n = routes_table[i][j];
+					int prev_n = routes_table[i][j-1];
+					// dist = sqrt((cur_n.x - prev_n.x)*(cur_n.x - prev_n.x) + (cur_n.y - prev_n.y)*(cur_n.y - prev_n.y));
+					dist = dist_table[cur_n][prev_n]; // distance from cur_n to prev_n
 				}
 				time += dist / SPEED;
 			}
-			Node last_n = customer_points[routes_table[i][routes_table[i].size()-1]];
-			dist = sqrt((last_n.x - exch_point.x)*(last_n.x - exch_point.x) + (last_n.y - exch_point.y)*(last_n.y - exch_point.y));
+			int last_n = routes_table[i][routes_table[i].size()-1];
+			// dist = sqrt((last_n.x - exch_point.x)*(last_n.x - exch_point.x) + (last_n.y - exch_point.y)*(last_n.y - exch_point.y));
+			dist = dist_table[last_n][last_n]; // distance from last_n to exchange point
 			time += dist / SPEED;
 			total_time += time;
 			routes_time.push_back(time);
