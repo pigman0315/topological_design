@@ -459,6 +459,7 @@ void GVNS::do_work_balance(const int LAST_N, const int FIRST_M){
 		vector<SolutionNode> ns = build_VNDI_ns(cur_sn,m, LAST_N, FIRST_M); 
 		// best balance neighbor
 		SolutionNode balance_neighbor = find_balance_neighbor(ns);
+		// balance_neighbor.show();
 		max = 0.0;
 		min = FLT_MAX;
 		float cur_diff;
@@ -532,9 +533,7 @@ vector<SolutionNode> GVNS::VNDI_ns1(SolutionNode cur_sn, const int LAST_N, const
 	vector<float> routes_time = cur_sn.routes_time;;
 	int route_num = rt.size();
 	//
-	//
-	SolutionNode tmp_sn(rt,customer_points,exch_point,dist_table);
-	sn_vec.push_back(tmp_sn);
+	sn_vec.push_back(cur_sn);
 	// find big & small route
 	vector<int> big_routes;
 	vector<int> small_routes;
@@ -596,8 +595,7 @@ vector<SolutionNode> GVNS::VNDI_ns2(SolutionNode cur_sn, const int LAST_N, const
 	int route_num = rt.size();
 	//
 	//
-	SolutionNode tmp_sn(rt,customer_points,exch_point,dist_table);
-	sn_vec.push_back(tmp_sn);
+	sn_vec.push_back(cur_sn);
 	// find big & small route
 	vector<int> big_routes;
 	vector<int> small_routes;
@@ -829,8 +827,7 @@ vector<SolutionNode> GVNS::VND_ns1(SolutionNode cur_sn){
 	vector< vector<int> > rt = cur_sn.routes_table;
 	const int NUM_OF_NODE = 2;
 	//
-	SolutionNode tmp_sn(rt,customer_points,exch_point,dist_table);
-	sn_vec.push_back(tmp_sn);
+	sn_vec.push_back(cur_sn);
 	//
 	// TODO: intra-route 2-opt
 	// 
@@ -869,8 +866,7 @@ vector<SolutionNode> GVNS::VND_ns2(SolutionNode cur_sn){
 	vector< vector<int> > rt = cur_sn.routes_table;
 	int route_num = rt.size();
 	//
-	SolutionNode tmp_sn(rt,customer_points,exch_point,dist_table);
-	sn_vec.push_back(tmp_sn);
+	sn_vec.push_back(cur_sn);
 	//
 	// TODO: intra-route Or-opt
 	//
@@ -910,8 +906,7 @@ vector<SolutionNode> GVNS::VND_ns3(SolutionNode cur_sn){
 	int route_num = rt.size();
 	const int NUM_OF_NODE = 3;
 	//
-	SolutionNode tmp_sn(rt,customer_points,exch_point,dist_table);
-	sn_vec.push_back(tmp_sn);
+	sn_vec.push_back(cur_sn);
 	//
 	// TODO: intra-route 3-opt
 	//
@@ -1044,8 +1039,7 @@ vector<SolutionNode> GVNS::VND_ns4(SolutionNode cur_sn){
 	vector< vector<int> > rt = cur_sn.routes_table;
 	int route_num = rt.size();
 	//
-	SolutionNode tmp_sn(rt,customer_points,exch_point,dist_table);
-	sn_vec.push_back(tmp_sn);
+	sn_vec.push_back(cur_sn);
 	//
 	// TODO: inter-route shift(1,0)
 	//
@@ -1082,8 +1076,7 @@ vector<SolutionNode> GVNS::VND_ns5(SolutionNode cur_sn){
 	vector< vector<int> > rt = cur_sn.routes_table;
 	int route_num = rt.size();
 	//
-	SolutionNode tmp_sn(rt,customer_points,exch_point,dist_table);
-	sn_vec.push_back(tmp_sn);
+	sn_vec.push_back(cur_sn);
 	//
 	// TODO: inter-route swap(1,1)
 	//
@@ -1118,8 +1111,7 @@ vector<SolutionNode> GVNS::VND_ns6(SolutionNode cur_sn){
 	vector< vector<int> > rt = cur_sn.routes_table;
 	int route_num = rt.size();
 	//
-	SolutionNode tmp_sn(rt,customer_points,exch_point,dist_table);
-	sn_vec.push_back(tmp_sn);
+	sn_vec.push_back(cur_sn);
 	//
 	// TODO: inter-route Or-opt
 	//
@@ -1164,8 +1156,7 @@ vector<SolutionNode> GVNS::VND_ns7(SolutionNode cur_sn){
 	vector< vector<int> > rt = cur_sn.routes_table;
 	int route_num = rt.size();
 	//
-	SolutionNode tmp_sn(rt,customer_points,exch_point,dist_table);
-	sn_vec.push_back(tmp_sn);
+	sn_vec.push_back(cur_sn);
 	//
 	// TODO: inter-route cross-exchange
 	//
@@ -1219,8 +1210,7 @@ vector<SolutionNode> GVNS::VND_ns8(SolutionNode cur_sn){
 	vector< vector<int> > rt = cur_sn.routes_table;
 	int route_num = rt.size();
 	//
-	SolutionNode tmp_sn(rt,customer_points,exch_point,dist_table);
-	sn_vec.push_back(tmp_sn);
+	sn_vec.push_back(cur_sn);
 	//
 	//
 	// TODO: inter-route icross-exchange
