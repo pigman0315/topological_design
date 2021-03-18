@@ -21,7 +21,7 @@ m_I = -1
 m_O = -1
 w = -1
 best_rot_deg = 0
-H = 2
+H = 3
 T = H / (0.5+m_I+2*(w-1)*m_O)
 SPEED = 40000 # unit: (m/hr)
 
@@ -783,12 +783,9 @@ def read_file():
 	curPath = os.path.dirname(os.path.abspath(__file__))
 	fileBound = open(curPath+"/boundaries.txt", "r")
 	fileCust = open(curPath+"/customers.txt", "r")
-	fileCent = open(curPath+"/centers.txt", "r")
 	# read boundaries/centers/customers data points from file
 	dataBound = fileBound.readlines()
 	fileBound.close()
-	dataCent = fileCent.readlines()
-	fileCent.close()
 	dataCust = fileCust.readlines()
 	fileCust.close()
 	# convert (x,y) from string to float, e.g.: ('10','10') ---> (10,10)

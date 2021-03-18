@@ -234,11 +234,15 @@ void SavingsAlgo::minimize_routes(){
 				cur_rn = failed_nodes[i];
 			}
 		}
+
 		routes_flg[cur_rn] = true;
 		failed_nodes.erase(failed_nodes.begin()+min_idx);
+		prev_node = cur_node;
+
 		// do while until number of failed nodes = 0
 		while(failed_nodes.size() > 0){
 			min_idx = -1;
+			min_dist = FLT_MAX;
 			for(int i = 0;i < failed_nodes.size();i++){
 				cur_node = failed_nodes[i];
 				cur_dist = get_dist(cur_node,prev_node);
@@ -248,15 +252,18 @@ void SavingsAlgo::minimize_routes(){
 					min_node = cur_node;
 				}
 			}
+
 			float add_dist = cur_dist + get_dist(-1,min_node) - get_dist(-1,prev_node);
 			float add_time = add_dist / SPEED;
-
+			
 			if((add_time+routes_time[cur_rn]) <= T && min_idx != -1){
 				routes_table[cur_rn].push_back(failed_nodes[min_idx]);
 				routes_map[failed_nodes[min_idx]] = cur_rn;
 				routes_time[cur_rn] += add_time;
 				failed_nodes.erase(failed_nodes.begin()+min_idx);
+				prev_node = min_node;
 			}
+
 			// find anothor start point if exceed time limit
 			else{
 				min_dist = FLT_MAX;
@@ -266,12 +273,14 @@ void SavingsAlgo::minimize_routes(){
 					if(cur_dist < min_dist){
 						min_dist = cur_dist;
 						min_idx = i;
-						cur_rn = failed_nodes[i];
+						prev_node = failed_nodes[i];
+						cur_rn = prev_node;
 					}
 				}
 				routes_flg[cur_rn] = true;
 				failed_nodes.erase(failed_nodes.begin()+min_idx);
 			}
+
 		}
 	}
 	get_routes_time();	
