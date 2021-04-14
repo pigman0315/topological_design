@@ -48,7 +48,7 @@ public:
 public:
 	GVNS();
 	GVNS(SolutionNode sn, vector<Node> cps, Node ep, vector< vector<float> > dist_table_);
-	GVNS(SolutionNode sn, vector<Node> cps, Node ep, int _owned_courier_num, vector< vector<float> > dist_table_);
+	GVNS(SolutionNode sn, vector<Node> cps, Node ep, vector< vector<float> > dist_table_,int _owned_courier_num);
 	void initial();
 	void run();
 	void show_result();
@@ -103,7 +103,7 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep, vector< vector<float> > d
 	hired_courier_num = -1;
 	visit_low_bound = -1;
 }
-GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep,int _owned_courier_num, vector< vector<float> > dist_table_){
+GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep, vector< vector<float> > dist_table_,int _owned_courier_num){
 
 	exch_point = ep;
 	customer_points = cps;

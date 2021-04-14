@@ -102,8 +102,6 @@ void SavingsAlgo::run(){
 	do_savings_algo();
 	// try to minimize the number of routes
 	minimize_routes();
-	// show routes
-	// show_routes();
 }
 void SavingsAlgo::initial(){
 	routes_table.clear();
@@ -188,9 +186,10 @@ bool SavingsAlgo::insert_node(Node n_insert, int n_insert_num){
 void SavingsAlgo::minimize_routes(){
 	vector<int> single_node_nums; // nodes which is released
 	// release routes
-	for(int i = 0;i < routes_table.size();i++){
+	// i = 1, do not release the first route to prevent unknown error
+	for(int i = 1;i < routes_table.size();i++){
 		if(routes_table[i].size() <= RSA_U && routes_flg[i] == true){
-			for(int j = 1;j < routes_table[i].size();j++){
+			for(int j = 0;j < routes_table[i].size();j++){
 				routes_table[routes_table[i][j]].clear();
 				routes_table[routes_table[i][j]].push_back(routes_table[i][j]);
 				routes_map[routes_table[i][j]] = routes_table[i][j];
@@ -199,8 +198,6 @@ void SavingsAlgo::minimize_routes(){
 			routes_table[i].clear();
 			routes_table[i].push_back(i);
 			routes_flg[i] = false;
-			single_node_nums.push_back(i);
-			
 		}
 	}
 
@@ -210,7 +207,8 @@ void SavingsAlgo::minimize_routes(){
 	for(int n = 0;n < single_node_nums.size();n++){
 		//cout << single_node_nums[n] << endl;
 		Node n_insert = customer_points[single_node_nums[n]]; // node we want to insert 
-		if(!insert_node(n_insert, single_node_nums[n])){
+		int node_num = single_node_nums[n];
+		if(!insert_node(n_insert, node_num)){
 			failed_nodes.push_back(single_node_nums[n]);
 			// cout << "insert node " << single_node_nums[n] << " failed." << endl;
 		}

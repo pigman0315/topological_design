@@ -3,6 +3,8 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <math.h>
+#include <regex>
 #include "rand_sa.h" // class SavingsAlgo
 #include "gvns.h"
 //
@@ -163,4 +165,6 @@ public:
 		return tmp;
 	}
 };
+
+
 
