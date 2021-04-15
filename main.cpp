@@ -34,7 +34,8 @@ private:
 	vector<vector<SolutionNode>> same_courier_num_solution;
 	vector<vector<SolutionNode>> balance_solution;
 	vector<vector<SolutionNode>> familiarity_solution;
-	int DELTA_1;
+	int DELTA_1; // for balancing workload
+	int DELTA_2; // for increasing familiarity
 public:	
 	vector<int>  split(const string& str,const string& delim) { 
 		vector<int> res;
@@ -568,16 +569,24 @@ public:
 		}
 		cout << "---- Balance workload end ----" << endl << endl;
 	}
+	int getFamiliarityScore(SolutionNode sn, vector<int> &cust_postal_nums){
+		
+	}
+	SolutionNode doFamiliarityVND(int region, int period,int VISIT_LOW_BOUND, vector<int> &cust_postal_nums){
+		SolutionNode sn = balance_solution[region][period];
+		vector<vector<float>> &dist_table = cust_dist[region][period];
+		float time_limit = sn.total_time;
+		int familiarity_score = getFamiliarityScore(sn,cust_postal_nums);
+	}
 	void increaseFamiliarity(int VISIT_LOW_BOUND){
 		// familiarity_solution = balance_solution;
-		familiarity_solution = init_solution;
+		balance_solution = init_solution;
+		familiarity_solution = balance_solution;
 		fixed_courier_num_list = {2,2,2};
 		for(int i = 0;i < m_I;i++){
 			int idx = 0;
 			for(int j = 0;j < time_period;j++){
-				cout << "--District " << i << ", Time period " << j << "---" << endl;
-				// GVNS gvns(balance_solution[i][j],time_cust_points[i][j],exch_points[i],cust_dist[i][j],fixed_courier_num_list[i]);
-				GVNS gvns(init_solution[i][j],time_cust_points[i][j],exch_points[i],cust_dist[i][j],fixed_courier_num_list[i]);cout << "cons\n";
+				cout << "---District " << i << ", Time period " << j << "---" << endl;
 				vector<int> cur_postal_nums;
 				cur_postal_nums.assign(postal_nums[i].begin()+idx,postal_nums[i].begin()+idx+time_cust_nums[i][j]);
 				cout << "p: ";
@@ -585,20 +594,20 @@ public:
 					cout << cur_postal_nums[k] << " ";
 				}
 				cout << endl;
-				gvns.read_postal_num(cur_postal_nums);
-				gvns.increase_familiarity(VISIT_LOW_BOUND);
-				familiarity_solution[i][j] = gvns.solution;
-				gvns.solution.show();
-				gvns.show_familiar_table();
+				SolutionNode sn = doFamiliarityVND(i,j,VISIT_LOW_BOUND,cur_postal_nums);
+				familiarity_solution[i][j] = sn;
+				sn.show();
+				// showFamiliarTable(sn);
 				idx += time_cust_nums[i][j];
 			}
 		}
 		
 	}
-	TopoSolution1(vector<vector<Node>> _distr_cust_points, vector<Node> _exch_points,int DELTA_1_){
+	TopoSolution1(vector<vector<Node>> _distr_cust_points, vector<Node> _exch_points,int DELTA_1_,int DELTA_2_){
 		distr_cust_points = _distr_cust_points;
 		exch_points = _exch_points;
 		DELTA_1 = DELTA_1_;
+		DELTA_2 = DELTA_2_;
 		for(int i = 0;i < m_I;i++){
 			vector<SolutionNode> vec;
 			for(int j = 0;j < time_period;j++){
@@ -624,7 +633,7 @@ int main(){
 	//
 	//
 	//
-	TopoSolution1 tp1(district_customers_1st,exch_points_1st,0.2);
+	TopoSolution1 tp1(district_customers_1st,exch_points_1st,0.2,0.5);
 	tp1.readInputFile();
 	tp1.splitCustByTime();
 	tp1.calcDist();
