@@ -61,8 +61,6 @@ public:
 public:
 	SolutionNode(){}
 	SolutionNode(vector< vector<int> > _routes_table, 
-				 vector<Node> customer_points,
-				 Node exch_point,
 				 vector< vector<float> > dist_table)
 	{
 		routes_table = _routes_table;

@@ -132,7 +132,7 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep, vector< vector<float> > d
 				vector< vector<int> > tmp_rt = rt;
 				tmp_rt[i] = tmp_route;
 				tmp_rt.push_back(route);
-				SolutionNode tmp_sn(tmp_rt,customer_points,exch_point,dist_table);
+				SolutionNode tmp_sn(tmp_rt,dist_table);
 				solution = tmp_sn;
 				rt = tmp_rt;
 				break;
@@ -343,7 +343,7 @@ vector<SolutionNode> GVNS::VNDII_ns1(SolutionNode cur_sn){
 							else{
 								tmp_rt.erase(tmp_rt.begin()+unfam_couriers[t][i]);
 							}
-							SolutionNode tmp_sn(tmp_rt,customer_points,exch_point, dist_table);
+							SolutionNode tmp_sn(tmp_rt, dist_table);
 							sn_vec.push_back(tmp_sn);
 						}
 					}
@@ -404,7 +404,7 @@ vector<SolutionNode> GVNS::VNDII_ns2(SolutionNode cur_sn){
 							else{
 								tmp_rt.erase(tmp_rt.begin()+unfam_couriers[t][i]);
 							}
-							SolutionNode tmp_sn(tmp_rt,customer_points,exch_point,dist_table);
+							SolutionNode tmp_sn(tmp_rt,dist_table);
 							sn_vec.push_back(tmp_sn);
 						}
 					}
@@ -580,7 +580,7 @@ vector<SolutionNode> GVNS::VNDI_ns1(SolutionNode cur_sn, const int LAST_N, const
 					else{
 						tmp_rt.erase(tmp_rt.begin()+big_routes[i]);
 					}
-					SolutionNode tmp_sn(tmp_rt,customer_points,exch_point,dist_table);
+					SolutionNode tmp_sn(tmp_rt,dist_table);
 					sn_vec.push_back(tmp_sn);
 				}
 			}
@@ -647,7 +647,7 @@ vector<SolutionNode> GVNS::VNDI_ns2(SolutionNode cur_sn, const int LAST_N, const
 					else{
 						tmp_rt.erase(tmp_rt.begin()+big_routes[i]);
 					}
-					SolutionNode tmp_sn(tmp_rt,customer_points,exch_point,dist_table);
+					SolutionNode tmp_sn(tmp_rt,dist_table);
 					sn_vec.push_back(tmp_sn);
 				}
 			}
@@ -854,7 +854,7 @@ vector<SolutionNode> GVNS::VND_ns1(SolutionNode cur_sn){
 				}
 				vector< vector<int> > tmp_rt = rt;
 				tmp_rt[i] = tmp_route;
-				SolutionNode tmp_sn(tmp_rt,customer_points,exch_point,dist_table);
+				SolutionNode tmp_sn(tmp_rt,dist_table);
 				sn_vec.push_back(tmp_sn);
 			}
 		}
@@ -892,7 +892,7 @@ vector<SolutionNode> GVNS::VND_ns2(SolutionNode cur_sn){
 				tmp_route.insert(tmp_route.begin()+k,seg.begin(),seg.end());
 				vector< vector<int> > tmp_rt = rt;
 				tmp_rt[i] = tmp_route;
-				SolutionNode tmp_sn(tmp_rt,customer_points,exch_point,dist_table);
+				SolutionNode tmp_sn(tmp_rt,dist_table);
 				sn_vec.push_back(tmp_sn);
 			}
 		}
@@ -939,7 +939,7 @@ vector<SolutionNode> GVNS::VND_ns3(SolutionNode cur_sn){
 				}
 				tmp_rt = rt;
 				tmp_rt[i] = tmp_route;
-				SolutionNode tmp_sn1(tmp_rt,customer_points,exch_point,dist_table);
+				SolutionNode tmp_sn1(tmp_rt,dist_table);
 				sn_vec.push_back(tmp_sn1);
 
 				// 2. single 2-opt(0,2)
@@ -951,7 +951,7 @@ vector<SolutionNode> GVNS::VND_ns3(SolutionNode cur_sn){
 				}
 				tmp_rt = rt;
 				tmp_rt[i] = tmp_route;
-				SolutionNode tmp_sn2(tmp_rt,customer_points,exch_point,dist_table);
+				SolutionNode tmp_sn2(tmp_rt,dist_table);
 				sn_vec.push_back(tmp_sn2);
 
 				// 3. single 2-opt(1,2)
@@ -963,7 +963,7 @@ vector<SolutionNode> GVNS::VND_ns3(SolutionNode cur_sn){
 				}
 				tmp_rt = rt;
 				tmp_rt[i] = tmp_route;
-				SolutionNode tmp_sn3(tmp_rt,customer_points,exch_point,dist_table);
+				SolutionNode tmp_sn3(tmp_rt,dist_table);
 				sn_vec.push_back(tmp_sn3);
 
 				// split route into A,B,C segments
@@ -985,7 +985,7 @@ vector<SolutionNode> GVNS::VND_ns3(SolutionNode cur_sn){
 				}
 				tmp_rt = rt;
 				tmp_rt[i] = tmp_route;
-				SolutionNode tmp_sn4(tmp_rt,customer_points,exch_point,dist_table);
+				SolutionNode tmp_sn4(tmp_rt,dist_table);
 				sn_vec.push_back(tmp_sn4);
 				// 5. 3-opt(A',B',C)
 				tmp_route.clear();
@@ -998,7 +998,7 @@ vector<SolutionNode> GVNS::VND_ns3(SolutionNode cur_sn){
 				tmp_route.insert(tmp_route.end(),C.begin(),C.end());
 				tmp_rt = rt;
 				tmp_rt[i] = tmp_route;
-				SolutionNode tmp_sn5(tmp_rt,customer_points,exch_point,dist_table);
+				SolutionNode tmp_sn5(tmp_rt,dist_table);
 				sn_vec.push_back(tmp_sn5);
 				// 6. 3-opt(A',B,C')
 				tmp_route.clear();
@@ -1011,7 +1011,7 @@ vector<SolutionNode> GVNS::VND_ns3(SolutionNode cur_sn){
 				}
 				tmp_rt = rt;
 				tmp_rt[i] = tmp_route;
-				SolutionNode tmp_sn6(tmp_rt,customer_points,exch_point,dist_table);
+				SolutionNode tmp_sn6(tmp_rt,dist_table);
 				sn_vec.push_back(tmp_sn6);
 				// 7. 3-opt(A',B',C')
 				tmp_route.clear();
@@ -1026,7 +1026,7 @@ vector<SolutionNode> GVNS::VND_ns3(SolutionNode cur_sn){
 				}
 				tmp_rt = rt;
 				tmp_rt[i] = tmp_route;
-				SolutionNode tmp_sn7(tmp_rt,customer_points,exch_point,dist_table);
+				SolutionNode tmp_sn7(tmp_rt,dist_table);
 				sn_vec.push_back(tmp_sn7);
 			}
 		}
@@ -1063,7 +1063,7 @@ vector<SolutionNode> GVNS::VND_ns4(SolutionNode cur_sn){
 					else{
 						tmp_rt.erase(tmp_rt.begin()+i);
 					}
-					SolutionNode tmp_sn(tmp_rt,customer_points,exch_point,dist_table);
+					SolutionNode tmp_sn(tmp_rt,dist_table);
 					sn_vec.push_back(tmp_sn);
 				}
 			}
@@ -1098,7 +1098,7 @@ vector<SolutionNode> GVNS::VND_ns5(SolutionNode cur_sn){
 					vector< vector<int> > tmp_rt = rt;
 					tmp_rt[i] = route_i;
 					tmp_rt[k] = route_k;
-					SolutionNode tmp_sn(tmp_rt,customer_points,exch_point,dist_table);
+					SolutionNode tmp_sn(tmp_rt,dist_table);
 					sn_vec.push_back(tmp_sn);
 				}
 			}
@@ -1142,7 +1142,7 @@ vector<SolutionNode> GVNS::VND_ns6(SolutionNode cur_sn){
 						if(delete_vec.size() == 0){
 							tmp_rt.erase(tmp_rt.begin()+i);
 						}
-						SolutionNode tmp_sn(tmp_rt,customer_points,exch_point,dist_table);
+						SolutionNode tmp_sn(tmp_rt,dist_table);
 						sn_vec.push_back(tmp_sn);
 					}
 				}
@@ -1192,7 +1192,7 @@ vector<SolutionNode> GVNS::VND_ns7(SolutionNode cur_sn){
 							vector< vector<int> > tmp_rt = rt;
 							tmp_rt[i] = tmp_r1;
 							tmp_rt[k] = tmp_r2;
-							SolutionNode tmp_sn(tmp_rt,customer_points,exch_point,dist_table);
+							SolutionNode tmp_sn(tmp_rt,dist_table);
 							sn_vec.push_back(tmp_sn);
 						}
 					}
@@ -1253,7 +1253,7 @@ vector<SolutionNode> GVNS::VND_ns8(SolutionNode cur_sn){
 							vector< vector<int> > tmp_rt = rt;
 							tmp_rt[i] = tmp_r1;
 							tmp_rt[k] = tmp_r2;
-							SolutionNode tmp_sn(tmp_rt,customer_points,exch_point,dist_table);
+							SolutionNode tmp_sn(tmp_rt,dist_table);
 							sn_vec.push_back(tmp_sn);
 						}
 					}
@@ -1289,7 +1289,7 @@ vector<SolutionNode> GVNS::shake_ns1(){
 	vector< vector<int> > rt = solution.routes_table;
 	int route_num = rt.size();
 	//
-	SolutionNode tmp_sn(rt,customer_points,exch_point,dist_table);
+	SolutionNode tmp_sn(rt,dist_table);
 	sn_vec.push_back(tmp_sn);
 	//
 	// intra-route Or-opt (# of nodes = 4)
@@ -1308,7 +1308,7 @@ vector<SolutionNode> GVNS::shake_ns1(){
 					tmp_route.insert(tmp_route.begin()+l,insert_vec.begin(),insert_vec.end());
 					vector< vector<int> > tmp_rt = rt;
 					tmp_rt[i] = tmp_route;
-					SolutionNode tmp_sn(tmp_rt,customer_points,exch_point,dist_table);
+					SolutionNode tmp_sn(tmp_rt,dist_table);
 					sn_vec.push_back(tmp_sn);
 				}
 			}
@@ -1322,7 +1322,7 @@ vector<SolutionNode> GVNS::shake_ns2(){
 	vector< vector<int> > rt = solution.routes_table;
 	int route_num = rt.size();
 	//
-	SolutionNode tmp_sn(rt,customer_points,exch_point,dist_table);
+	SolutionNode tmp_sn(rt,dist_table);
 	sn_vec.push_back(tmp_sn);
 	//
 	// intra-route Double-bridge (# of nodes = 4)
@@ -1356,7 +1356,7 @@ vector<SolutionNode> GVNS::shake_ns2(){
 					tmp_v.insert(tmp_v.end(),B.begin(),B.end());
 					vector< vector<int> > tmp_rt = rt;
 					tmp_rt[i] = tmp_v;
-					SolutionNode tmp_sn(tmp_rt,customer_points,exch_point,dist_table);
+					SolutionNode tmp_sn(tmp_rt,dist_table);
 					sn_vec.push_back(tmp_sn);
 				}
 			}
@@ -1370,7 +1370,7 @@ vector<SolutionNode> GVNS::shake_ns3(){
 	vector< vector<int> > rt = solution.routes_table;
 	int route_num = rt.size();
 	//
-	SolutionNode tmp_sn(rt,customer_points,exch_point,dist_table);
+	SolutionNode tmp_sn(rt,dist_table);
 	sn_vec.push_back(tmp_sn);
 	//
 	// inter-route Or-opt (# of nodes = 4~6)
@@ -1407,7 +1407,7 @@ vector<SolutionNode> GVNS::shake_ns3(){
 						if(delete_vec.size() == 0){
 							tmp_rt.erase(tmp_rt.begin()+i);
 						}
-						SolutionNode tmp_sn(tmp_rt,customer_points,exch_point,dist_table);
+						SolutionNode tmp_sn(tmp_rt,dist_table);
 						sn_vec.push_back(tmp_sn);
 					}
 				}
@@ -1422,7 +1422,7 @@ vector<SolutionNode> GVNS::shake_ns4(){
 	vector< vector<int> > rt = solution.routes_table;
 	int route_num = rt.size();
 	//
-	SolutionNode tmp_sn(rt,customer_points,exch_point,dist_table);
+	SolutionNode tmp_sn(rt,dist_table);
 	sn_vec.push_back(tmp_sn);
 	//
 	// inter-route Cross-exchange (# of nodes = 4~6)
@@ -1467,7 +1467,7 @@ vector<SolutionNode> GVNS::shake_ns4(){
 							vector< vector<int> > tmp_rt = rt;
 							tmp_rt[i] = tmp_r1;
 							tmp_rt[k] = tmp_r2;
-							SolutionNode tmp_sn(tmp_rt,customer_points,exch_point,dist_table);
+							SolutionNode tmp_sn(tmp_rt,dist_table);
 							sn_vec.push_back(tmp_sn);
 						}
 					}
@@ -1486,7 +1486,7 @@ vector<SolutionNode> GVNS::shake_ns5(){
 	vector< vector<int> > rt = solution.routes_table;
 	int route_num = rt.size();
 	//
-	SolutionNode tmp_sn(rt,customer_points,exch_point,dist_table);
+	SolutionNode tmp_sn(rt,dist_table);
 	sn_vec.push_back(tmp_sn);
 	//
 	// inter-route iCross-exchange (# of nodes = 4~6)
@@ -1535,7 +1535,7 @@ vector<SolutionNode> GVNS::shake_ns5(){
 							vector< vector<int> > tmp_rt = rt;
 							tmp_rt[i] = tmp_r1;
 							tmp_rt[k] = tmp_r2;
-							SolutionNode tmp_sn(tmp_rt,customer_points,exch_point,dist_table);
+							SolutionNode tmp_sn(tmp_rt,dist_table);
 							sn_vec.push_back(tmp_sn);
 						}
 					}

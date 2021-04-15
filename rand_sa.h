@@ -305,6 +305,7 @@ void SavingsAlgo::do_savings_algo(){
 	vector<float> best_routes_time; // store each routes' time
 	bool update = false;
 	// do Q times to find best routes(Randomized Savings algo.)
+
 	for(int i = 0;i < RSA_Q;i++){
 		// initial routes
 		initial();
