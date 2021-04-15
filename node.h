@@ -59,7 +59,10 @@ public:
 	float total_time;
 	int route_num;
 public:
-	SolutionNode(){}
+	SolutionNode(){
+		total_time = 0.0;
+		route_num = 0;
+	}
 	SolutionNode(vector< vector<int> > _routes_table, 
 				 vector< vector<float> > dist_table)
 	{

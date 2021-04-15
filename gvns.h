@@ -104,13 +104,13 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep, vector< vector<float> > d
 	visit_low_bound = -1;
 }
 GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep, vector< vector<float> > dist_table_,int _owned_courier_num){
-
 	exch_point = ep;
 	customer_points = cps;
 	solution = sn;
 	customer_num = customer_points.size();
 	dist_table = dist_table_;
 	visit_low_bound = -1;
+
 	if(sn.routes_table.size() > _owned_courier_num){
 		hired_courier_num = sn.routes_table.size();
 		owned_courier_num = _owned_courier_num;
@@ -120,6 +120,7 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep, vector< vector<float> > d
 		owned_courier_num = _owned_courier_num;
 	}
 	// fill up the routes number
+
 	vector< vector<int> > rt = sn.routes_table;
 	while(rt.size() < owned_courier_num){
 		vector<int> route;

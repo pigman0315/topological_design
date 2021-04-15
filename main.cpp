@@ -26,6 +26,7 @@ private:
 	vector<vector<Node>> distr_cust_points;
 	vector<vector<vector<Node>>> time_cust_points;
 	vector<vector<vector<vector<float>>>> cust_dist;
+	vector<vector<int>> postal_nums;
 	vector<vector<int>> time_cust_nums;
 	vector<Node> exch_points;
 	vector<int> peak_time;
@@ -62,6 +63,15 @@ public:
 			getline(file,str);
 			vector<int> tmp_v = split(str," ");
 			time_cust_nums.push_back(tmp_v);
+		}
+		file.close();
+		// Read table 2: get postal number
+		file.open("table2.txt");
+		while(file){
+			string str;
+			getline(file,str);
+			vector<int> tmp_v = split(str," ");
+			postal_nums.push_back(tmp_v);
 		}
 		file.close();
 	}
@@ -115,7 +125,6 @@ public:
 	}
 	void getInitSolution(){
 		for(int i = 0;i < m_I;i++){
-			vector<SolutionNode> tmp_sn_vec;
 			for(int j = 0;j < time_period;j++){
 				cout << "--District " << i << ", Time period " << j << "---" << endl;
 				cout << "--Map--" << endl;
@@ -129,13 +138,12 @@ public:
 				SolutionNode sn = doSavingAlgo(time_cust_points[i][j],exch_points[i],cust_dist[i][j]);
 				sn.show();
 				GVNS gvns(sn,time_cust_points[i][j],exch_points[i],cust_dist[i][j]);
-				//gvns.run();
+				gvns.run();
 				gvns.solution.show();
-				tmp_sn_vec.push_back(gvns.solution);
+				init_solution[i][j] = gvns.solution;
 			}
-			init_solution.push_back(tmp_sn_vec);
 		}
-		cout << "---- initial solution ok ----" << endl;
+		cout << "---- initial solution ok ----" << endl << endl;
 	}
 	void useSameNumCourier(vector<int> fixed_courier_num_list_){
 		fixed_courier_num_list = fixed_courier_num_list_;
@@ -152,7 +160,7 @@ public:
 				same_courier_num_solution[i][j] = gvns.solution;
 			}
 		}
-		cout << "---- use same courier number solution ok ----" << endl;
+		cout << "---- use same courier number solution ok ----" << endl << endl;
 	}
 	vector<float> getCorierRoutingTotalTime(int distr_num,int fixed_courier_num){
 		vector<float> total_time_vec(fixed_courier_num,0);
@@ -558,17 +566,31 @@ public:
 			}
 			cout << endl;
 		}
-		cout << "---- Balance workload end ----" << endl;
+		cout << "---- Balance workload end ----" << endl << endl;
 	}
 	void increaseFamiliarity(int VISIT_LOW_BOUND){
-		familiarity_solution = balance_solution;
+		// familiarity_solution = balance_solution;
+		familiarity_solution = init_solution;
+		fixed_courier_num_list = {2,2,2};
 		for(int i = 0;i < m_I;i++){
+			int idx = 0;
 			for(int j = 0;j < time_period;j++){
 				cout << "--District " << i << ", Time period " << j << "---" << endl;
-				GVNS gvns(balance_solution[i][j],time_cust_points[i][j],exch_points[i],cust_dist[i][j],fixed_courier_num_list[i]);
+				// GVNS gvns(balance_solution[i][j],time_cust_points[i][j],exch_points[i],cust_dist[i][j],fixed_courier_num_list[i]);
+				GVNS gvns(init_solution[i][j],time_cust_points[i][j],exch_points[i],cust_dist[i][j],fixed_courier_num_list[i]);cout << "cons\n";
+				vector<int> cur_postal_nums;
+				cur_postal_nums.assign(postal_nums[i].begin()+idx,postal_nums[i].begin()+idx+time_cust_nums[i][j]);
+				cout << "p: ";
+				for(int k = 0;k < cur_postal_nums.size();k++){
+					cout << cur_postal_nums[k] << " ";
+				}
+				cout << endl;
+				gvns.read_postal_num(cur_postal_nums);
 				gvns.increase_familiarity(VISIT_LOW_BOUND);
 				familiarity_solution[i][j] = gvns.solution;
 				gvns.solution.show();
+				gvns.show_familiar_table();
+				idx += time_cust_nums[i][j];
 			}
 		}
 		
@@ -577,6 +599,14 @@ public:
 		distr_cust_points = _distr_cust_points;
 		exch_points = _exch_points;
 		DELTA_1 = DELTA_1_;
+		for(int i = 0;i < m_I;i++){
+			vector<SolutionNode> vec;
+			for(int j = 0;j < time_period;j++){
+				SolutionNode sn;
+				vec.push_back(sn);
+			}
+			init_solution.push_back(vec);
+		}
 	}
 	~TopoSolution1(){}
 };
@@ -601,7 +631,7 @@ int main(){
 	tp1.getInitSolution();
 	tp1.useSameNumCourier({2,2,2});
 	tp1.balanceWorkload(1,1);
-	tp1.increaseFamiliarity(1);
+	// tp1.increaseFamiliarity(1);
 	//
 	// outside for loop
 	//
