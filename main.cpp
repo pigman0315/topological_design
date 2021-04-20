@@ -139,7 +139,7 @@ public:
 				SolutionNode sn = doSavingAlgo(time_cust_points[i][j],exch_points[i],cust_dist[i][j]);
 				sn.show();
 				GVNS gvns(sn,time_cust_points[i][j],exch_points[i],cust_dist[i][j]);
-				gvns.run();
+				//gvns.run();
 				gvns.solution.show();
 				init_solution[i][j] = gvns.solution;
 			}
@@ -569,37 +569,47 @@ public:
 		}
 		cout << "---- Balance workload end ----" << endl << endl;
 	}
-	int getFamiliarityScore(SolutionNode sn, vector<int> &cust_postal_nums){
-		
+	int getFamiliarityScore(vector<SolutionNode> distr_solution,vector<int> cust_postal_nums,int fixed_courier_num){
+		vector<vector<int>> score_matrix(fixed_courier_num,vector<int>(6,0));
+		int cnt = 0;
+		// 
+		for(int i = 0;i < distr_solution.size();i++){
+			SolutionNode &sn = distr_solution[i];
+			for(int r = 0;r < fixed_courier_num;r++){
+				vector<int> &route = sn.routes_table[r];
+				for(int j = 0;j < route.size();j++){
+					score_matrix[r][cust_postal_nums[route[j]]]++;
+					if(score_matrix[r][cust_postal_nums[route[j]]] == 1)
+						cnt++;
+				}
+			}
+		}
+		// show postal distribution of courier
+		for(int i = 0;i < fixed_courier_num;i++){
+			for(int j = 0;j < 6;j++){
+				cout << score_matrix[i][j] << " ";
+			}
+			cout << endl;
+		}
+		cout << cnt << endl;
+		cout << endl << endl;
+		return cnt;
 	}
-	SolutionNode doFamiliarityVND(int region, int period,int VISIT_LOW_BOUND, vector<int> &cust_postal_nums){
-		SolutionNode sn = balance_solution[region][period];
-		vector<vector<float>> &dist_table = cust_dist[region][period];
-		float time_limit = sn.total_time;
-		int familiarity_score = getFamiliarityScore(sn,cust_postal_nums);
+	void doFamiliarityVND(int region,int VISIT_LOW_BOUND){
+		// vector<SolutionNode> sn = init_solution[region];
+		vector<SolutionNode> distr_solution = balance_solution[region];
+		vector<int> distr_postal_nums = postal_nums[region];
+		int fixed_courier_num = fixed_courier_num_list[region];
+		int familiarity_score = getFamiliarityScore(distr_solution,distr_postal_nums,fixed_courier_num);
+
 	}
 	void increaseFamiliarity(int VISIT_LOW_BOUND){
 		// familiarity_solution = balance_solution;
-		balance_solution = init_solution;
-		familiarity_solution = balance_solution;
-		fixed_courier_num_list = {2,2,2};
+		balance_solution = same_courier_num_solution;
+		// familiarity_solution = init_solution;
+		// fixed_courier_num_list = {3,3,3};
 		for(int i = 0;i < m_I;i++){
-			int idx = 0;
-			for(int j = 0;j < time_period;j++){
-				cout << "---District " << i << ", Time period " << j << "---" << endl;
-				vector<int> cur_postal_nums;
-				cur_postal_nums.assign(postal_nums[i].begin()+idx,postal_nums[i].begin()+idx+time_cust_nums[i][j]);
-				cout << "p: ";
-				for(int k = 0;k < cur_postal_nums.size();k++){
-					cout << cur_postal_nums[k] << " ";
-				}
-				cout << endl;
-				SolutionNode sn = doFamiliarityVND(i,j,VISIT_LOW_BOUND,cur_postal_nums);
-				familiarity_solution[i][j] = sn;
-				sn.show();
-				// showFamiliarTable(sn);
-				idx += time_cust_nums[i][j];
-			}
+			doFamiliarityVND(i,VISIT_LOW_BOUND);
 		}
 		
 	}
@@ -638,9 +648,9 @@ int main(){
 	tp1.splitCustByTime();
 	tp1.calcDist();
 	tp1.getInitSolution();
-	tp1.useSameNumCourier({2,2,2});
-	tp1.balanceWorkload(1,1);
-	// tp1.increaseFamiliarity(1);
+	tp1.useSameNumCourier({3,3,3});
+	// tp1.balanceWorkload(1,1);
+	tp1.increaseFamiliarity(3);
 	//
 	// outside for loop
 	//
