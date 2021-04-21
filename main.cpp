@@ -654,7 +654,7 @@ public:
 				}
 			}
 		}
-		else if(type == 2){
+		else if(type == 1){
 			int NUM_OF_NODE = 2;
 			//
 			// TODO: intra-route 2-opt
@@ -688,7 +688,7 @@ public:
 				}
 			}
 		}
-		else if(type == 3){
+		else if(type == 2){
 			//
 			// TODO: intra-route Or-opt
 			//
@@ -720,7 +720,7 @@ public:
 				}
 			}
 		}
-		else if(type == 4){
+		else if(type == 3){
 			int NUM_OF_NODE = 3;
 			//
 			// TODO: intra-route 3-opt
@@ -849,11 +849,20 @@ public:
 		}
 		return sn_vec;
 	}
+	bool exceedTimeLimit(SolutionNode sn){
+		for(int i = 0;i < sn.routes_time.size();i++){
+			if(sn.routes_time[i] > T)
+				return true;
+		}
+		return false;
+	}
 	SolutionNode findBestNeighbor(vector<SolutionNode> neighbors,float time_limit,float workload){
 		float cur_time = FLT_MAX;
 		SolutionNode sn = neighbors[0];
 		if(neighbors.size() >= 2){
 			for(int i = neighbors.size()-1;i>=1;i--){
+				if(exceedTimeLimit(neighbors[i]))
+					continue;
 				float wl = getWorkload(neighbors[i]);
 				if(neighbors[i].total_time < cur_time && neighbors[i].total_time < time_limit*(1+DELTA_1) && wl < (workload+DELTA_2)){
 					sn = neighbors[i];
@@ -869,7 +878,7 @@ public:
 		//
 		// get neighbors
 		for(int t = 0;t < time_period;t++){
-			SolutionNode &sn = familiarity_solution[region][t];
+			SolutionNode sn = familiarity_solution[region][t];
 			float time_limit = same_courier_num_solution[region][t].total_time;
 			vector<vector<float>> dist_table = cust_dist[region][t];
 			float workload = getWorkload(sn);
@@ -890,7 +899,6 @@ public:
 					if(type != 0 && best_neighbor.total_time != sn.total_time){
 						type = 1;
 						sn = best_neighbor;
-						sn.show();
 					}
 					else if(type == 0){
 						sn = best_neighbor;
@@ -899,6 +907,7 @@ public:
 				}
 				shift_cnt--;
 			}
+			familiarity_solution[region][t] = sn;
 		}
 	}
 	vector<SolutionNode> doFamiliarityVND(int region,int VISIT_LOW_BOUND){
