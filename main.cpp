@@ -622,7 +622,10 @@ public:
 			//
 			// TODO: shift(1,0)
 			//
+			//cout << "size: " << period_postal_nums.size() << endl;
 			for(int i = 0;i < rt[courier_num].size();i++){
+				//cout << "Compare: " << period_postal_nums[rt[courier_num][i]] << " " << postal_num << endl;
+				//cout << "cust num: " << rt[courier_num][i] << endl;
 				if(period_postal_nums[rt[courier_num][i]] == postal_num){
 					int cust_n = rt[courier_num][i];
 					vector<int> tmp1 = rt[courier_num];
@@ -850,13 +853,15 @@ public:
 	SolutionNode findBestNeighbor(vector<SolutionNode> neighbors,float time_limit,float workload){
 		float cur_time = FLT_MAX;
 		SolutionNode sn = neighbors[0];
+		//cout << "neighbors size: "  << neighbors.size() << endl;
 		if(neighbors.size() >= 2){
 			for(int i = 1;i < neighbors.size();i++){
-				if(exceedTimeLimit(neighbors[i])){
-					continue;
-				}
+				// if(exceedTimeLimit(neighbors[i])){
+				// 	continue;
+				// }
 				float wl = getWorkload(neighbors[i]);
-				if(neighbors[i].total_time < cur_time && (neighbors[i].total_time < time_limit*(1+DELTA_1)) && (wl < (workload+DELTA_2))){
+				if(neighbors[i].total_time < cur_time && (neighbors[i].total_time < time_limit*(1.0+DELTA_1)) && (wl < (workload+DELTA_2))){
+				//if(neighbors[i].total_time < cur_time){
 					sn = neighbors[i];
 					cur_time = neighbors[i].total_time;
 				}
@@ -885,11 +890,11 @@ public:
 				period_postal_nums.assign(postal_nums[region].begin()+time_cust_nums[region][t-1],postal_nums[region].begin()+time_cust_nums[region][t-1]+time_cust_nums[region][t]);
 			else
 				period_postal_nums.assign(postal_nums[region].begin(),postal_nums[region].begin()+time_cust_nums[region][t]);
-			// for(int i = 0;i < period_postal_nums.size();i++)
-			// 	cout << period_postal_nums[i] << " ";
-			// cout << endl;
-			//
-			while(shift_cnt > 0){
+			for(int i = 0;i < period_postal_nums.size();i++)
+				cout << period_postal_nums[i] << " ";
+			cout << endl;
+			// cout << "Total: " << time_cust_nums[region][t] << endl;
+			for(int cnt = 0;cnt < shift_cnt;cnt++){
 				for(int type = 0;type < 4;type++){
 					vector<SolutionNode> neighbors = getNeighborsFam(sn,courier_num,postal_num,type,dist_table,period_postal_nums);
 					SolutionNode best_neighbor = findBestNeighbor(neighbors,time_limit,workload);
@@ -899,13 +904,11 @@ public:
 					}
 					else if(type == 0){
 						sn = best_neighbor; 
-						sn.show();
 					}
 				}
-				shift_cnt--;
+				familiarity_solution[region][t] = sn;
+				sn.show();
 			}
-			familiarity_solution[region][t] = sn;
-			sn.show();
 		}
 	}
 	void doFamiliarityVND(int region,int VISIT_LOW_BOUND){
@@ -968,7 +971,7 @@ int main(){
 	tp1.splitCustByTime();
 	tp1.calcDist();
 	tp1.getInitSolution();
-	tp1.useSameNumCourier({3,3,3});
+	tp1.useSameNumCourier({2,2,2});
 	tp1.balanceWorkload(1,1);
 	tp1.increaseFamiliarity(3);
 	//

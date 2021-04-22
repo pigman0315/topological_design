@@ -22,7 +22,7 @@ m_I = -1
 m_O = -1
 w = -1
 best_rot_deg = 0
-H = 2
+H = 2.0
 T = H / (0.5+m_I+2*(w-1)*m_O)
 SPEED = 40000 # unit: (m/hr)
 
