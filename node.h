@@ -63,6 +63,15 @@ public:
 		total_time = 0.0;
 		route_num = 0;
 	}
+	bool operator!=(SolutionNode another){
+		if(another.routes_time.size() != this->routes_time.size())
+			return true;
+		for(int i = 0;i < routes_time.size();i++){
+			if(this->routes_time[i] != another.routes_time[i])
+				return true;
+		}
+		return false;
+	}
 	SolutionNode(vector< vector<int> > _routes_table, 
 				 vector< vector<float> > dist_table)
 	{
