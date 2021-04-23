@@ -860,8 +860,8 @@ public:
 				// 	continue;
 				// }
 				float wl = getWorkload(neighbors[i]);
-				if(neighbors[i].total_time < cur_time && (neighbors[i].total_time < time_limit*(1.0+DELTA_1)) && (wl < (workload+DELTA_2))){
-				//if(neighbors[i].total_time < cur_time){
+				//if(neighbors[i].total_time < cur_time && (neighbors[i].total_time < time_limit*(1.0+DELTA_1)) && (wl < (workload+DELTA_2))){
+				if(neighbors[i].total_time < cur_time){
 					sn = neighbors[i];
 					cur_time = neighbors[i].total_time;
 				}
@@ -883,7 +883,7 @@ public:
 			float workload = getWorkload(sn);
 			// do not need to do VND
 			if(sn.routes_table[courier_num].size() <= 1)
-				return;
+				continue;
 			
 			vector<int> period_postal_nums;
 			if(t != 0)
@@ -903,11 +903,14 @@ public:
 						sn = best_neighbor;
 					}
 					else if(type == 0){
-						sn = best_neighbor; 
-					}
+						sn = best_neighbor;
 				}
 				familiarity_solution[region][t] = sn;
 				sn.show();
+				// do not need to do VND
+				if(sn.routes_table[courier_num].size() <= 1)
+					break; 
+				}
 			}
 		}
 	}
@@ -971,7 +974,7 @@ int main(){
 	tp1.splitCustByTime();
 	tp1.calcDist();
 	tp1.getInitSolution();
-	tp1.useSameNumCourier({2,2,2});
+	tp1.useSameNumCourier({2,3,3});
 	tp1.balanceWorkload(1,1);
 	tp1.increaseFamiliarity(3);
 	//
