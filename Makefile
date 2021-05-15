@@ -1,4 +1,4 @@
 all:
-	g++ main.cpp -o dvrp
+	g++ -std=c++17 main.cpp -o dvrp
 clean:
 	rm -f dvrp

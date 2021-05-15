@@ -17,7 +17,7 @@ vector< vector<int> > visit_time_vec;
 const float H = 2.0;
 float T; // unit: hr
 const float SPEED = 40000; // unit: km/hr
-const float SERV_COST = 0.025; // 1.5 min = 0.025 hr
+const float SERV_COST = 0.2; // 1.5 min = 0.025 hr
 const int time_period = 3;
 const float DIST_RATE = 10.0; // to simulate real distance from Euclidean distance of two points
 const int MAX_POSTAL_NUM = 6;
@@ -132,7 +132,7 @@ public:
 				SolutionNode sn = doSavingAlgo(time_cust_points[i][j],exch_points[i],cust_dist[i][j]);
 				sn.show();
 				GVNS gvns(sn,time_cust_points[i][j],exch_points[i],cust_dist[i][j]);
-				//gvns.run();
+				gvns.run();
 				gvns.solution.show();
 				init_solution[i][j] = gvns.solution;
 			}
@@ -939,7 +939,7 @@ public:
 			doFamiliarityVND(i,VISIT_LOW_BOUND);
 		}
 	}
-	TopoSolution1(vector<vector<Node>> _distr_cust_points, vector<Node> _exch_points,int DELTA_1_,int DELTA_2_){
+	TopoSolution1(vector<vector<Node>> _distr_cust_points, vector<Node> _exch_points,float DELTA_1_,float DELTA_2_){
 		distr_cust_points = _distr_cust_points;
 		exch_points = _exch_points;
 		DELTA_1 = DELTA_1_;
@@ -974,7 +974,7 @@ int main(){
 	tp1.splitCustByTime();
 	tp1.calcDist();
 	tp1.getInitSolution();
-	tp1.useSameNumCourier({2,3,3});
+	tp1.useSameNumCourier({1,2,1});
 	tp1.balanceWorkload(1,1);
 	tp1.increaseFamiliarity(3);
 	//

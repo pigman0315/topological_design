@@ -143,7 +143,7 @@ void SavingsAlgo::get_routes_time(){
 			sum += get_dist(routes_table[i][routes_table[i].size()-1],-1);
 			sum = sum / SPEED;
 		}
-		routes_time[i] = sum;
+		routes_time[i] = sum + routes_table[i].size()*SERV_COST;
 	}
 }
 bool SavingsAlgo::insert_node(Node n_insert, int n_insert_num){
@@ -170,7 +170,7 @@ bool SavingsAlgo::insert_node(Node n_insert, int n_insert_num){
 						add_dist = get_dist(n_insert_num,n_prev)+get_dist(n_insert_num,n_cur)-get_dist(n_prev,n_cur);
 					}
 				}
-				add_time = add_dist / SPEED;
+				add_time = add_dist / SPEED + SERV_COST;
 				if(add_time + routes_time[i] <= T){
 					// do insert
 					routes_table[i].insert(routes_table[i].begin()+j,n_insert_num);
@@ -254,10 +254,10 @@ void SavingsAlgo::minimize_routes(){
 			float add_dist = cur_dist + get_dist(-1,min_node) - get_dist(-1,prev_node);
 			float add_time = add_dist / SPEED;
 			
-			if((add_time+routes_time[cur_rn]) <= T && min_idx != -1){
+			if((add_time+routes_time[cur_rn]+SERV_COST) <= T && min_idx != -1){
 				routes_table[cur_rn].push_back(failed_nodes[min_idx]);
 				routes_map[failed_nodes[min_idx]] = cur_rn;
-				routes_time[cur_rn] += add_time;
+				routes_time[cur_rn] += (add_time+SERV_COST);
 				failed_nodes.erase(failed_nodes.begin()+min_idx);
 				prev_node = min_node;
 			}
@@ -281,7 +281,7 @@ void SavingsAlgo::minimize_routes(){
 
 		}
 	}
-	get_routes_time();	
+	//get_routes_time();	
 }
 void SavingsAlgo::show_routes(){
 	int cnt = 0;
@@ -373,7 +373,7 @@ bool SavingsAlgo::check_sn(SavingsNode sn){
 		return false;
 	}
 	// check time limit after merge 
-	float ri_dist, rj_dist, totoal_dist;
+	float ri_dist, rj_dist, total_dist;
 	float max_dist = SPEED*T;
 	int ri_start = route_i[0];
 	int ri_end = route_i[route_i.size()-1];
@@ -395,8 +395,8 @@ bool SavingsAlgo::check_sn(SavingsNode sn){
 			rj_dist += get_dist(n1,n2);
 		}
 	}
-	totoal_dist = ri_dist + rj_dist + get_dist(ri_end,rj_start);
-	if(totoal_dist > max_dist){
+	total_dist = ri_dist + rj_dist + get_dist(ri_end,rj_start) + (SERV_COST*route_i.size()+route_j.size())*SPEED;
+	if(total_dist > max_dist){
 		//cout << "exceed time limit" << endl;
 		return false;
 	}

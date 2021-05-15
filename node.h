@@ -3,6 +3,7 @@
 using namespace std;
 
 extern const float SPEED;
+extern const float SERV_COST;
 
 class Node{
 public:
@@ -72,6 +73,7 @@ public:
 		}
 		return false;
 	}
+	// to build solution node in VND
 	SolutionNode(vector< vector<int> > _routes_table, 
 				 vector< vector<float> > dist_table)
 	{
@@ -93,7 +95,7 @@ public:
 					// dist = sqrt((cur_n.x - prev_n.x)*(cur_n.x - prev_n.x) + (cur_n.y - prev_n.y)*(cur_n.y - prev_n.y));
 					dist = dist_table[cur_n][prev_n]; // distance from cur_n to prev_n
 				}
-				time += dist / SPEED;
+				time += dist / SPEED + SERV_COST;
 			}
 			int last_n = routes_table[i][routes_table[i].size()-1];
 			// dist = sqrt((last_n.x - exch_point.x)*(last_n.x - exch_point.x) + (last_n.y - exch_point.y)*(last_n.y - exch_point.y));
@@ -103,14 +105,7 @@ public:
 			routes_time.push_back(time);
 		}
 	}
-	SolutionNode(vector< vector<int> > _routes_table,vector<float> _routes_time){
-		routes_table = _routes_table;
-		route_num = routes_table.size();
-		total_time = 0.0;
-		for(int i = 0;i < route_num;i++){
-			total_time += _routes_time[i];
-		}
-	}
+	// to build solution node in saving algorithm
 	SolutionNode(vector< vector<int> > _routes_table,
 				 vector<bool> _routes_flg,
 				 vector<float> _routes_time,
