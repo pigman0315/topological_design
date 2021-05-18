@@ -35,8 +35,8 @@ private:
 	vector<vector<SolutionNode>> same_courier_num_solution;
 	vector<vector<SolutionNode>> balance_solution;
 	vector<vector<SolutionNode>> familiarity_solution;
-	int DELTA_1; // for balancing workload
-	int DELTA_2; // for increasing familiarity
+	float DELTA_1; // for balancing workload
+	float DELTA_2; // for increasing familiarity
 public:	
 	vector<int>  split(const string& str,const string& delim) { 
 		vector<int> res;

@@ -101,6 +101,7 @@ public:
 			// dist = sqrt((last_n.x - exch_point.x)*(last_n.x - exch_point.x) + (last_n.y - exch_point.y)*(last_n.y - exch_point.y));
 			dist = dist_table[last_n][last_n]; // distance from last_n to exchange point
 			time += dist / SPEED;
+			time += SERV_COST*routes_table[i].size();
 			total_time += time;
 			routes_time.push_back(time);
 		}
