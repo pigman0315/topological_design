@@ -169,7 +169,7 @@ public:
 	}
 };
 
-class TopoSolution1{
+class TopoSolution{
 private:
 	vector<int> fixed_courier_num_list;
 	vector<vector<Node>> distr_cust_points;
@@ -185,7 +185,29 @@ private:
 	vector<vector<SolutionNode>> familiarity_solution;
 	float DELTA_1; // for balancing workload
 	float DELTA_2; // for increasing familiarity
-public:	
+public:
+	//
+	// Constructor & Deconstructor
+	//
+	TopoSolution(vector<vector<Node>> _distr_cust_points, vector<Node> _exch_points,float DELTA_1_,float DELTA_2_){
+		distr_cust_points = _distr_cust_points;
+		exch_points = _exch_points;
+		DELTA_1 = DELTA_1_;
+		DELTA_2 = DELTA_2_;
+		for(int i = 0;i < m_I;i++){
+			vector<SolutionNode> vec;
+			for(int j = 0;j < time_period;j++){
+				SolutionNode sn;
+				vec.push_back(sn);
+			}
+			init_solution.push_back(vec);
+		}
+	}
+	~TopoSolution(){}
+
+	//
+	// Member function
+	//
 	vector<int>  split(const string& str,const string& delim) { 
 		vector<int> res;
 		if("" == str) return  res;
@@ -273,14 +295,15 @@ public:
 		sa.run();
 		return sa.get_solution();
 	}
-	void getInitSolution(){
+	void getInitSolution(bool isTest){
 		for(int i = 0;i < m_I;i++){
 			for(int j = 0;j < time_period;j++){
 				cout << "--District " << i << ", Time period " << j << "---" << endl;
 				SolutionNode sn = doSavingAlgo(time_cust_points[i][j],exch_points[i],cust_dist[i][j]);
 				sn.show();
 				GVNS gvns(sn,time_cust_points[i][j],exch_points[i],cust_dist[i][j]);
-				gvns.run();
+				if(!isTest)
+					gvns.run();
 				gvns.solution.show();
 				init_solution[i][j] = gvns.solution;
 			}
@@ -308,7 +331,6 @@ public:
 		vector<float> total_time_vec(fixed_courier_num,0);
 		for(int i = 0;i < time_period;i++){
 			SolutionNode sn = same_courier_num_solution[distr_num][i];
-			cout << sn.routes_time.size() << endl;
 			for(int t = 0;t < sn.routes_time.size();t++){
 				total_time_vec[t] += sn.routes_time[t];
 			}
@@ -327,11 +349,11 @@ public:
 		sort(vec.begin(),vec.end(),func);
 		return vec;
 	}
-	vector<SolutionNode> getNeighbors(SolutionNode &sn, vector<int> &fast,vector<int> &slow, int type,vector<vector<float>> dist_table){
+	vector<SolutionNode> getNeighbors(SolutionNode sn, vector<int> fast,vector<int> slow, int type,vector<vector<float>> dist_table){
 		vector<SolutionNode> sn_vec;
 		sn_vec.push_back(sn);
-		vector< vector<int> > &rt = sn.routes_table;
-		vector<float> &routes_time = sn.routes_time;;
+		vector< vector<int> > rt = sn.routes_table;
+		vector<float> routes_time = sn.routes_time;;
 		int route_num = rt.size();
 		// Shift(1,0)
 		if(type == 0){
@@ -616,7 +638,7 @@ public:
 			// Lambda function: check if illegal
 			bool illegal = [=](SolutionNode sn){
 				for(int n = 0;n < sn.routes_time.size();n++){
-					if(sn.routes_time[n] > T || sn.total_time < time_limit*(1+DELTA_1))
+					if(sn.routes_time[n] > T || sn.total_time > time_limit*(1.0+DELTA_1))
 						return true;
 				}
 				return false;
@@ -641,7 +663,7 @@ public:
 	}
 	SolutionNode doBalanceVND(int region,int period,vector<int> &fast,vector<int> &slow){
 		SolutionNode sn = same_courier_num_solution[region][period];
-		vector<vector<float>> &dist_table = cust_dist[region][period];
+		vector<vector<float>> dist_table = cust_dist[region][period];
 		float time_limit = sn.total_time;
 		float gap = 0.0;
 		for(int j = 0;j < fast.size();j++){
@@ -655,15 +677,21 @@ public:
 		sn.show();
 		for(int type = 0;type < 5;type++){
 			vector<SolutionNode> neighbors = getNeighbors(sn,fast,slow,type,dist_table);
+			cout << "ok1\n";
+			cout << neighbors.size() << endl;
 			SolutionNode balance_neighbor = findBalanceNeighbor(neighbors,fast,slow,time_limit);
+			cout << "ok2\n";
 			// calculate gap of cur sn & balance neighbor
 			float balance_gap = 0.0;
 			for(int j = 0;j < fast.size();j++){
+				cout << fast[j] << " " << balance_neighbor.routes_time.size() << endl;
 				balance_gap -= balance_neighbor.routes_time[fast[j]];
 			}
+			cout << "ok3\n";
 			for(int j = 0;j < slow.size();j++){
 				balance_gap += balance_neighbor.routes_time[slow[j]];
 			}
+			cout << "ok4\n";
 			if(abs(balance_gap) < gap){
 				gap = abs(balance_gap);
 				sn = balance_neighbor;
@@ -682,7 +710,7 @@ public:
 			// Error detection
 			if((FIRST_SHORT+LAST_LONG) > fixed_courier_num_list[i]){
 				cout << "Workload balancing failed: FIRST_SHORT or LAST_LONG too big" << endl;
-				return;
+				continue;
 			}
 			
 			vector<int> vec = getCorierRoutingTimeOrder(i,fixed_courier_num_list[i]);
@@ -698,7 +726,7 @@ public:
 			}
 			cout << endl;
 			for(int j = 0;j < time_period;j++){
-				cout << "--District " << i << ", Time period " << j << "---" << endl;
+				cout << "---District " << i << ", Time period " << j << "---" << endl;
 				SolutionNode sn = doBalanceVND(i,j,fast_courier_num,slow_courier_num);
 				balance_solution[i][j] = sn;
 			}
@@ -1087,21 +1115,6 @@ public:
 			doFamiliarityVND(i,VISIT_LOW_BOUND);
 		}
 	}
-	TopoSolution1(vector<vector<Node>> _distr_cust_points, vector<Node> _exch_points,float DELTA_1_,float DELTA_2_){
-		distr_cust_points = _distr_cust_points;
-		exch_points = _exch_points;
-		DELTA_1 = DELTA_1_;
-		DELTA_2 = DELTA_2_;
-		for(int i = 0;i < m_I;i++){
-			vector<SolutionNode> vec;
-			for(int j = 0;j < time_period;j++){
-				SolutionNode sn;
-				vec.push_back(sn);
-			}
-			init_solution.push_back(vec);
-		}
-	}
-	~TopoSolution1(){}
 };
 
 
