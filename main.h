@@ -18,6 +18,7 @@ extern vector< vector<Node> > district_customers_1st;
 extern vector< vector< vector<Node> > > district_customers_2nd;
 extern vector<Node> exch_points_1st;
 extern vector< vector<Node> > exch_points_2nd;
+extern string DIR_PATH;
 extern int total_postal_num;
 extern int total_cust_num;
 extern vector<int> cust_postal_num;
@@ -31,7 +32,7 @@ class ReadFile{
 public:
 	void run(){
 		ifstream file;
-		file.open("sp1_result.txt");
+		file.open(DIR_PATH+"sp1_result.txt");
 		string str;
 		// get w, get m_I, m_O, best rotation degree
 		getline(file,str);
@@ -229,7 +230,7 @@ public:
 	void readInputFile(){
 		ifstream file;
 		// Read table 1: get customer number in each distirct & time period
-		file.open("table1.txt");
+		file.open(DIR_PATH+"table1.txt");
 		while(file){
 			string str;
 			getline(file,str);
@@ -238,7 +239,7 @@ public:
 		}
 		file.close();
 		// Read table 2: get postal number
-		file.open("table2.txt");
+		file.open(DIR_PATH+"table2.txt");
 		while(file){
 			string str;
 			getline(file,str);
@@ -316,7 +317,7 @@ public:
 		for(int i = 0;i < m_I;i++){
 			for(int j = 0;j < time_period;j++){
 				cout << "--District " << i << ", Time period " << j << "---" << endl;
-				if(init_solution[i][j].routes_table.size() == fixed_courier_num_list[i]){
+				if(init_solution[i][j].routes_table.size() >= fixed_courier_num_list[i]){
 					continue;
 				}
 				GVNS gvns(init_solution[i][j],time_cust_points[i][j],exch_points[i],cust_dist[i][j],fixed_courier_num_list[i]);
@@ -674,30 +675,29 @@ public:
 			gap += sn.routes_time[slow[j]];
 		}
 		gap = abs(gap);
-		sn.show();
 		for(int type = 0;type < 5;type++){
 			vector<SolutionNode> neighbors = getNeighbors(sn,fast,slow,type,dist_table);
-			cout << "ok1\n";
-			cout << neighbors.size() << endl;
 			SolutionNode balance_neighbor = findBalanceNeighbor(neighbors,fast,slow,time_limit);
-			cout << "ok2\n";
 			// calculate gap of cur sn & balance neighbor
-			float balance_gap = 0.0;
+			float balance_gap;
+
+			// To prevent Balance neighbor = NULL
+			if(balance_neighbor.routes_table.size() != 0)
+				balance_gap = 0.0;
+			else{
+				cout << "ERROR: Exceed time limit in workload balance part" << endl;
+				exit(0);
+			}
+			//
 			for(int j = 0;j < fast.size();j++){
-				cout << fast[j] << " " << balance_neighbor.routes_time.size() << endl;
 				balance_gap -= balance_neighbor.routes_time[fast[j]];
 			}
-			cout << "ok3\n";
 			for(int j = 0;j < slow.size();j++){
 				balance_gap += balance_neighbor.routes_time[slow[j]];
 			}
-			cout << "ok4\n";
 			if(abs(balance_gap) < gap){
 				gap = abs(balance_gap);
 				sn = balance_neighbor;
-				sn.show();
-				cout << sn.total_time << ", ";
-				cout << gap << endl;
 				type = 0;
 			}
 		}
@@ -721,20 +721,24 @@ public:
 			slow_courier_num.assign(vec.end()-LAST_LONG,vec.end());
 			//
 			vector<float> total_time_vec = getCorierRoutingTotalTime(i,fixed_courier_num_list[i]);
-			for(int j = 0;j < total_time_vec.size();j++){
-				cout << total_time_vec[j] << " ";
-			}
-			cout << endl;
+
+			// show total time of each courier
+			// for(int j = 0;j < total_time_vec.size();j++){
+			// 	cout << total_time_vec[j] << " ";
+			// }
+			// cout << endl;
+
 			for(int j = 0;j < time_period;j++){
 				cout << "---District " << i << ", Time period " << j << "---" << endl;
 				SolutionNode sn = doBalanceVND(i,j,fast_courier_num,slow_courier_num);
+				sn.show();
 				balance_solution[i][j] = sn;
 			}
-			total_time_vec = getCorierRoutingTotalTime(i,fixed_courier_num_list[i]);
-			for(int j = 0;j < total_time_vec.size();j++){
-				cout << total_time_vec[j] << " ";
-			}
-			cout << endl;
+			// total_time_vec = getCorierRoutingTotalTime(i,fixed_courier_num_list[i]);
+			// for(int j = 0;j < total_time_vec.size();j++){
+			// 	cout << total_time_vec[j] << " ";
+			// }
+			// cout << endl;
 		}
 		cout << "---- Balance workload end ----" << endl << endl;
 	}

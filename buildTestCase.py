@@ -36,9 +36,9 @@ fileCustDistrict.write(str(CUSTOMER_NUM))
 fileCustDistrict.write("\n")
 cnt = 0
 
-##### FOR DEBUG
-random.seed(21) 
-##### FOR DEBUG
+##### FOR DEBUG##
+random.seed(21) #
+##### FOR DEBUG##
 
 for i in range(CUSTOMER_NUM):
 	x = random.randrange(INTERVAL,POINTS_SIDE_LEN,INTERVAL)

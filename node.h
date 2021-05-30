@@ -95,7 +95,7 @@ public:
 					// dist = sqrt((cur_n.x - prev_n.x)*(cur_n.x - prev_n.x) + (cur_n.y - prev_n.y)*(cur_n.y - prev_n.y));
 					dist = dist_table[cur_n][prev_n]; // distance from cur_n to prev_n
 				}
-				time += dist / SPEED + SERV_COST;
+				time += dist / SPEED;
 			}
 			int last_n = routes_table[i][routes_table[i].size()-1];
 			// dist = sqrt((last_n.x - exch_point.x)*(last_n.x - exch_point.x) + (last_n.y - exch_point.y)*(last_n.y - exch_point.y));
@@ -144,9 +144,9 @@ public:
 				cnt++;
 				cout << routes_table[i][j] << " ";
 			}
-			cout << ", time: " << routes_time[i] << endl;
+			cout << ", time: " << routes_time[i]*60.0 << endl;
 		}
 		cout << "Total node number: " << cnt << endl;
-		cout << "Total time: " << total_time << endl;
+		cout << "Total time: " << total_time*60.0 << endl;
 	}
 };

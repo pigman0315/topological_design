@@ -23,7 +23,8 @@ m_O = -1
 w = -1
 best_rot_deg = 0
 H = 2.0
-T = H / (0.5+m_I+2*(w-1)*m_O)
+SERV_COST = 0.0167
+T = H / (0.5+m_I+2*(w-1)*m_O) - SERV_COST
 SPEED = 40000 # unit: (m/hr)
 
 # Data points from files
@@ -292,7 +293,7 @@ def find1stLayerCust(I,dataCust, district_end_points_1st,centers):
 	return result
 # get max travel time
 def get_max_dist(w,I,O,distr_end_points,bestCenter):
-	max_dist = 0
+	max_dist = 0.0
 	if(w == 1):
 		for i in range(I):
 			c = bestCenter[i]
@@ -1133,6 +1134,7 @@ cand_exch_point = []
 if(w == 1):
 	# get candidate exchange point 
 	cand_exch_point = getCandExchPoint(w,m_I,m_O,best2ndCenter, r, maxN, minN)
+	print(cand_exch_point)
 	# calculate weight of each candidate exchange point
 	cep_weight = getCepWeight(w,m_I,m_O,a,cand_exch_point,districted_customer_points_1st)
 	# get exchange point of 1st layer
@@ -1149,7 +1151,7 @@ else: # w = 2
 		n = len(exch_point[i])
 		exch_point_1st.append(exch_point[i][n-2])
 print("\n********** Ring network design problem is done ************")
-#draw_map()
+draw_map()
 if(w == 1):
 	output_info_1(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,district_end_points_1st,districted_customer_points_1st,exch_point_1st)
 else:
