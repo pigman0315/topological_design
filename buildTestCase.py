@@ -4,7 +4,7 @@ import os
 SIDE_LENGTH = 20000
 POINTS_SIDE_LEN = SIDE_LENGTH*0.9
 INTERVAL = 100
-CUSTOMER_NUM = 30
+CUSTOMER_NUM = 100
 DISTRICT_INTERVAL = INTERVAL*100
 #### open files
 curPath = os.path.dirname(os.path.abspath(__file__))

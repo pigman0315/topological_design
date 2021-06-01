@@ -25,7 +25,7 @@ best_rot_deg = 0
 H = 2.0
 SERV_COST = 0.0167
 T = H / (0.5+m_I+2*(w-1)*m_O) - SERV_COST
-SPEED = 40000 # unit: (m/hr)
+SPEED = 60000 # unit: (m/hr)
 
 # Data points from files
 dataBound = None
@@ -912,7 +912,6 @@ def draw_map():
 def output_testcase_1(customer_points,cand_exch_point,center):
 	TIME_PERIOD_NUM = 3
 	I = 3
-	SPEED = 40000
 	distr_num = len(customer_points)
 	# Table1: #Customer/district/time period
 	csvfile = open('table1.txt','w')

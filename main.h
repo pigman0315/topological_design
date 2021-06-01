@@ -3,6 +3,8 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <algorithm>
+#include <functional>
 #include <math.h>
 #include <regex>
 #include "rand_sa.h" // class SavingsAlgo
@@ -742,17 +744,26 @@ public:
 		}
 		cout << "---- Balance workload end ----" << endl << endl;
 	}
-	void showFamiliarityScore(vector<SolutionNode> distr_solution,vector<int> cust_postal_nums,int fixed_courier_num){
-		vector<vector<int>> score_matrix(fixed_courier_num,vector<int>(6,0));
+	void showFamiliarityScore(vector<SolutionNode> distr_solution,int fixed_courier_num, int region){
+		vector<vector<int>> score_matrix(fixed_courier_num,vector<int>(MAX_POSTAL_NUM,0));
 		int cnt = 0;
 		// 
 		for(int i = 0;i < distr_solution.size();i++){
-			SolutionNode &sn = distr_solution[i];
+			SolutionNode sn = distr_solution[i];
+
+			// make postal number vector in certain time period and region
+			vector<int> period_postal_nums;
+			if(i != 0)
+				period_postal_nums.assign(postal_nums[region].begin()+time_cust_nums[region][i-1],postal_nums[region].begin()+time_cust_nums[region][i-1]+time_cust_nums[region][i]);
+			else
+				period_postal_nums.assign(postal_nums[region].begin(),postal_nums[region].begin()+time_cust_nums[region][i]);
+			
+			//
 			for(int r = 0;r < fixed_courier_num;r++){
-				vector<int> &route = sn.routes_table[r];
+				vector<int> route = sn.routes_table[r];
 				for(int j = 0;j < route.size();j++){
-					score_matrix[r][cust_postal_nums[route[j]]]++;
-					if(score_matrix[r][cust_postal_nums[route[j]]] == 1)
+					score_matrix[r][period_postal_nums[route[j]]]++;
+					if(score_matrix[r][period_postal_nums[route[j]]] == 1)
 						cnt++;
 				}
 			}
@@ -765,17 +776,26 @@ public:
 			cout << endl;
 		}
 		cout << cnt << endl;
-		cout << endl << endl;
 	}
-	vector<vector<int>> getFamiliarityScoreMatrix(vector<SolutionNode> distr_solution,vector<int> cust_postal_nums,int fixed_courier_num){
+	vector<vector<int>> getFamiliarityScore(vector<SolutionNode> distr_solution,int fixed_courier_num, int region){
 		vector<vector<int>> score_matrix(fixed_courier_num,vector<int>(MAX_POSTAL_NUM,0));
+		int cnt = 0;
 		// 
 		for(int i = 0;i < distr_solution.size();i++){
 			SolutionNode sn = distr_solution[i];
+
+			// make postal number vector in certain time period and region
+			vector<int> period_postal_nums;
+			if(i != 0)
+				period_postal_nums.assign(postal_nums[region].begin()+time_cust_nums[region][i-1],postal_nums[region].begin()+time_cust_nums[region][i-1]+time_cust_nums[region][i]);
+			else
+				period_postal_nums.assign(postal_nums[region].begin(),postal_nums[region].begin()+time_cust_nums[region][i]);
+			
+			//
 			for(int r = 0;r < fixed_courier_num;r++){
 				vector<int> route = sn.routes_table[r];
 				for(int j = 0;j < route.size();j++){
-					score_matrix[r][cust_postal_nums[route[j]]]++;
+					score_matrix[r][period_postal_nums[route[j]]]++;
 				}
 			}
 		}
@@ -792,47 +812,62 @@ public:
 		}
 		return abs(max - min);
 	}
-	vector<SolutionNode> getNeighborsFam(SolutionNode sn, int courier_num, int postal_num, int type, vector<vector<float>> dist_table,vector<int> period_postal_nums){
+	vector<SolutionNode> getInitNeigborsFam(SolutionNode sn, int target_courier_num, int target_postal_num, vector<vector<float>> dist_table,vector<int> period_postal_nums){
+		// preparation
 		vector<SolutionNode> sn_vec;
-		sn_vec.push_back(sn);
 		vector<vector<int>> rt = sn.routes_table;
 		int route_num = rt.size();
-		
-		if(type == 0){
-			//
-			// TODO: shift(1,0)
-			//
-			//cout << "size: " << period_postal_nums.size() << endl;
-			for(int i = 0;i < rt[courier_num].size();i++){
-				//cout << "Compare: " << period_postal_nums[rt[courier_num][i]] << " " << postal_num << endl;
-				//cout << "cust num: " << rt[courier_num][i] << endl;
-				if(period_postal_nums[rt[courier_num][i]] == postal_num){
-					int cust_n = rt[courier_num][i];
-					vector<int> tmp1 = rt[courier_num];
-					tmp1.erase(tmp1.begin()+i);
-					for(int j = 0;j < route_num;j++){
-						if(j == courier_num)
-							continue;
-						vector<int> route = rt[j];
-						for(int k = 0;k <= route.size();k++){
-							vector<int> tmp2 = route;
-							tmp2.insert(tmp2.begin()+k,cust_n);
-							//
-							vector<vector<int>> tmp_rt = rt;
-							tmp_rt[courier_num] = tmp1;
-							tmp_rt[j] = tmp2;
-							SolutionNode tmp_sn(tmp_rt,dist_table);
-							sn_vec.push_back(tmp_sn);
-						}
+
+		// Find and delete all infamiliar nodes from original route
+		vector<int> infam_nodes;
+		vector<int> tmp_route;
+		for(int i = 0;i < rt[target_courier_num].size();i++){
+			if(period_postal_nums[rt[target_courier_num][i]] == target_postal_num){
+				infam_nodes.push_back(rt[target_courier_num][i]);
+			}
+			else
+				tmp_route.push_back(rt[target_courier_num][i]);
+		}
+		rt[target_courier_num] = tmp_route;
+
+		// Insert all infamiliar nodes into other routes
+		vector<vector<vector<int>>> rts;
+		rts.push_back(rt);
+		for(int i = 0;i < infam_nodes.size();i++){
+			vector<vector<vector<int>>> tmp_rts;
+			for(int j = 0;j < rts.size();j++){
+				vector<vector<int>> tmp_rt = rts[j];
+				for(int k = 0;k < tmp_rt.size();k++){
+					if(k == target_courier_num)
+						continue;
+					for(int l = 0;l <= tmp_rt[k].size();l++){
+						vector<vector<int>> tmp_rt2 = tmp_rt;
+						tmp_rt2[k].insert(tmp_rt2[k].begin()+l,infam_nodes[i]);
+						tmp_rts.push_back(tmp_rt2);
 					}
 				}
 			}
+			rts = tmp_rts;
 		}
-		else if(type == 1){
+		// Build solution node based on rts
+		cout << rts.size() << endl;
+		for(int i = 0;i < rts.size();i++){
+			SolutionNode tmp_sn(rts[i],dist_table);
+			sn_vec.push_back(tmp_sn);
+		}
+		//
+		return sn_vec;
+	}
+	vector<SolutionNode> getNeighborsFam(SolutionNode sn, int type, vector<vector<float>> dist_table){
+		// preparation
+		vector<SolutionNode> sn_vec;
+		vector<vector<int>> rt = sn.routes_table;
+		int route_num = rt.size();
+		
+		//
+		if(type == 2){
 			int NUM_OF_NODE = 2;
-			//
-			// TODO: intra-route 2-opt
-			// 
+			// intra-route 2-opt
 			for(int i = 0; i < rt.size();i++){
 				// get all combinations of C(n,k)
 				if(rt[i].size() < 3)
@@ -862,10 +897,8 @@ public:
 				}
 			}
 		}
-		else if(type == 2){
-			//
-			// TODO: intra-route Or-opt
-			//
+		else if(type == 3){
+			// intra-route Or-opt
 			for(int i = 0;i < route_num;i++){
 				int route_len = rt[i].size();
 				vector<int> route = rt[i];
@@ -894,12 +927,10 @@ public:
 				}
 			}
 		}
-		else if(type == 3){
-			int NUM_OF_NODE = 3;
-			//
-			// TODO: intra-route 3-opt
-			//
+		else{
+			// intra-route 3-opt
 			for(int i = 0;i < route_num;i++){
+				int NUM_OF_NODE = 3;
 				// check length > 3
 				if(rt[i].size() < 3) continue;
 				// get combinations of C(n,3)
@@ -1023,98 +1054,130 @@ public:
 		}
 		return sn_vec;
 	}
-	bool exceedTimeLimit(SolutionNode sn){
+	bool exceedRouteTimeLimit(SolutionNode sn){
 		for(int i = 0;i < sn.routes_time.size();i++){
 			if(sn.routes_time[i] > T)
 				return true;
 		}
 		return false;
 	}
-	SolutionNode findBestNeighbor(vector<SolutionNode> neighbors,float time_limit,float workload){
+	bool exceedTotalTimeLimit(SolutionNode sn, float total_time_limit){
+		if(sn.total_time <= total_time_limit*(1.0+DELTA_1))
+			return false;
+		else
+			return true;
+	}
+	bool exceedWorkloadLimit(SolutionNode sn, float workload_limit){
+		float wl = getWorkload(sn);
+		if(wl <= workload_limit + DELTA_2)
+			return false;
+		else
+			return true;
+	}
+	SolutionNode findLegalNeighbor(vector<SolutionNode> neighbors,float time_limit,float workload_limit){
 		float cur_time = FLT_MAX;
-		SolutionNode sn = neighbors[0];
-		//cout << "neighbors size: "  << neighbors.size() << endl;
-		if(neighbors.size() >= 2){
-			for(int i = 1;i < neighbors.size();i++){
-				// if(exceedTimeLimit(neighbors[i])){
-				// 	continue;
-				// }
-				float wl = getWorkload(neighbors[i]);
-				//if(neighbors[i].total_time < cur_time && (neighbors[i].total_time < time_limit*(1.0+DELTA_1)) && (wl < (workload+DELTA_2))){
-				if(neighbors[i].total_time < cur_time){
-					sn = neighbors[i];
-					cur_time = neighbors[i].total_time;
-				}
+		SolutionNode sn;
+		for(int i = 0;i < neighbors.size();i++){
+			if(exceedRouteTimeLimit(neighbors[i]) || 
+				exceedWorkloadLimit(neighbors[i], workload_limit) || 
+				exceedTotalTimeLimit(neighbors[i], time_limit)
+			) continue;
+			//
+			if(neighbors[i].total_time < cur_time){
+				sn = neighbors[i];
+				cur_time = neighbors[i].total_time;
 			}
 		}
 		return sn;
 	}
-	void doVNDII(int region,int courier_num,int postal_num,int shift_cnt){
-		//
-		// Shift operation
-		//
-		// get neighbors
+	void doVNDII(int region,int courier_num,int postal_num){
+		
 		for(int t = 0;t < time_period;t++){
-			cout << "---District " << region << ", Time period " << t << "---" <<endl;
+			//cout << "--- District " << region << ", Time period " << t << "---" <<endl;
 			SolutionNode sn = familiarity_solution[region][t];
-			sn.show();
-			float time_limit = same_courier_num_solution[region][t].total_time;
+			float time_limit = same_courier_num_solution[region][t].total_time; // for delta_1
 			vector<vector<float>> dist_table = cust_dist[region][t];
-			float workload = getWorkload(sn);
+			float workload_limit = getWorkload(sn); // for delta_2
+			
 			// do not need to do VND
-			if(sn.routes_table[courier_num].size() <= 1)
+			if(sn.routes_table[courier_num].size() == 0)
 				continue;
 			
+			// make postal number vector in certain time period and region
 			vector<int> period_postal_nums;
 			if(t != 0)
 				period_postal_nums.assign(postal_nums[region].begin()+time_cust_nums[region][t-1],postal_nums[region].begin()+time_cust_nums[region][t-1]+time_cust_nums[region][t]);
 			else
 				period_postal_nums.assign(postal_nums[region].begin(),postal_nums[region].begin()+time_cust_nums[region][t]);
-			for(int i = 0;i < period_postal_nums.size();i++)
-				cout << period_postal_nums[i] << " ";
-			cout << endl;
-			// cout << "Total: " << time_cust_nums[region][t] << endl;
-			for(int cnt = 0;cnt < shift_cnt;cnt++){
-				for(int type = 0;type < 4;type++){
-					vector<SolutionNode> neighbors = getNeighborsFam(sn,courier_num,postal_num,type,dist_table,period_postal_nums);
-					SolutionNode best_neighbor = findBestNeighbor(neighbors,time_limit,workload);
-					if(type != 0 && best_neighbor.total_time < sn.total_time){
-						type = 1;
-						sn = best_neighbor;
+			// cout << "Period postal number: ";
+			// for(int i = 0;i < period_postal_nums.size();i++)
+			// 	cout << period_postal_nums[i] << " ";
+			// cout << endl;
+
+			// Get inital neighbors of familiarity
+			vector<SolutionNode> init_neighbors =  getInitNeigborsFam(sn, courier_num, postal_num, dist_table, period_postal_nums);
+			
+			// Improve inital neighbors of familiarity
+			for(int i = 0;i < init_neighbors.size();i++){
+				SolutionNode tmp_sn = init_neighbors[i];
+				for(int type = 2;type < 5;type++){
+					vector<SolutionNode> neighbors = getNeighborsFam(tmp_sn,type,dist_table);
+					SolutionNode legal_neighbor = findLegalNeighbor(neighbors,time_limit,workload_limit);
+					//
+					if(legal_neighbor.routes_table.size() == 0)
+						break;
+					//
+					if(legal_neighbor.total_time < tmp_sn.total_time){
+						tmp_sn = legal_neighbor;
+						type = 2;
 					}
-					else if(type == 0){
-						sn = best_neighbor;
 				}
-				familiarity_solution[region][t] = sn;
-				sn.show();
-				// do not need to do VND
-				if(sn.routes_table[courier_num].size() <= 1)
-					break; 
+				init_neighbors[i] = tmp_sn;
+			}
+			// Find a best initial neighbors
+			SolutionNode best_sn;
+			float best_total_time = FLT_MAX;
+			for(int i = 0;i < init_neighbors.size();i++){
+				if(exceedRouteTimeLimit(init_neighbors[i]) || 
+					exceedWorkloadLimit(init_neighbors[i], workload_limit) || 
+					exceedTotalTimeLimit(init_neighbors[i], time_limit)
+				) 
+					continue;
+				//
+				if(init_neighbors[i].total_time < best_total_time){
+					best_sn = init_neighbors[i];
+					best_total_time = init_neighbors[i].total_time;
 				}
 			}
+			if(best_sn.routes_table.size() == 0){
+				cout << "ERROR: cannot increase familiarity in district " << region << endl;
+				return;
+			}
+			familiarity_solution[region][t] = best_sn;
 		}
 	}
 	void doFamiliarityVND(int region,int VISIT_LOW_BOUND){
-		// vector<SolutionNode> sn = init_solution[region];
-		vector<SolutionNode> distr_solution = familiarity_solution[region];
-		vector<int> distr_postal_nums = postal_nums[region];
 		int fixed_courier_num = fixed_courier_num_list[region];
-		showFamiliarityScore(distr_solution,distr_postal_nums,fixed_courier_num);
-		
+		cout << "--- Before: ---" << endl;
+		showFamiliarityScore(familiarity_solution[region],fixed_courier_num,region);
 		//
-		vector<vector<int>> score_matrix = getFamiliarityScoreMatrix(distr_solution,distr_postal_nums,fixed_courier_num);
+		vector<vector<int>> score_matrix = getFamiliarityScore(familiarity_solution[region],fixed_courier_num,region);
 		for(int i = 0;i < fixed_courier_num;i++){
 			for(int j = 0;j < MAX_POSTAL_NUM;j++){
-				if(score_matrix[i][j] >= 1 && score_matrix[i][j] <= VISIT_LOW_BOUND){
-					doVNDII(region,i,j,score_matrix[i][j]);
-					score_matrix = getFamiliarityScoreMatrix(familiarity_solution[region],distr_postal_nums,fixed_courier_num);
+				if(score_matrix[i][j] >= 1 && score_matrix[i][j] < VISIT_LOW_BOUND){
+					doVNDII(region,i,j);
+					score_matrix = getFamiliarityScore(familiarity_solution[region],fixed_courier_num,region);
 				}
 			}
 		}
-		showFamiliarityScore(familiarity_solution[region],distr_postal_nums,fixed_courier_num);
+		cout << "--- After: ---" << endl;
+		showFamiliarityScore(familiarity_solution[region],fixed_courier_num,region);
 	}
 	void increaseFamiliarity(int VISIT_LOW_BOUND){
-		familiarity_solution = balance_solution;
+		if(balance_solution.size() == 0)
+			familiarity_solution = same_courier_num_solution;
+		else
+			familiarity_solution = balance_solution;
 		for(int i = 0;i < m_I;i++){
 			doFamiliarityVND(i,VISIT_LOW_BOUND);
 		}

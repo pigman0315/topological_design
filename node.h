@@ -83,6 +83,10 @@ public:
 		for(int i = 0;i < routes_table.size();i++){
 			float dist;
 			float time = 0.0;
+			if(routes_table[i].size() == 0){
+				routes_time.push_back(0.0);
+				continue;
+			}
 			for(int j = 0;j < routes_table[i].size();j++){
 				if(j == 0){
 					int cur_n = routes_table[i][j];
@@ -144,9 +148,9 @@ public:
 				cnt++;
 				cout << routes_table[i][j] << " ";
 			}
-			cout << ", time: " << routes_time[i]*60.0 << endl;
+			cout << ", time: " << routes_time[i] << endl;
 		}
 		cout << "Total node number: " << cnt << endl;
-		cout << "Total time: " << total_time*60.0 << endl;
+		cout << "Total time: " << total_time << endl;
 	}
 };
