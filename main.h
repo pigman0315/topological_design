@@ -665,7 +665,7 @@ public:
 		}
 		return result;
 	}
-	SolutionNode doBalanceVND(int region,int period,vector<int> &fast,vector<int> &slow){
+	SolutionNode doBalanceVND(int region,int period, vector<int> &fast,vector<int> &slow){
 		SolutionNode sn = same_courier_num_solution[region][period];
 		vector<vector<float>> dist_table = cust_dist[region][period];
 		float time_limit = sn.total_time;
@@ -688,8 +688,9 @@ public:
 			if(balance_neighbor.routes_table.size() != 0)
 				balance_gap = 0.0;
 			else{
-				cout << "ERROR: Exceed time limit in workload balance part" << endl;
-				exit(0);
+				cout << "ERROR: Exceed time limit in workload balance part(region = " << region << " & time period = " << period << ")" << endl;
+				return same_courier_num_solution[region][period];
+				
 			}
 			//
 			for(int j = 0;j < fast.size();j++){
@@ -747,7 +748,6 @@ public:
 	}
 	void showFamiliarityScore(vector<SolutionNode> distr_solution,int fixed_courier_num, int region){
 		vector<vector<int>> score_matrix(fixed_courier_num,vector<int>(MAX_POSTAL_NUM,0));
-		int cnt = 0;
 		// 
 		for(int i = 0;i < distr_solution.size();i++){
 			SolutionNode sn = distr_solution[i];
@@ -764,8 +764,6 @@ public:
 				vector<int> route = sn.routes_table[r];
 				for(int j = 0;j < route.size();j++){
 					score_matrix[r][period_postal_nums[route[j]]]++;
-					if(score_matrix[r][period_postal_nums[route[j]]] == 1)
-						cnt++;
 				}
 			}
 		}
@@ -776,11 +774,9 @@ public:
 			}
 			cout << endl;
 		}
-		cout << cnt << endl;
 	}
 	vector<vector<int>> getFamiliarityScore(vector<SolutionNode> distr_solution,int fixed_courier_num, int region){
 		vector<vector<int>> score_matrix(fixed_courier_num,vector<int>(MAX_POSTAL_NUM,0));
-		int cnt = 0;
 		// 
 		for(int i = 0;i < distr_solution.size();i++){
 			SolutionNode sn = distr_solution[i];
