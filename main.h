@@ -25,6 +25,7 @@ extern int total_postal_num;
 extern int total_cust_num;
 extern vector<int> cust_postal_num;
 extern float T;
+extern const float H;
 extern const float SPEED;
 extern const float SERV_COST;
 extern const int time_period;
@@ -1151,6 +1152,7 @@ public:
 			}
 			if(best_sn.routes_table.size() == 0){
 				cout << "ERROR: cannot increase familiarity in district " << region << endl;
+				familiarity_solution[region] = balance_solution[region];
 				return;
 			}
 			familiarity_solution[region][t] = best_sn;
@@ -1182,6 +1184,83 @@ public:
 			doFamiliarityVND(i,VISIT_LOW_BOUND);
 		}
 	}
+	float getTotalTime(vector<vector<SolutionNode>> solution){
+		float time = 0.0;
+		for(int i = 0;i < solution.size();i++){
+			for(int j = 0;j < solution[i].size();j++){
+				time += solution[i][j].total_time;
+			}
+		}
+		return time;
+	}
+	void showWorkload(vector<vector<SolutionNode>> solution){
+		cout << "Workload:" << endl;
+		for(int i = 0;i < m_I;i++){
+			cout << "\tDistrct " << (i+1) << ": ";
+			vector<float> wl(fixed_courier_num_list[i],0.0);
+			vector<SolutionNode> &s_vec = solution[i];
+			for(int t = 0;t < s_vec.size();t++){
+				SolutionNode &s = s_vec[t];
+				for(int c = 0;c < fixed_courier_num_list[i];c++){
+					wl[c] += s.routes_time[c];
+				}
+			} 
+			for(int j = 0;j < wl.size();j++){
+				cout << wl[j] << " ";
+			}
+			cout << endl;
+		}
+			
+	}
+	void showFinalResult(){
+		
+		//
+		// Parameters
+		//
+		cout << "\n=== Parameters ===" << endl;
+		cout << "H = " << H << endl;
+		cout << "T = " << T << endl;
+		cout << "Speed = " << SPEED << endl;
+		cout << "Service cost = " << SERV_COST << endl;
+		cout << "Time period = " << time_period << endl;
+		cout << "Max postal number = " << MAX_POSTAL_NUM << endl;
+
+		//
+		// Statistics
+		//
+		cout << "\n=== Statistics ===" << endl;
+		float total_time = 0.0;
+		total_time = getTotalTime(init_solution);
+		cout << "--- Initial ---" << endl;
+		cout << "Total time = " << total_time*60 << endl;
+
+		total_time = getTotalTime(same_courier_num_solution);
+		cout << "\n--- Use same courier ---" << endl;
+		cout << "Total time = " << total_time*60 << endl;
+		showWorkload(same_courier_num_solution);
+
+		total_time = getTotalTime(balance_solution);
+		cout << "\n--- Workload balance ---" << endl;
+		cout << "Total time = " << total_time*60 << endl;
+		showWorkload(balance_solution);
+
+		total_time = getTotalTime(familiarity_solution);
+		cout << "\n--- Familiarity ---" << endl;
+		cout << "Total time = " << total_time*60 << endl;
+		showWorkload(familiarity_solution);
+
+
+		//
+		// Routes
+		//
+		cout << "\n=== Routes ===" << endl;
+		for(int r = 0;r < familiarity_solution.size();r++){
+			for(int t = 0;t < familiarity_solution[r].size();t++){
+				cout << "-- District " << r << ", Time period " << t << "---" << endl; 
+				familiarity_solution[r][t].show();
+			}
+		}
+ 	}
 };
 
 

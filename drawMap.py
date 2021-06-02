@@ -25,7 +25,7 @@ best_rot_deg = 0
 H = 2.0
 SERV_COST = 0.0167
 T = H / (0.5+m_I+2*(w-1)*m_O) - SERV_COST
-SPEED = 60000 # unit: (m/hr)
+SPEED = 40000 # unit: (m/hr)
 
 # Data points from files
 dataBound = None
@@ -1150,7 +1150,10 @@ else: # w = 2
 		n = len(exch_point[i])
 		exch_point_1st.append(exch_point[i][n-2])
 print("\n********** Ring network design problem is done ************")
-draw_map()
+
+### Visualization
+#draw_map()
+
 if(w == 1):
 	output_info_1(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,district_end_points_1st,districted_customer_points_1st,exch_point_1st)
 else:

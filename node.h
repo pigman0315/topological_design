@@ -148,7 +148,7 @@ public:
 				cnt++;
 				cout << routes_table[i][j] << " ";
 			}
-			cout << ", time: " << routes_time[i] << endl;
+			cout << ",time: " << routes_time[i] << endl;
 		}
 		cout << "Total node number: " << cnt << endl;
 		cout << "Total time: " << total_time << endl;
