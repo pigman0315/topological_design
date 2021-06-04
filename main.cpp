@@ -52,15 +52,17 @@ int main(){
 	tp.getInitSolution(is_test);
 
 	// use same courier number 
-	vector<int> courier_limit({2,2,2});
+	vector<int> courier_limit({3,2,2});
 	tp.useSameNumCourier(courier_limit);
 
 	// workload balance
 	int FIRST_SHORT = 1, LAST_LONG = 1;
-	tp.balanceWorkload(FIRST_SHORT, LAST_LONG);
+	int FIRST_SHORT_R = 2, LAST_LONG_R = 2;
+	tp.balanceWorkload(FIRST_SHORT, LAST_LONG, FIRST_SHORT_R, LAST_LONG_R);
 
 	// increase familiarity
-	tp.increaseFamiliarity(2);
+	int LOW_BOUND = 3; // need to lower than lower bound
+	tp.increaseFamiliarity(LOW_BOUND);
 
 	// show final results
 	tp.showFinalResult();

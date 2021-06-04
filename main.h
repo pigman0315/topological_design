@@ -321,6 +321,7 @@ public:
 			for(int j = 0;j < time_period;j++){
 				cout << "--District " << i << ", Time period " << j << "---" << endl;
 				if(init_solution[i][j].routes_table.size() >= fixed_courier_num_list[i]){
+					same_courier_num_solution[i][j].show();
 					continue;
 				}
 				GVNS gvns(init_solution[i][j],time_cust_points[i][j],exch_points[i],cust_dist[i][j],fixed_courier_num_list[i]);
@@ -331,7 +332,7 @@ public:
 		}
 		cout << "---- use same courier number solution ok ----" << endl << endl;
 	}
-	vector<float> getCorierRoutingTotalTime(int distr_num,int fixed_courier_num){
+	vector<float> getCourierRoutingTotalTime(int distr_num,int fixed_courier_num){
 		vector<float> total_time_vec(fixed_courier_num,0);
 		for(int i = 0;i < time_period;i++){
 			SolutionNode sn = same_courier_num_solution[distr_num][i];
@@ -341,19 +342,44 @@ public:
 		}
 		return total_time_vec;
 	}
-	vector<int> getCorierRoutingTimeOrder(int distr_num,int fixed_courier_num){
-		vector<float> total_time_vec = getCorierRoutingTotalTime(distr_num,fixed_courier_num);
+	vector<vector<int>> getCourierRoutesTimeOrder(int distr_num,int fixed_courier_num){
+		vector<vector<int>> result;
+		for(int i = 0;i < fixed_courier_num;i++){
+			vector<float> times;
+			for(int t = 0 ;t < time_period;t++){
+				SolutionNode sn = same_courier_num_solution[distr_num][t];
+				times.push_back(sn.routes_time[i]);
+			}
+
+			// lambda compare function, sort ascendingly
+			auto func = [times](int a,int b) { 
+				return times[a] < times[b]; 
+			};
+
+			// sorting
+			vector<int> vec(time_period);
+			iota(vec.begin(), vec.end(), 0); // set value in range,e.g. 0 1 2 3 4 5...
+			sort(vec.begin(), vec.end(), func);
+
+			// store result
+			result.push_back(vec);
+		}
+		return result;
+	}
+	vector<int> getCourierRoutingTimeOrder(int distr_num,int fixed_courier_num){
+		vector<float> total_time_vec = getCourierRoutingTotalTime(distr_num,fixed_courier_num);
 		// lambda compare function, sort to be ascending
 		auto func = [total_time_vec](int a,int b) { 
 			return total_time_vec[a] < total_time_vec[b]; 
 		};
+
+		// sorting
 		vector<int> vec(fixed_courier_num);
-		// set value in range, begin from 0
-		iota(vec.begin(), vec.end(), 0);
+		iota(vec.begin(), vec.end(), 0); // set value in range,e.g. 0 1 2 3 4 5...
 		sort(vec.begin(),vec.end(),func);
 		return vec;
 	}
-	vector<SolutionNode> getNeighbors(SolutionNode sn, vector<int> fast,vector<int> slow, int type,vector<vector<float>> dist_table){
+	vector<SolutionNode> getNeighborsBalance(SolutionNode sn, int fast, int slow, int type,vector<vector<float>> dist_table){
 		vector<SolutionNode> sn_vec;
 		sn_vec.push_back(sn);
 		vector< vector<int> > rt = sn.routes_table;
@@ -361,69 +387,44 @@ public:
 		int route_num = rt.size();
 		// Shift(1,0)
 		if(type == 0){
-			for(int i = 0;i < slow.size();i++){
-				vector<int> route = rt[slow[i]];
-				int route_len = route.size();
-				for(int j = 0;j < route_len;j++){
-					vector<int> route_i = route;
-					int n = route[j];
-					route_i.erase(route_i.begin()+j);
-					for(int k = 0;k < fast.size();k++){
-						// do shift if slow route really take more time than fast route
-						// do shif if routes are not the same
-						if(slow[i] == fast[k] || routes_time[fast[k]] > routes_time[slow[i]]) 
-							continue;
-						for(int l = 0;l <= rt[fast[k]].size();l++){
-							vector<int> route_k = rt[fast[k]];
-							route_k.insert(route_k.begin()+l,n);
-							vector< vector<int> > tmp_rt = rt;
-							tmp_rt[fast[k]] = route_k;
-							if(route_i.size() > 0){
-								tmp_rt[slow[i]] = route_i;
-							}
-							else{
-								tmp_rt.erase(tmp_rt.begin()+slow[i]);
-							}
-							SolutionNode tmp_sn(tmp_rt,dist_table);
-							sn_vec.push_back(tmp_sn);
-						}
-					}
+			vector<int> route = rt[slow];
+			int route_len = route.size();
+			for(int j = 0;j < route_len;j++){
+				vector<int> route_i = route;
+				int n = route[j];
+				route_i.erase(route_i.begin()+j);
+				for(int l = 0;l <= rt[fast].size();l++){
+					vector<int> route_k = rt[fast];
+					route_k.insert(route_k.begin()+l,n);
+					vector< vector<int> > tmp_rt = rt;
+					//
+					tmp_rt[slow] = route_i;
+					tmp_rt[fast] = route_k;
+					SolutionNode tmp_sn(tmp_rt,dist_table);
+					sn_vec.push_back(tmp_sn);
 				}
 			}
 		}	
 		// Shift(2,0)
 		else if(type == 1){
-			for(int i = 0;i < slow.size();i++){
-				vector<int> route = rt[slow[i]];
-				int route_len = route.size();
-				if(route_len < 2)
-					continue;
-				for(int j = 0;j < route_len-1;j++){
-					vector<int> route_i = route;
-					int n1 = route[j];
-					int n2 = route[j+1];
-					route_i.erase(route_i.begin()+j,route_i.begin()+j+2);
-					for(int k = 0;k < fast.size();k++){
-						// do shift if slow route really take more time than fast route
-						// do shif if routes are not the same
-						if(slow[i] == fast[k] || routes_time[fast[k]] > routes_time[slow[i]]) 
-							continue;
-						for(int l = 0;l <= rt[fast[k]].size();l++){
-							vector<int> route_k = rt[fast[k]];
-							route_k.insert(route_k.begin()+l,n1);
-							route_k.insert(route_k.begin()+l+1,n2);
-							vector< vector<int> > tmp_rt = rt;
-							tmp_rt[fast[k]] = route_k;
-							if(route_i.size() > 0){
-								tmp_rt[slow[i]] = route_i;
-							}
-							else{
-								tmp_rt.erase(tmp_rt.begin()+slow[i]);
-							}
-							SolutionNode tmp_sn(tmp_rt,dist_table);
-							sn_vec.push_back(tmp_sn);
-						}
-					}
+			vector<int> route = rt[slow];
+			int route_len = route.size();
+			if(route_len < 2)
+				return sn_vec;
+			for(int j = 0;j < route_len-1;j++){
+				vector<int> route_i = route;
+				int n1 = route[j];
+				int n2 = route[j+1];
+				route_i.erase(route_i.begin()+j,route_i.begin()+j+2);
+				for(int l = 0;l <= rt[fast].size();l++){
+					vector<int> route_k = rt[fast];
+					route_k.insert(route_k.begin()+l,n1);
+					route_k.insert(route_k.begin()+l+1,n2);
+					vector< vector<int> > tmp_rt = rt;
+					tmp_rt[fast] = route_k;
+					tmp_rt[slow] = route_i;
+					SolutionNode tmp_sn(tmp_rt,dist_table);
+					sn_vec.push_back(tmp_sn);
 				}
 			}
 		}
@@ -634,7 +635,7 @@ public:
 		}
 		return true;
 	}
-	SolutionNode findBalanceNeighbor(vector<SolutionNode> &neighbors,vector<int> &fast,vector<int> &slow,float time_limit){
+	SolutionNode findBalanceNeighbor(vector<SolutionNode> &neighbors,int fast,int slow,float time_limit,float base_time){
 		float gap = FLT_MAX;
 		SolutionNode result;
 		for(int i = 0;i < neighbors.size();i++){
@@ -642,7 +643,7 @@ public:
 			// Lambda function: check if illegal
 			bool illegal = [=](SolutionNode sn){
 				for(int n = 0;n < sn.routes_time.size();n++){
-					if(sn.routes_time[n] > T || sn.total_time > time_limit*(1.0+DELTA_1))
+					if(sn.routes_time[n] > T || exceedTotalTimeLimit(sn.total_time,base_time,time_limit))
 						return true;
 				}
 				return false;
@@ -650,14 +651,11 @@ public:
 			if(illegal) continue;
 			// calculate fast couriers' total time
 			float fast_total_time = 0;
-			for(int j = 0;j < fast.size();j++){
-				fast_total_time += cur_sn.routes_time[fast[j]];
-			}
+			fast_total_time += cur_sn.routes_time[fast];
 			// calculate slow couriers' total time
 			float slow_total_time = 0;
-			for(int j = 0;j < slow.size();j++){
-				slow_total_time += cur_sn.routes_time[slow[j]];
-			}
+			slow_total_time += cur_sn.routes_time[slow];
+			//
 			if(abs(fast_total_time-slow_total_time) < gap){
 				gap = abs(fast_total_time-slow_total_time);
 				result = cur_sn;
@@ -665,22 +663,19 @@ public:
 		}
 		return result;
 	}
-	SolutionNode doBalanceVND(int region,int period, vector<int> &fast,vector<int> &slow){
-		SolutionNode sn = same_courier_num_solution[region][period];
+	SolutionNode doBalanceVND(int region,int period, int fast, int slow){
+		SolutionNode sn = balance_solution[region][period];
 		vector<vector<float>> dist_table = cust_dist[region][period];
-		float time_limit = sn.total_time;
+		float base_time = sn.total_time;
+		float time_limit = getTimelimit(balance_solution);
 		float gap = 0.0;
-		for(int j = 0;j < fast.size();j++){
-			gap -= sn.routes_time[fast[j]];
-		}
-		float slow_total_time = 0;
-		for(int j = 0;j < slow.size();j++){
-			gap += sn.routes_time[slow[j]];
-		}
+		gap -= sn.routes_time[fast];
+		gap += sn.routes_time[slow];
 		gap = abs(gap);
+		cout << "initial gap: " << gap << endl;
 		for(int type = 0;type < 5;type++){
-			vector<SolutionNode> neighbors = getNeighbors(sn,fast,slow,type,dist_table);
-			SolutionNode balance_neighbor = findBalanceNeighbor(neighbors,fast,slow,time_limit);
+			vector<SolutionNode> neighbors = getNeighborsBalance(sn,fast,slow,type,dist_table);
+			SolutionNode balance_neighbor = findBalanceNeighbor(neighbors,fast,slow,time_limit,base_time);
 			// calculate gap of cur sn & balance neighbor
 			float balance_gap;
 
@@ -693,12 +688,9 @@ public:
 				
 			}
 			//
-			for(int j = 0;j < fast.size();j++){
-				balance_gap -= balance_neighbor.routes_time[fast[j]];
-			}
-			for(int j = 0;j < slow.size();j++){
-				balance_gap += balance_neighbor.routes_time[slow[j]];
-			}
+			balance_gap -= balance_neighbor.routes_time[fast];
+			balance_gap += balance_neighbor.routes_time[slow];
+			cout << "gap: " << balance_gap << endl;
 			if(abs(balance_gap) < gap){
 				gap = abs(balance_gap);
 				sn = balance_neighbor;
@@ -707,42 +699,89 @@ public:
 		}
 		return sn;
 	}
-	void balanceWorkload(int FIRST_SHORT, int LAST_LONG){
+	void checkMatch_workload(vector<int> fast_courier_num, vector<int> slow_courier_num, 
+		vector<vector<int>> routes_time_order, int FIRST_SHORT_R,int LAST_LONG_R,int region,
+		int time_period_)
+	{
+		for(int i = 0;i < fast_courier_num.size();i++){
+			vector<int> rto_fast = routes_time_order[fast_courier_num[i]];
+			vector<int> v1;
+			v1.assign(rto_fast.begin(),rto_fast.begin()+FIRST_SHORT_R);
+			auto f1 = find(v1.begin(),v1.end(),time_period_);
+			for(int j = 0;j < slow_courier_num.size();j++){
+				vector<int> rto_slow = routes_time_order[slow_courier_num[j]];
+				vector<int> v2;
+				v2.assign(rto_slow.end()-LAST_LONG_R,rto_slow.end());
+				//
+				auto f2 = find(v2.begin(),v2.end(),time_period_);
+				//
+				if(f1 != v1.end() && f2 != v2.end()){
+					cout << "- before - " << endl;
+					balance_solution[region][time_period_].show();
+					SolutionNode sn = doBalanceVND(region,time_period_,fast_courier_num[i],slow_courier_num[j]);
+					cout << "- after - " << endl;
+					sn.show();
+					balance_solution[region][time_period_] = sn;
+				}
+				else{
+					cout << "ERROR: didn't match workload time in time period: " << time_period_ << endl;
+				}
+			}
+		}
+	}
+	void balanceWorkload(int FIRST_SHORT, int LAST_LONG, int FIRST_SHORT_R, int LAST_LONG_R){
 		balance_solution = same_courier_num_solution;
+		
+		// in each district
 		for(int i = 0; i < m_I;i++){
-		//for(int i = 0; i < 1;i++){
 			// Error detection
 			if((FIRST_SHORT+LAST_LONG) > fixed_courier_num_list[i]){
 				cout << "Workload balancing failed: FIRST_SHORT or LAST_LONG too big" << endl;
 				continue;
 			}
 			
-			vector<int> vec = getCorierRoutingTimeOrder(i,fixed_courier_num_list[i]);
+			vector<int> vec = getCourierRoutingTimeOrder(i,fixed_courier_num_list[i]);
 			// get first m fast routing couriers & last n slow routing couriers
 			vector<int> fast_courier_num;
 			vector<int> slow_courier_num;
 			fast_courier_num.assign(vec.begin(),vec.begin()+FIRST_SHORT);
 			slow_courier_num.assign(vec.end()-LAST_LONG,vec.end());
+			
+			//show total time of each courier
+			vector<float> total_time_vec = getCourierRoutingTotalTime(i,fixed_courier_num_list[i]);
+			for(int j = 0;j < total_time_vec.size();j++){
+				cout << total_time_vec[j] << " ";
+			}
+			cout << endl;
+			
+			// get each courier's routes time order
+			cout << "- route time order -" << endl;
+			vector<vector<int>>  routes_time_order = getCourierRoutesTimeOrder(i,fixed_courier_num_list[i]);
+			for(int a = 0;a < routes_time_order.size();a++){
+				for(int b = 0;b < routes_time_order[a].size();b++){
+					cout << routes_time_order[a][b] << " ";
+				}
+				cout << endl;
+			}
 			//
-			vector<float> total_time_vec = getCorierRoutingTotalTime(i,fixed_courier_num_list[i]);
-
-			// show total time of each courier
-			// for(int j = 0;j < total_time_vec.size();j++){
-			// 	cout << total_time_vec[j] << " ";
-			// }
-			// cout << endl;
-
 			for(int j = 0;j < time_period;j++){
 				cout << "---District " << i << ", Time period " << j << "---" << endl;
-				SolutionNode sn = doBalanceVND(i,j,fast_courier_num,slow_courier_num);
-				sn.show();
-				balance_solution[i][j] = sn;
+				
+				// check if last slow routes match first fast routes
+				checkMatch_workload(fast_courier_num,slow_courier_num,routes_time_order,FIRST_SHORT_R,LAST_LONG_R,i,j);
+				balance_solution[i][j].show();
+				// //
+				// SolutionNode sn = doBalanceVND(i,j,fast_courier_num,slow_courier_num);
+				// sn.show();
+				// balance_solution[i][j] = sn;
 			}
-			// total_time_vec = getCorierRoutingTotalTime(i,fixed_courier_num_list[i]);
-			// for(int j = 0;j < total_time_vec.size();j++){
-			// 	cout << total_time_vec[j] << " ";
-			// }
-			// cout << endl;
+
+			//show total time of each courier
+			total_time_vec = getCourierRoutingTotalTime(i,fixed_courier_num_list[i]);
+			for(int j = 0;j < total_time_vec.size();j++){
+				cout << total_time_vec[j] << " ";
+			}
+			cout << endl;
 		}
 		cout << "---- Balance workload end ----" << endl << endl;
 	}
@@ -1051,6 +1090,13 @@ public:
 		}
 		return sn_vec;
 	}
+	float getTimelimit(vector<vector<SolutionNode>> solution){
+		float time_limit = getTotalTime(same_courier_num_solution)*(1.0+DELTA_1) - getTotalTime(solution);
+		if(time_limit > 0)
+			return time_limit;
+		else
+			return 0.0;
+	}
 	bool exceedRouteTimeLimit(SolutionNode sn){
 		for(int i = 0;i < sn.routes_time.size();i++){
 			if(sn.routes_time[i] > T)
@@ -1058,26 +1104,53 @@ public:
 		}
 		return false;
 	}
-	bool exceedTotalTimeLimit(SolutionNode sn, float total_time_limit){
-		if(sn.total_time <= total_time_limit*(1.0+DELTA_1))
+	bool exceedTotalTimeLimit(float cur_time, float base_time, float time_limit){
+		if(cur_time < base_time)
+			return false;
+		if(cur_time - base_time < time_limit)
 			return false;
 		else
 			return true;
 	}
-	bool exceedWorkloadLimit(SolutionNode sn, float workload_limit){
-		float wl = getWorkload(sn);
-		if(wl <= workload_limit + DELTA_2)
+	void getWorkloadMaxMin(vector<vector<SolutionNode>> solution, float &min, float &max){
+		min = FLT_MAX;
+		max = 0;
+		for(int i = 0;i < m_I;i++){
+			vector<float> wl(fixed_courier_num_list[i],0.0);
+			vector<SolutionNode> &s_vec = solution[i];
+			for(int t = 0;t < s_vec.size();t++){
+				SolutionNode &s = s_vec[t];
+				for(int c = 0;c < fixed_courier_num_list[i];c++){
+					wl[c] += s.routes_time[c];
+				}
+			}
+			for(int j = 0;j < wl.size();j++){
+				if(wl[j] < min)
+					min = wl[j];
+				if(wl[j] > max)
+					max = wl[j];
+			}
+		}	
+	}
+	bool exceedWorkloadLimit(SolutionNode sn, int region, int time_period_){
+		vector<vector<SolutionNode>> solution = balance_solution;
+		solution[region][time_period_] = sn;
+		//
+		float min_o, max_o, min_n, max_n;
+		getWorkloadMaxMin(balance_solution,min_o,max_o);
+		getWorkloadMaxMin(solution,min_n,max_n);
+		if((max_n - min_n) < ((max_o - min_o)+DELTA_2))
 			return false;
 		else
 			return true;
 	}
-	SolutionNode findLegalNeighbor(vector<SolutionNode> neighbors,float time_limit,float workload_limit){
+	SolutionNode findLegalNeighbor(vector<SolutionNode> neighbors,float base_time,float time_limit, int region, int time_period_){
 		float cur_time = FLT_MAX;
 		SolutionNode sn;
 		for(int i = 0;i < neighbors.size();i++){
 			if(exceedRouteTimeLimit(neighbors[i]) || 
-				exceedWorkloadLimit(neighbors[i], workload_limit) || 
-				exceedTotalTimeLimit(neighbors[i], time_limit)
+				exceedWorkloadLimit(neighbors[i], region, time_period_) || 
+				exceedTotalTimeLimit(neighbors[i].total_time, base_time, time_limit)
 			) continue;
 			//
 			if(neighbors[i].total_time < cur_time){
@@ -1092,9 +1165,10 @@ public:
 		for(int t = 0;t < time_period;t++){
 			//cout << "--- District " << region << ", Time period " << t << "---" <<endl;
 			SolutionNode sn = familiarity_solution[region][t];
-			float time_limit = same_courier_num_solution[region][t].total_time; // for delta_1
+			float base_time = same_courier_num_solution[region][t].total_time; // for delta_1
+			float time_limit = getTimelimit(familiarity_solution);
 			vector<vector<float>> dist_table = cust_dist[region][t];
-			float workload_limit = getWorkload(sn); // for delta_2
+			float base_workload = getWorkload(sn); // for delta_2
 			
 			// do not need to do VND
 			if(sn.routes_table[courier_num].size() == 0)
@@ -1119,7 +1193,7 @@ public:
 				SolutionNode tmp_sn = init_neighbors[i];
 				for(int type = 2;type < 5;type++){
 					vector<SolutionNode> neighbors = getNeighborsFam(tmp_sn,type,dist_table);
-					SolutionNode legal_neighbor = findLegalNeighbor(neighbors,time_limit,workload_limit);
+					SolutionNode legal_neighbor = findLegalNeighbor(neighbors,base_time,time_limit,region,t);
 					//
 					if(legal_neighbor.routes_table.size() == 0)
 						break;
@@ -1136,8 +1210,8 @@ public:
 			float best_total_time = FLT_MAX;
 			for(int i = 0;i < init_neighbors.size();i++){
 				if(exceedRouteTimeLimit(init_neighbors[i]) || 
-					exceedWorkloadLimit(init_neighbors[i], workload_limit) || 
-					exceedTotalTimeLimit(init_neighbors[i], time_limit)
+					exceedWorkloadLimit(init_neighbors[i], region, t) || 
+					exceedTotalTimeLimit(init_neighbors[i].total_time, base_time, time_limit)
 				) 
 					continue;
 				//
@@ -1202,7 +1276,7 @@ public:
 				}
 			} 
 			for(int j = 0;j < wl.size();j++){
-				cout << wl[j] << " ";
+				cout << wl[j]*60.0 << "(mins)" << " ";
 			}
 			cout << endl;
 		}
@@ -1214,13 +1288,14 @@ public:
 		// Parameters
 		//
 		cout << "\n=== Parameters ===" << endl;
-		cout << "H = " << H << endl;
-		cout << "T = " << T << endl;
-		cout << "Speed = " << SPEED << endl;
-		cout << "Service cost = " << SERV_COST << endl;
+		cout << "H = " << H*60.0 << "(mins)" << endl;
+		cout << "T = " << T*60.0 << "(mins)" << endl;
+		cout << "Speed = " << SPEED/1000.0 << "(km/hr)" << endl;
+		cout << "Service cost = " << SERV_COST*60.0 << "(mins)" << endl;
 		cout << "Time period = " << time_period << endl;
 		cout << "Max postal number = " << MAX_POSTAL_NUM << endl;
-
+		cout << "Delta 1 = " << delta_1 << endl;
+		cout << "Delta 2 = " << delta_2*60.0 << endl;
 		//
 		// Statistics
 		//
@@ -1228,21 +1303,21 @@ public:
 		float total_time = 0.0;
 		total_time = getTotalTime(init_solution);
 		cout << "--- Initial ---" << endl;
-		cout << "Total time = " << total_time*60 << endl;
+		cout << "Total time = " << total_time*60 << "(mins)" << endl;
 
 		total_time = getTotalTime(same_courier_num_solution);
 		cout << "\n--- Use same courier ---" << endl;
-		cout << "Total time = " << total_time*60 << endl;
+		cout << "Total time = " << total_time*60 << "(mins)" << endl;
 		showWorkload(same_courier_num_solution);
 
 		total_time = getTotalTime(balance_solution);
 		cout << "\n--- Workload balance ---" << endl;
-		cout << "Total time = " << total_time*60 << endl;
+		cout << "Total time = " << total_time*60 << "(mins)" << endl;
 		showWorkload(balance_solution);
 
 		total_time = getTotalTime(familiarity_solution);
 		cout << "\n--- Familiarity ---" << endl;
-		cout << "Total time = " << total_time*60 << endl;
+		cout << "Total time = " << total_time*60 << "(mins)" << endl;
 		showWorkload(familiarity_solution);
 
 
