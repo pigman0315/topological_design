@@ -41,7 +41,7 @@ int main(){
 	//
 	// Get result of each process
 	//
-	TopoSolution tp(district_customers_1st,exch_points_1st,0.1,0.1);
+	TopoSolution tp(district_customers_1st,exch_points_1st,0.2,0.083);
 	tp.readInputFile();
 	tp.splitCustByTime();
 	tp.calcDist();
@@ -52,7 +52,7 @@ int main(){
 	tp.getInitSolution(is_test);
 
 	// use same courier number 
-	vector<int> courier_limit({3,2,2});
+	vector<int> courier_limit({1,2,1,1,1});
 	tp.useSameNumCourier(courier_limit);
 
 	// workload balance

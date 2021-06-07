@@ -814,6 +814,36 @@ public:
 			cout << endl;
 		}
 	}
+	int getTotalFamiliarityScore(vector<vector<SolutionNode>> solution){
+		int count = 0;
+		//
+		for(int a = 0;a < solution.size();a++){
+			vector<SolutionNode> distr_solution = solution[a];
+			vector<vector<int>> score_matrix(fixed_courier_num_list[a],vector<int>(MAX_POSTAL_NUM,0));
+			int fixed_courier_num = fixed_courier_num_list[a];
+			for(int i = 0;i < distr_solution.size();i++){
+				SolutionNode sn = distr_solution[i];
+
+				// make postal number vector in certain time period and region
+				vector<int> period_postal_nums;
+				if(i != 0)
+					period_postal_nums.assign(postal_nums[a].begin()+time_cust_nums[a][i-1],postal_nums[a].begin()+time_cust_nums[a][i-1]+time_cust_nums[a][i]);
+				else
+					period_postal_nums.assign(postal_nums[a].begin(),postal_nums[a].begin()+time_cust_nums[a][i]);
+				
+				//
+				for(int r = 0;r < fixed_courier_num;r++){
+					vector<int> route = sn.routes_table[r];
+					for(int j = 0;j < route.size();j++){
+						score_matrix[r][period_postal_nums[route[j]]]++;
+						if(score_matrix[r][period_postal_nums[route[j]]] == 1)
+							count++;
+					}
+				}
+			}
+		}
+		return count;
+	}
 	vector<vector<int>> getFamiliarityScore(vector<SolutionNode> distr_solution,int fixed_courier_num, int region){
 		vector<vector<int>> score_matrix(fixed_courier_num,vector<int>(MAX_POSTAL_NUM,0));
 		// 
@@ -1283,6 +1313,16 @@ public:
 			
 	}
 	void showFinalResult(){
+		//
+		// Routes
+		//
+		cout << "\n=== Routes ===" << endl;
+		for(int r = 0;r < familiarity_solution.size();r++){
+			for(int t = 0;t < familiarity_solution[r].size();t++){
+				cout << "-- District " << r << ", Time period " << t << "---" << endl; 
+				familiarity_solution[r][t].show();
+			}
+		}
 		
 		//
 		// Parameters
@@ -1294,43 +1334,36 @@ public:
 		cout << "Service cost = " << SERV_COST*60.0 << "(mins)" << endl;
 		cout << "Time period = " << time_period << endl;
 		cout << "Max postal number = " << MAX_POSTAL_NUM << endl;
-		cout << "Delta 1 = " << delta_1 << endl;
-		cout << "Delta 2 = " << delta_2*60.0 << endl;
+		cout << "Delta 1 = " << DELTA_1 << endl;
+		cout << "Delta 2 = " << DELTA_2*60.0 << endl;
 		//
 		// Statistics
 		//
 		cout << "\n=== Statistics ===" << endl;
 		float total_time = 0.0;
-		total_time = getTotalTime(init_solution);
-		cout << "--- Initial ---" << endl;
-		cout << "Total time = " << total_time*60 << "(mins)" << endl;
+		float min,max;
+		int fam_score;
 
 		total_time = getTotalTime(same_courier_num_solution);
-		cout << "\n--- Use same courier ---" << endl;
+		cout << "\n--- Object 1 ---" << endl;
 		cout << "Total time = " << total_time*60 << "(mins)" << endl;
 		showWorkload(same_courier_num_solution);
 
 		total_time = getTotalTime(balance_solution);
-		cout << "\n--- Workload balance ---" << endl;
+		cout << "\n--- Object 2(Workload balance) ---" << endl;
 		cout << "Total time = " << total_time*60 << "(mins)" << endl;
+		getWorkloadMaxMin(balance_solution,min,max);
+		cout << "Workload difference = " << (max - min)*60.0 << endl;
 		showWorkload(balance_solution);
 
 		total_time = getTotalTime(familiarity_solution);
-		cout << "\n--- Familiarity ---" << endl;
+		cout << "\n--- Object 3(Familiarity) ---" << endl;
 		cout << "Total time = " << total_time*60 << "(mins)" << endl;
+		getWorkloadMaxMin(familiarity_solution,min,max);
+		cout << "Workload difference =  " << (max - min)*60.0 << endl;
 		showWorkload(familiarity_solution);
-
-
-		//
-		// Routes
-		//
-		cout << "\n=== Routes ===" << endl;
-		for(int r = 0;r < familiarity_solution.size();r++){
-			for(int t = 0;t < familiarity_solution[r].size();t++){
-				cout << "-- District " << r << ", Time period " << t << "---" << endl; 
-				familiarity_solution[r][t].show();
-			}
-		}
+		fam_score = getTotalFamiliarityScore(familiarity_solution);
+		cout << "Familiarity score = " << fam_score << endl;
  	}
 };
 

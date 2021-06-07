@@ -14,6 +14,7 @@ LENGTH_OF_MAP = 20000
 INTERVAL = 200
 SINGLE_ROT_DEG = 15
 EPSILON = 0.1
+TIME_PERIOD_NUM = 3
 # Parameter
 # m_I = 4 --> degree = 90, m_I = 3 ---> degree = 120
 # m_O = 3 --> degree = 90, m_O = 2 ---> degree = 120
@@ -910,26 +911,24 @@ def draw_map():
 	plt.axis('equal')
 	plt.show()
 def output_testcase_1(customer_points,cand_exch_point,center):
-	TIME_PERIOD_NUM = 3
-	I = 3
+	I = m_I
 	distr_num = len(customer_points)
 	# Table1: #Customer/district/time period
-	csvfile = open('table1.txt','w')
+	csvfile = open('c_m_l.txt','w')
 	writer = csv.writer(csvfile,delimiter=' ')
 	t1 = np.array([])
 	for i in range(distr_num):
 		num = len(customer_points[i])
-		#print(num)
 		row = []
 		for j in range(TIME_PERIOD_NUM-1):
 			row.append(num//TIME_PERIOD_NUM)
 		row.append(num-(num//TIME_PERIOD_NUM)*(TIME_PERIOD_NUM-1))
 		writer.writerow(row)
 		t1 = np.append(t1,row,axis=0)
-	t1 = t1.reshape(I,I)
+	t1 = t1.reshape(I,TIME_PERIOD_NUM)
 	csvfile.close()
 	# Table2: postal number
-	csvfile = open('table2.txt','w')
+	csvfile = open('c_w.txt','w')
 	writer = csv.writer(csvfile,delimiter=' ')
 	postal_num = []
 	for i in range(distr_num):
@@ -938,7 +937,7 @@ def output_testcase_1(customer_points,cand_exch_point,center):
 		c = center[i]
 
 		for j in range(num):
-			if( customer_points[i][j][1] >= c[1]):
+			if(customer_points[i][j][1] >= c[1]):
 				row.append(i*2)
 			else:
 				row.append(i*2+1)
@@ -970,7 +969,7 @@ def output_testcase_1(customer_points,cand_exch_point,center):
 		t4[cnt:cnt+len(ceps),cnt:cnt+len(ceps)] = tmp
 		cnt += len(ceps)
 	#
-	csvfile = open('table4.txt','w')
+	csvfile = open('de.txt','w')
 	writer = csv.writer(csvfile,delimiter=' ')
 	for i in range(total_cep):
 		writer.writerow(t4[i])
@@ -981,7 +980,7 @@ def output_testcase_1(customer_points,cand_exch_point,center):
 	cus = []
 	idx = [0]*TIME_PERIOD_NUM
 	t1 = t1.T
-	for i in range(I):
+	for i in range(TIME_PERIOD_NUM):
 		tmp_cus = []
 		for j in range(len(t1[i])):
 			tmp_cus.append(customer_points[j][int(idx[j]):int(idx[j]+t1[i][j])])
@@ -989,10 +988,9 @@ def output_testcase_1(customer_points,cand_exch_point,center):
 		cus.append(tmp_cus)
 	sum_time = np.sum(np.array(t1),axis=1,dtype=int)
 	t6_all = []
-	csvfile = open('table6.txt','w')
+	csvfile = open('dij.txt','w')
 	writer = csv.writer(csvfile,delimiter=' ')
-	for i in range(TIME_PERIOD_NUM):
-	#for i in range(1):
+	for i in range(TIME_PERIOD_NUM): # I am sure it is TIME_PERIOD_NUM = 5，不同區搞在一起
 		t6 = np.zeros((sum_time[i]+len(t4),sum_time[i]+len(t4)))
 		t6 += 9999
 		t6[:len(t4),:len(t4)] = t4
@@ -1020,11 +1018,10 @@ def output_testcase_1(customer_points,cand_exch_point,center):
 			cnt_y += len(cus[i][j])
 		#writer.writerows(t6)
 		writer.writerows(t6)
-		writer.writerow([-1]*100)
 	csvfile.close()
 
 	# Table7: postal number of each district
-	csvfile = open('table7.txt','w')
+	csvfile = open('pw.txt','w')
 	writer = csv.writer(csvfile,delimiter=' ')
 	t7 = np.zeros((I,I*2),dtype=int)
 	for i in range(I):
@@ -1033,7 +1030,7 @@ def output_testcase_1(customer_points,cand_exch_point,center):
 		writer.writerow(t7[i])
 	csvfile.close()
 	# Table8: peak time table
-	csvfile = open('table8.txt','w')
+	csvfile = open('lu.txt','w')
 	writer = csv.writer(csvfile,delimiter=' ')
 	t8 = np.zeros((len(cand_exch_point),len(cand_exch_point)),dtype=int)
 	writer.writerows(t8)
