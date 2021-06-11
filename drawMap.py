@@ -975,6 +975,12 @@ def output_testcase_1(customer_points,cand_exch_point,center):
 		writer.writerow(t4[i])
 	csvfile.close()
 	# Table6: postal Exchange point & customer point distance of each time period
+	total_cep = 0
+	for i in range(len(cand_exch_point)):
+		total_cep += len(cand_exch_point[i])
+	tmp_9999 = np.zeros((total_cep,total_cep))
+	tmp_9999 += 9999
+	t4 = tmp_9999 # NOTICE: t4 change to all 9999 here
 	points = cand_exch_point[0].copy()
 	points.extend(customer_points[0])
 	cus = []
