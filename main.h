@@ -233,7 +233,7 @@ public:
 	void readInputFile(){
 		ifstream file;
 		// Read table 1: get customer number in each distirct & time period
-		file.open(DIR_PATH+"table1.txt");
+		file.open(DIR_PATH+"c_m_l.txt");
 		while(file){
 			string str;
 			getline(file,str);
@@ -242,7 +242,7 @@ public:
 		}
 		file.close();
 		// Read table 2: get postal number
-		file.open(DIR_PATH+"table2.txt");
+		file.open(DIR_PATH+"c_w.txt");
 		while(file){
 			string str;
 			getline(file,str);
