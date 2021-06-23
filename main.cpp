@@ -41,7 +41,7 @@ int main(){
 	//
 	// Get result of each process
 	//
-	TopoSolution tp(district_customers_1st,exch_points_1st,0.1,0.05);
+	TopoSolution tp(district_customers_1st,exch_points_1st,0.5,0.05);
 	tp.readInputFile();
 	tp.splitCustByTime();
 	tp.calcDist();

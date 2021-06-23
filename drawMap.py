@@ -1155,7 +1155,7 @@ else: # w = 2
 print("\n********** Ring network design problem is done ************")
 
 ### Visualization
-#draw_map()
+draw_map()
 
 if(w == 1):
 	output_info_1(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,district_end_points_1st,districted_customer_points_1st,exch_point_1st)

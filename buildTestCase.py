@@ -2,15 +2,22 @@ import random
 import os
 #### Constant
 SIDE_LENGTH = 20000
-POINTS_SIDE_LEN = SIDE_LENGTH*0.9
 INTERVAL = 100
-CUSTOMER_NUM = 30
+POINTS_SIDE_LEN = SIDE_LENGTH-INTERVAL
+INTERVAL = 100
+CUSTOMER_NUM = 35
 DISTRICT_INTERVAL = INTERVAL*100
+
+##### FOR DEBUG##
+random.seed(21) #
+##### FOR DEBUG##
+
 #### open files
 curPath = os.path.dirname(os.path.abspath(__file__))
 fileBound = open(curPath+"/boundaries.txt", "w")
 fileCust = open(curPath+"/customers.txt", "w")
 fileCustDistrict = open(curPath+"/cust_postal_num.txt", "w")
+
 #### build boundary points
 # make bottom line
 for i in range(0,SIDE_LENGTH+1,INTERVAL):
@@ -36,13 +43,9 @@ fileCustDistrict.write(str(CUSTOMER_NUM))
 fileCustDistrict.write("\n")
 cnt = 0
 
-##### FOR DEBUG##
-random.seed(21) #
-##### FOR DEBUG##
-
 for i in range(CUSTOMER_NUM):
-	x = random.randrange(INTERVAL,POINTS_SIDE_LEN,INTERVAL)
-	y = random.randrange(INTERVAL,POINTS_SIDE_LEN,INTERVAL)
+	x = random.randrange(SIDE_LENGTH-POINTS_SIDE_LEN,POINTS_SIDE_LEN,INTERVAL)
+	y = random.randrange(SIDE_LENGTH-POINTS_SIDE_LEN,POINTS_SIDE_LEN,INTERVAL)
 	fileCust.write(str(x))
 	fileCust.write(" ")
 	fileCust.write(str(y))
