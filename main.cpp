@@ -41,7 +41,7 @@ int main(){
 	//
 	// Get result of each process
 	//
-	TopoSolution tp(district_customers_1st,exch_points_1st,0.5,0.05);
+	TopoSolution tp(district_customers_1st,exch_points_1st,0.03,0.1667); // Delta_1:(%), Delta_2:(hr)
 	tp.readInputFile();
 	tp.splitCustByTime();
 	tp.calcDist();
@@ -52,16 +52,16 @@ int main(){
 	tp.getInitSolution(is_test);
 
 	// use same courier number 
-	vector<int> courier_limit({1,2,1});
+	vector<int> courier_limit({2,1,1});
 	tp.useSameNumCourier(courier_limit);
 
 	// workload balance
 	int FIRST_SHORT = 1, LAST_LONG = 1;
-	int FIRST_SHORT_R = 2, LAST_LONG_R = 2;
+	int FIRST_SHORT_R = 3, LAST_LONG_R = 3;
 	tp.balanceWorkload(FIRST_SHORT, LAST_LONG, FIRST_SHORT_R, LAST_LONG_R);
 
 	// increase familiarity
-	int LOW_BOUND = 2; // need to lower than lower bound
+	int LOW_BOUND = 3; // need to lower than lower bound
 	tp.increaseFamiliarity(LOW_BOUND);
 
 	// show final results

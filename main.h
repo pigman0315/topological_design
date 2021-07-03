@@ -648,7 +648,8 @@ public:
 				}
 				return false;
 			}(cur_sn);
-			if(illegal) continue;
+			if(illegal)
+				continue;
 			// calculate fast couriers' total time
 			float fast_total_time = 0;
 			fast_total_time += cur_sn.routes_time[fast];
@@ -675,6 +676,7 @@ public:
 		cout << "initial gap: " << gap << endl;
 		for(int type = 0;type < 5;type++){
 			vector<SolutionNode> neighbors = getNeighborsBalance(sn,fast,slow,type,dist_table);
+			cout << "neighbor size = " << neighbors.size() << endl;
 			SolutionNode balance_neighbor = findBalanceNeighbor(neighbors,fast,slow,time_limit,base_time);
 			// calculate gap of cur sn & balance neighbor
 			float balance_gap;
@@ -699,7 +701,7 @@ public:
 		}
 		return sn;
 	}
-	void checkMatch_workload(vector<int> fast_courier_num, vector<int> slow_courier_num, 
+	void checkMatchWorkload(vector<int> fast_courier_num, vector<int> slow_courier_num, 
 		vector<vector<int>> routes_time_order, int FIRST_SHORT_R,int LAST_LONG_R,int region,
 		int time_period_)
 	{
@@ -768,12 +770,7 @@ public:
 				cout << "---District " << i << ", Time period " << j << "---" << endl;
 				
 				// check if last slow routes match first fast routes
-				checkMatch_workload(fast_courier_num,slow_courier_num,routes_time_order,FIRST_SHORT_R,LAST_LONG_R,i,j);
-				balance_solution[i][j].show();
-				// //
-				// SolutionNode sn = doBalanceVND(i,j,fast_courier_num,slow_courier_num);
-				// sn.show();
-				// balance_solution[i][j] = sn;
+				checkMatchWorkload(fast_courier_num,slow_courier_num,routes_time_order,FIRST_SHORT_R,LAST_LONG_R,i,j);
 			}
 
 			//show total time of each courier
@@ -1283,6 +1280,7 @@ public:
 		for(int i = 0;i < m_I;i++){
 			doFamiliarityVND(i,VISIT_LOW_BOUND);
 		}
+		cout << "---- Increasing familiarity end ----" << endl;
 	}
 	float getTotalTime(vector<vector<SolutionNode>> solution){
 		float time = 0.0;
