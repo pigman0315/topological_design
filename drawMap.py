@@ -14,7 +14,8 @@ LENGTH_OF_MAP = 20000
 INTERVAL = 200
 SINGLE_ROT_DEG = 15
 EPSILON = 0.1
-TIME_PERIOD_NUM = 3
+TIME_PERIOD_NUM = 4
+PEAK_TIME_LIST = [3,3,3]
 # Parameter
 # m_I = 4 --> degree = 90, m_I = 3 ---> degree = 120
 # m_O = 3 --> degree = 90, m_O = 2 ---> degree = 120
@@ -1035,10 +1036,13 @@ def output_testcase_1(customer_points,cand_exch_point,center):
 		t7[i][i*2+1] = 1
 		writer.writerow(t7[i])
 	csvfile.close()
+
 	# Table8: peak time table
 	csvfile = open('lu.txt','w')
 	writer = csv.writer(csvfile,delimiter=' ')
-	t8 = np.zeros((len(cand_exch_point),len(cand_exch_point)),dtype=int)
+	t8 = np.zeros((TIME_PERIOD_NUM,I),dtype=int)
+	for i in range(I):
+		t8[PEAK_TIME_LIST[i]][i] = 1
 	writer.writerows(t8)
 	csvfile.close()
 	# 
@@ -1095,6 +1099,13 @@ def output_info_2(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,best3rdCent
 		for o in range(m_O+1):
 			f.write(str(int(exch_point_2nd[i][o][0]))+' '+str(int(exch_point_2nd[i][o][1]))+'\n')
 	f.close()
+def test_show_exch_point_cost_1st(exch_point_1st):
+	dist = 0.0
+	for i in range(m_I):
+		dist += math.sqrt((exch_point_1st[i][0]-exch_point_1st[i+1][0])**2 + (exch_point_1st[i][1]-exch_point_1st[i+1][1])**2)
+	cost_in_hr = dist/SPEED
+	cost_in_min = cost_in_hr*60.0
+	return cost_in_min
 ###################### Main Function #################################
 read_file()
 #### Districting Problem
@@ -1141,6 +1152,9 @@ if(w == 1):
 	cep_weight = getCepWeight(w,m_I,m_O,a,cand_exch_point,districted_customer_points_1st)
 	# get exchange point of 1st layer
 	exch_point_1st = getExchPoint(w,m_I,m_O,cep_weight, cand_exch_point,EPSILON)
+	print(exch_point_1st)
+	cost = test_show_exch_point_cost_1st(exch_point_1st)
+	print('Exchange points\' cost = {}'.format(cost*(TIME_PERIOD_NUM-1)))
 else: # w = 2
 	cand_exch_point = getCandExchPoint(w,m_I,m_O,best3rdCenter, r, maxN, minN)
 	# calculate weight of each candidate exchange point

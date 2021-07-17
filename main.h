@@ -182,7 +182,6 @@ private:
 	vector<vector<int>> postal_nums;
 	vector<vector<int>> time_cust_nums;
 	vector<Node> exch_points;
-	vector<int> peak_time;
 	vector<vector<SolutionNode>> init_solution;
 	vector<vector<SolutionNode>> same_courier_num_solution;
 	vector<vector<SolutionNode>> balance_solution;
@@ -314,9 +313,22 @@ public:
 		}
 		cout << "---- initial solution ok ----" << endl << endl;
 	}
-	void useSameNumCourier(vector<int> fixed_courier_num_list_){
-		fixed_courier_num_list = fixed_courier_num_list_;
+	void useSameNumCourier(vector<int> peak_time){
 		same_courier_num_solution = init_solution;
+		// build fixed_courier_num_list(private member of this class)
+		for(int i = 0;i < m_I;i++){
+			int max = 0;
+			for(int j = 0;j < time_period;j++){
+				if(find(peak_time.begin(),peak_time.end(),j) == peak_time.end() 
+					&& init_solution[i][j].routes_table.size() > max)
+				{
+					max = init_solution[i][j].routes_table.size();
+				}
+			}
+			fixed_courier_num_list.push_back(max);
+		}
+
+		// use same courier number
 		for(int i = 0;i < m_I;i++){
 			for(int j = 0;j < time_period;j++){
 				cout << "--District " << i << ", Time period " << j << "---" << endl;

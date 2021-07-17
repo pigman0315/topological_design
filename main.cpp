@@ -22,7 +22,7 @@ const float H = 2.0;
 float T; // unit: hr
 const float SPEED = 40000; // unit: km/hr
 const float SERV_COST = 0.0167; // 1.5 min = 0.025 hr
-const int time_period = 3;
+const int time_period = 4;
 const int MAX_POSTAL_NUM = 6;
 
 //
@@ -41,7 +41,7 @@ int main(){
 	//
 	// Get result of each process
 	//
-	TopoSolution tp(district_customers_1st,exch_points_1st,0.03,0.1667); // Delta_1:(%), Delta_2:(hr)
+	TopoSolution tp(district_customers_1st,exch_points_1st,0.01,0.1667); // Delta_1:(%), Delta_2:(hr)
 	tp.readInputFile();
 	tp.splitCustByTime();
 	tp.calcDist();
@@ -51,9 +51,9 @@ int main(){
 	bool is_test = false;
 	tp.getInitSolution(is_test);
 
-	// use same courier number 
-	vector<int> courier_limit({2,1,1});
-	tp.useSameNumCourier(courier_limit);
+	// use same courier number (NOT DONE YET)
+	vector<int> peak_time({});
+	tp.useSameNumCourier(peak_time);
 
 	// workload balance
 	int FIRST_SHORT = 1, LAST_LONG = 1;
@@ -61,7 +61,7 @@ int main(){
 	tp.balanceWorkload(FIRST_SHORT, LAST_LONG, FIRST_SHORT_R, LAST_LONG_R);
 
 	// increase familiarity
-	int LOW_BOUND = 3; // need to lower than lower bound
+	int LOW_BOUND = 2; // need to lower than lower bound
 	tp.increaseFamiliarity(LOW_BOUND);
 
 	// show final results

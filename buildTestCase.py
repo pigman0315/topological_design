@@ -5,12 +5,12 @@ SIDE_LENGTH = 20000
 INTERVAL = 100
 POINTS_SIDE_LEN = SIDE_LENGTH-1000
 INTERVAL = 100
-CUSTOMER_NUM = 30
+CUSTOMER_NUM = 35
 DISTRICT_INTERVAL = INTERVAL*100
 
-##### FOR DEBUG##
-random.seed(111) #
-##### FOR DEBUG##
+##### FOR DEBUG ##
+random.seed(103) #
+##### FOR DEBUG ##
 
 #### open files
 curPath = os.path.dirname(os.path.abspath(__file__))
