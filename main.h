@@ -86,49 +86,33 @@ public:
 				Node tmp = get_node(str);
 				exch_points_1st.push_back(tmp);
 			}
+			file.close();
+
+			// read district number
+			file.open("cust_postal_num.txt");
+			getline(file,str);
+			total_postal_num = stoi(str);
+			getline(file,str);
+			total_cust_num = stoi(str);
+			for(int i = 0;i < total_cust_num;i++){
+				getline(file,str);
+				cust_postal_num.push_back(stoi(str));
+			}
+			file.close();
 		}
 		if(w == 2){
-			// get best 3rd layer center
+			m_I = m_O+1; // not a good operation (workaround for w = 2)
+			// get 1st layer districted customer points
 			for(int i = 0;i < m_I;i++){
-				vector<Node> tmp_v;
-				for(int j = 0;j < m_O+1;j++){
+				getline(file,str);
+				int num = stoi(str);
+				vector<Node> tmp_vec;
+				for(int j = 0;j < num;j++){
 					getline(file,str);
-					Node tmp = get_node(str);
-					tmp_v.push_back(tmp);
+					Node tmp_n = get_node(str);
+					tmp_vec.push_back(tmp_n);
 				}
-				best_3rd_center.push_back(tmp_v);
-			}
-			// get 2nd district endpoints
-			for(int i = 0;i < m_I;i++){
-				vector< vector<Node> > tmp_vv;
-				for(int j = 0;j < m_O+1;j++){
-					getline(file,str);
-					int num = stoi(str);
-					vector<Node> tmp_v;
-					for(int k = 0;k < num;k++){
-						getline(file,str);
-						Node tmp_n = get_node(str);
-						tmp_v.push_back(tmp_n);
-					}
-					tmp_vv.push_back(tmp_v);
-				}
-				district_endpoints_2nd.push_back(tmp_vv);
-			}
-			// get 2nd districted customer points
-			for(int i = 0;i < m_I;i++){
-				vector< vector<Node> > tmp_vv;
-				for(int j = 0;j < m_O+1;j++){
-					getline(file,str);
-					int num = stoi(str);
-					vector<Node> tmp_v;
-					for(int k = 0;k < num;k++){
-						getline(file,str);
-						Node tmp_n = get_node(str);
-						tmp_v.push_back(tmp_n);
-					}
-					tmp_vv.push_back(tmp_v);
-				}
-				district_customers_2nd.push_back(tmp_vv);
+				district_customers_1st.push_back(tmp_vec);
 			}
 			// get 1st layer exchange points
 			for(int i = 0;i < m_I;i++){
@@ -136,22 +120,10 @@ public:
 				Node tmp = get_node(str);
 				exch_points_1st.push_back(tmp);
 			}
-			// get 1st layer exchange points
-			// get best 3rd layer center
-			for(int i = 0;i < m_I;i++){
-				vector<Node> tmp_v;
-				for(int j = 0;j < m_O+1;j++){
-					getline(file,str);
-					Node tmp = get_node(str);
-					tmp_v.push_back(tmp);
-				}
-				exch_points_2nd.push_back(tmp_v);
-			}
+			file.close();
 		}
-		file.close();
-
 		// read district number
-		file.open("cust_postal_num.txt");
+		file.open(DIR_PATH+"cust_postal_num.txt");
 		getline(file,str);
 		total_postal_num = stoi(str);
 		getline(file,str);

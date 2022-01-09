@@ -15,7 +15,7 @@ INTERVAL = 200
 SINGLE_ROT_DEG = 15
 EPSILON = 0.1
 TIME_PERIOD_NUM = 4
-PEAK_TIME_LIST = [3,3,3]
+PEAK_TIME_LIST = [3,3,3,3,3]
 # Parameter
 # m_I = 4 --> degree = 90, m_I = 3 ---> degree = 120
 # m_O = 3 --> degree = 90, m_O = 2 ---> degree = 120
@@ -768,8 +768,8 @@ def get_best_layer_design():
 				if(dp < min_dp):
 					min_dp = dp
 					brg = rot_deg
-		if(brg != -1.0):
-			return w,I,O,brg
+		# if(brg != -1.0):
+		# 	return w,I,O,brg
 		# if(max_d/SPEED > 0.5*T):
 		# 	print("*** m_I =",i,"cannot guarantee the service time *** ")
 	# Try 2-layer design
@@ -779,7 +779,7 @@ def get_best_layer_design():
 			min_dp = sys.maxsize;
 			brg = -1.0;
 			for rot_deg in range(0,360//i, SINGLE_ROT_DEG):
-				print("Try m_I =",i,"m_O = ",o,"...",end=", ")	
+				print("Try m_I = {}, m_O = {}, deg = {}".format(i,o,rot_deg),end=", ")	
 				# find districting points in 1-layer
 				district_points_1st = find1stLayerDistrictPoint(i,rot_deg)
 				# find center of 1st layer
@@ -787,7 +787,7 @@ def get_best_layer_design():
 				# find end points of districting line
 				district_end_points_1st = find1stDistrictEndPoint(i,district_points_1st, best1stCenter,LENGTH_OF_MAP)
 				# distribute customer points to its corresponding district
-				district_customer_points_1st = find1stLayerCust(i,dataCust, district_end_points_1st)
+				district_customer_points_1st = find1stLayerCust(i,dataCust, district_end_points_1st,best2ndCenter)
 				# find center of each sub-district in 2-layer design
 				best2ndCenter = find2ndLayerCenter(i,district_end_points_1st)
 				# find districting points of each sub-district in 2nd layer design
@@ -1046,7 +1046,145 @@ def output_testcase_1(customer_points,cand_exch_point,center):
 	writer.writerows(t8)
 	csvfile.close()
 	# 
-	
+def output_testcase_2(customer_points_list,cand_exch_point_list,center_list):
+	I = m_O+1
+	for t in range(m_I):
+		customer_points = customer_points_list[t]
+		cand_exch_point = cand_exch_point_list[t]
+		center = center_list[t]
+		dir_path = str(t)+'/'
+		distr_num = len(customer_points)
+		# Table1: #Customer/district/time period
+		csvfile = open(dir_path+'c_m_l.txt','w')
+		writer = csv.writer(csvfile,delimiter=' ')
+		t1 = np.array([])
+		for i in range(distr_num):
+			num = len(customer_points[i])
+			row = []
+			for j in range(TIME_PERIOD_NUM-1):
+				row.append(num//TIME_PERIOD_NUM)
+			row.append(num-(num//TIME_PERIOD_NUM)*(TIME_PERIOD_NUM-1))
+			writer.writerow(row)
+			t1 = np.append(t1,row,axis=0)
+		t1 = t1.reshape(I,TIME_PERIOD_NUM)
+		csvfile.close()
+		# Table2: postal number
+		csvfile = open(dir_path+'c_w.txt','w')
+		writer = csv.writer(csvfile,delimiter=' ')
+		postal_num = []
+		for i in range(distr_num):
+			num = len(customer_points[i])
+			row = []
+			c = center[i]
+
+			for j in range(num):
+				if(customer_points[i][j][1] >= c[1]):
+					row.append(i*2)
+				else:
+					row.append(i*2+1)
+			writer.writerow(row)
+		csvfile.close()
+		# Table4: exchange points' time distance
+		np.set_printoptions(suppress=True)
+		total_cep = 0
+		ceps_list = []
+		for i in range(len(cand_exch_point)):
+			total_cep += len(cand_exch_point[i])
+			for j in range(len(cand_exch_point[i])):
+				ceps_list.append(cand_exch_point[i][j])
+		ceps_list = np.array(ceps_list)
+		ceps_list = ceps_list.reshape(total_cep,2)
+		t4 = np.zeros((total_cep,total_cep))
+		t4 += 9999
+		for i in range(total_cep):
+			for j in range(total_cep):
+				if(i != j):
+					dist = math.sqrt((ceps_list[i][0]-ceps_list[j][0])**2 + (ceps_list[i][1]-ceps_list[j][1])**2)
+					time = (dist)/SPEED * 60
+					t4[i][j] = time
+		cnt = 0
+		for i in range(len(cand_exch_point)):
+			ceps = cand_exch_point[i]
+			tmp = np.zeros((len(ceps),len(ceps)))
+			tmp += 9999
+			t4[cnt:cnt+len(ceps),cnt:cnt+len(ceps)] = tmp
+			cnt += len(ceps)
+		#
+		csvfile = open(dir_path+'de.txt','w')
+		writer = csv.writer(csvfile,delimiter=' ')
+		for i in range(total_cep):
+			writer.writerow(t4[i])
+		csvfile.close()
+		# Table6: postal Exchange point & customer point distance of each time period
+		total_cep = 0
+		for i in range(len(cand_exch_point)):
+			total_cep += len(cand_exch_point[i])
+		tmp_9999 = np.zeros((total_cep,total_cep))
+		tmp_9999 += 9999
+		t4 = tmp_9999 # NOTICE: t4 change to all 9999 here
+		points = cand_exch_point[0].copy()
+		points.extend(customer_points[0])
+		cus = []
+		idx = [0]*TIME_PERIOD_NUM
+		t1 = t1.T
+		for i in range(TIME_PERIOD_NUM):
+			tmp_cus = []
+			for j in range(len(t1[i])):
+				tmp_cus.append(customer_points[j][int(idx[j]):int(idx[j]+t1[i][j])])
+				idx[j] += t1[i][j]
+			cus.append(tmp_cus)
+		sum_time = np.sum(np.array(t1),axis=1,dtype=int)
+		t6_all = []
+		csvfile = open(dir_path+'dij.txt','w')
+		writer = csv.writer(csvfile,delimiter=' ')
+		for i in range(TIME_PERIOD_NUM): # I am sure it is TIME_PERIOD_NUM = 5，不同區搞在一起
+			t6 = np.zeros((sum_time[i]+len(t4),sum_time[i]+len(t4)))
+			t6 += 9999
+			t6[:len(t4),:len(t4)] = t4
+			cnt = len(t4)
+			for j in range(len(cus[i])):
+				leng = len(cus[i][j])
+				mat = np.zeros((leng,leng))
+				mat += 9999
+				for k in range(leng):
+					for h in range(leng):
+						if(k != h):
+							mat[k][h] = (math.sqrt((cus[i][j][k][0] - cus[i][j][h][0])**2 + (cus[i][j][k][1] - cus[i][j][h][1])**2) / SPEED) * 60
+				t6[cnt:cnt+leng,cnt:cnt+leng] = mat
+				cnt += leng
+			cnt_x = 0
+			cnt_y = 0
+			for j in range(I):
+				mat = np.zeros((len(cand_exch_point[j]),len(cus[i][j])))
+				for k in range(len(cand_exch_point[j])):
+					for l in range(len(cus[i][j])):
+						mat[k][l] = (math.sqrt((cand_exch_point[j][k][0]-cus[i][j][l][0])**2 + (cand_exch_point[j][k][1]-cus[i][j][l][1])**2) / SPEED) * 60
+				t6[cnt_x:cnt_x+len(cand_exch_point[j]),len(t4)+cnt_y:len(t4)+cnt_y+len(cus[i][j])] = mat
+				t6[len(t4)+cnt_y:len(t4)+cnt_y+len(cus[i][j]),cnt_x:cnt_x+len(cand_exch_point[j])] = mat.T
+				cnt_x += len(cand_exch_point[j])
+				cnt_y += len(cus[i][j])
+			#writer.writerows(t6)
+			writer.writerows(t6)
+		csvfile.close()
+
+		# Table7: postal number of each district
+		csvfile = open(dir_path+'pw.txt','w')
+		writer = csv.writer(csvfile,delimiter=' ')
+		t7 = np.zeros((I,I*2),dtype=int)
+		for i in range(I):
+			t7[i][i*2] = 1
+			t7[i][i*2+1] = 1
+			writer.writerow(t7[i])
+		csvfile.close()
+
+		# Table8: peak time table
+		csvfile = open(dir_path+'lu.txt','w')
+		writer = csv.writer(csvfile,delimiter=' ')
+		t8 = np.zeros((TIME_PERIOD_NUM,I),dtype=int)
+		for i in range(I):
+			t8[PEAK_TIME_LIST[i]][i] = 1
+		writer.writerows(t8)
+		csvfile.close()
 def output_info_1(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,district_end_points_1st,districted_customer_points_1st,exch_point_1st):
 	f = open('sp1_result.txt',mode='w')
 	f.write(str(w)+'\n')
@@ -1068,37 +1206,29 @@ def output_info_1(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,district_en
 		f.write(str(int(exch_point_1st[i][0]))+' '+str(int(exch_point_1st[i][1]))+'\n')
 	f.close()
 def output_info_2(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,best3rdCenter,district_end_points_1st,district_end_points_2nd,districted_customer_points_2nd,exch_point_1st,exch_point_2nd):
-	f = open('sp1_result.txt',mode='w')
-	f.write(str(w)+'\n')
-	f.write(str(m_I)+'\n')
-	f.write(str(m_O)+'\n')
-	f.write(str(best_rot_deg)+'\n')
-	f.write(str(int(best1stCenter[0]))+' '+str(int(best1stCenter[1]))+'\n')
 	for i in range(m_I):
+		f = open(str(i)+'/'+'sp1_result.txt',mode='w')
+		f.write(str(w)+'\n')
+		f.write(str(m_I)+'\n')
+		f.write(str(m_O)+'\n')
+		f.write(str(best_rot_deg)+'\n')
+	
 		f.write(str(int(best2ndCenter[i][0]))+' '+str(int(best2ndCenter[i][1]))+'\n')
-	for i in range(m_I):
 		f.write(str(len(district_end_points_1st[i]))+"\n")
 		for j in range(len(district_end_points_1st[i])):
 			f.write(str(int(district_end_points_1st[i][j][0]))+' '+str(int(district_end_points_1st[i][j][1]))+'\n')
-	for i in range(m_I):
 		for o in range(m_O+1):
 			f.write(str(int(best3rdCenter[i][o][0]))+' '+str(int(best3rdCenter[i][o][1]))+'\n')
-	for i in range(m_I):
-		for o in range(m_O+1):
 			f.write(str(len(district_end_points_2nd[i][o]))+"\n")
 			for k in range(len(district_end_points_2nd[i][o])):
 				f.write(str(int(district_end_points_2nd[i][o][k][0]))+' '+str(int(district_end_points_2nd[i][o][k][1]))+'\n')
-	for i in range(m_I):
-		for o in range(m_O+1):
 			f.write(str(len(districted_customer_points_2nd[i][o]))+"\n")
 			for k in range(len(districted_customer_points_2nd[i][o])):
 				f.write(str(int(districted_customer_points_2nd[i][o][k][0]))+' '+str(int(districted_customer_points_2nd[i][o][k][1]))+'\n')
-	for i in range(m_I):
 		f.write(str(int(exch_point_1st[i][0]))+' '+str(int(exch_point_1st[i][1]))+'\n')
-	for i in range(m_I):
 		for o in range(m_O+1):
 			f.write(str(int(exch_point_2nd[i][o][0]))+' '+str(int(exch_point_2nd[i][o][1]))+'\n')
-	f.close()
+		f.close()
 def test_show_exch_point_cost_1st(exch_point_1st):
 	dist = 0.0
 	for i in range(m_I):
@@ -1178,3 +1308,5 @@ else:
 
 if(w == 1):
 	output_testcase_1(districted_customer_points_1st,cand_exch_point,best2ndCenter)
+else:
+	output_testcase_2(districted_customer_points_2nd,cand_exch_point,best3rdCenter)

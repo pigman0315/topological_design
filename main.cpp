@@ -1,4 +1,4 @@
-#include "main.h" // class ReadFile / TopoSolution1
+#include "main.h" // class ReadFile & TopoSolution1
 
 //
 // Global variables
