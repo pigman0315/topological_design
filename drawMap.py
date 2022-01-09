@@ -1214,14 +1214,13 @@ def output_info_2(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,best3rdCent
 		f.write(str(best_rot_deg)+'\n')
 	
 		f.write(str(int(best2ndCenter[i][0]))+' '+str(int(best2ndCenter[i][1]))+'\n')
-		f.write(str(len(district_end_points_1st[i]))+"\n")
-		for j in range(len(district_end_points_1st[i])):
-			f.write(str(int(district_end_points_1st[i][j][0]))+' '+str(int(district_end_points_1st[i][j][1]))+'\n')
 		for o in range(m_O+1):
 			f.write(str(int(best3rdCenter[i][o][0]))+' '+str(int(best3rdCenter[i][o][1]))+'\n')
+		for o in range(m_O+1):	
 			f.write(str(len(district_end_points_2nd[i][o]))+"\n")
 			for k in range(len(district_end_points_2nd[i][o])):
 				f.write(str(int(district_end_points_2nd[i][o][k][0]))+' '+str(int(district_end_points_2nd[i][o][k][1]))+'\n')
+		for o in range(m_O+1):
 			f.write(str(len(districted_customer_points_2nd[i][o]))+"\n")
 			for k in range(len(districted_customer_points_2nd[i][o])):
 				f.write(str(int(districted_customer_points_2nd[i][o][k][0]))+' '+str(int(districted_customer_points_2nd[i][o][k][1]))+'\n')

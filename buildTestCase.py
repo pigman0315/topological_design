@@ -5,18 +5,17 @@ SIDE_LENGTH = 20000
 INTERVAL = 100
 POINTS_SIDE_LEN = SIDE_LENGTH-1000
 INTERVAL = 100
-CUSTOMER_NUM = 35
+CUSTOMER_NUM = 300
 DISTRICT_INTERVAL = INTERVAL*100
 
 ##### FOR DEBUG ##
-random.seed(103) #
+random.seed(100) #
 ##### FOR DEBUG ##
 
 #### open files
 curPath = os.path.dirname(os.path.abspath(__file__))
 fileBound = open(curPath+"/boundaries.txt", "w")
 fileCust = open(curPath+"/customers.txt", "w")
-fileCustDistrict = open(curPath+"/cust_postal_num.txt", "w")
 
 #### build boundary points
 # make bottom line
@@ -36,13 +35,6 @@ for i in range(0,SIDE_LENGTH+1,INTERVAL):
 	fileBound.write(str(i) + " " + str(SIDE_LENGTH))
 	fileBound.write("\n")
 
-#### build customers points & customer district number
-fileCustDistrict.write(str((POINTS_SIDE_LEN//DISTRICT_INTERVAL)**2))
-fileCustDistrict.write("\n")
-fileCustDistrict.write(str(CUSTOMER_NUM))
-fileCustDistrict.write("\n")
-cnt = 0
-
 for i in range(CUSTOMER_NUM):
 	x = random.randrange(SIDE_LENGTH-POINTS_SIDE_LEN,POINTS_SIDE_LEN,INTERVAL)
 	y = random.randrange(SIDE_LENGTH-POINTS_SIDE_LEN,POINTS_SIDE_LEN,INTERVAL)
@@ -50,11 +42,7 @@ for i in range(CUSTOMER_NUM):
 	fileCust.write(" ")
 	fileCust.write(str(y))
 	fileCust.write("\n")
-	if(x//DISTRICT_INTERVAL != 0):
-		fileCustDistrict.write(str((x//DISTRICT_INTERVAL)*POINTS_SIDE_LEN//DISTRICT_INTERVAL+y//DISTRICT_INTERVAL)+"\n")
-	else:
-		fileCustDistrict.write(str(y//DISTRICT_INTERVAL)+"\n")
+
 #### close file
 fileBound.close()
 fileCust.close()
-fileCustDistrict.close()

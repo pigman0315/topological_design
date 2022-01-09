@@ -15,57 +15,63 @@ vector<Node> exch_points_1st;
 vector< vector<Node> > exch_points_2nd;
 int total_postal_num;
 int total_cust_num;
-vector<int> cust_postal_num;
 vector< vector<int> > visit_time_vec;
 string DIR_PATH = "./";
-const float H = 2.0;
+const float H = 3.0;
 float T; // unit: hr
-const float SPEED = 40000; // unit: km/hr
+const float SPEED = 40000; // unit: m/hr
 const float SERV_COST = 0.0167; // 1.5 min = 0.025 hr
-const int time_period = 4;
-const int MAX_POSTAL_NUM = 6;
+const int time_period = 3;
+const int MAX_POSTAL_NUM = 8;
 
 //
 // Main function
 //
 int main(){
 	srand(time(NULL));
+	vector<string> dir_path_vec = {"0/","1/","2/","3/"};
+	for(int i = 0;i < dir_path_vec.size();i++){
+		DIR_PATH = dir_path_vec[i];
+		//
+		// Read file 
+	 	//
+		ReadFile rf;
+		rf.run();
+		T = H / (0.5+m_I+2*(w-1)*m_O);
+		cout << "=== dir path: " << DIR_PATH << " ===" << endl;
+		//
+		// Get result of each process
+		//
+		TopoSolution tp(district_customers_1st,exch_points_1st,0.01,0.1667); // Delta_1:(%), Delta_2:(hr)
+		tp.readInputFile();
+		tp.splitCustByTime();
+		tp.calcDist();
 
-	//
-	// Read file 
- 	//
-	ReadFile rf;
-	rf.run();
-	T = H / (0.5+m_I+2*(w-1)*m_O);
+		// initial solution
+		// including savings algo. & find shortest path(if isTest = True, then it won't do this part)
+		bool is_test = false;
+		tp.getInitSolution(is_test);
 
-	//
-	// Get result of each process
-	//
-	TopoSolution tp(district_customers_1st,exch_points_1st,0.01,0.1667); // Delta_1:(%), Delta_2:(hr)
-	tp.readInputFile();
-	tp.splitCustByTime();
-	tp.calcDist();
+		// use same courier number (NOT DONE YET)
+		vector<int> peak_time({});
+		tp.useSameNumCourier(peak_time);
 
-	// initial solution
-	// including savings algo. & find shortest path(if isTest = True, then it won't do this part)
-	bool is_test = false;
-	tp.getInitSolution(is_test);
+		// workload balance
+		int FIRST_SHORT = 1, LAST_LONG = 1;
+		int FIRST_SHORT_R = 3, LAST_LONG_R = 3;
+		tp.balanceWorkload(FIRST_SHORT, LAST_LONG, FIRST_SHORT_R, LAST_LONG_R);
 
-	// use same courier number (NOT DONE YET)
-	vector<int> peak_time({});
-	tp.useSameNumCourier(peak_time);
+		// increase familiarity
+		int LOW_BOUND = 2; // need to lower than lower bound
+		tp.increaseFamiliarity(LOW_BOUND);
 
-	// workload balance
-	int FIRST_SHORT = 1, LAST_LONG = 1;
-	int FIRST_SHORT_R = 3, LAST_LONG_R = 3;
-	tp.balanceWorkload(FIRST_SHORT, LAST_LONG, FIRST_SHORT_R, LAST_LONG_R);
+		// show final results
+		tp.showFinalResult();
+	}
+	
+	
 
-	// increase familiarity
-	int LOW_BOUND = 2; // need to lower than lower bound
-	tp.increaseFamiliarity(LOW_BOUND);
-
-	// show final results
-	tp.showFinalResult();
+	
 
 	// main function's return value
 	return 0;
