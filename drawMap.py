@@ -14,8 +14,8 @@ LENGTH_OF_MAP = 20000
 INTERVAL = 200
 SINGLE_ROT_DEG = 15
 EPSILON = 0.1
-TIME_PERIOD_NUM = 4
-PEAK_TIME_LIST = [3,3,3,3,3]
+TIME_PERIOD_NUM = 3
+PEAK_TIME_LIST = [TIME_PERIOD_NUM-1,TIME_PERIOD_NUM-1,TIME_PERIOD_NUM-1,TIME_PERIOD_NUM-1]
 # Parameter
 # m_I = 4 --> degree = 90, m_I = 3 ---> degree = 120
 # m_O = 3 --> degree = 90, m_O = 2 ---> degree = 120
@@ -23,7 +23,7 @@ PEAK_TIME_LIST = [3,3,3,3,3]
 m_I = -1
 m_O = -1
 w = -1
-best_rot_deg = 0
+best_rot_deg = -1
 H = 2.0
 SERV_COST = 0.0167
 T = H / (0.5+m_I+2*(w-1)*m_O) - SERV_COST
@@ -558,6 +558,7 @@ def getCepWeight(w,I,O,a,cand_exch_point,districted_customer_points):
 	return result
 # make a graph of adjecency matrix
 def makeGraph(w,m_I,m_O,cep_weight,cep,EPSILON):
+	# cep: candiate exchange point
 	# array to record each cand exch point's number
 	num_ary = [0]*(len(cep))
 	for i in range(1,len(cep)):
@@ -654,87 +655,49 @@ def getExchPoint(w,I,O,cep_weight,cand_exch_point,EPSILON):
 	# l = 1 --> inner layer, l = 2 --> outer layer
 	result = []
 	if(w == 1):
-		cep = cand_exch_point
-		cepW = cep_weight
-		G = makeGraph(w,I,O,cepW,cep,EPSILON)
-	# add v0 to G
-		v0 = [-1]*(len(G))
-		for i in range(len(cepW[0])):
-			v0[i] = cepW[0][i]
-		G.append(v0)
-		n = len(G) # node number
-		for x in range(n):
-			G[x].append(-1)
-		for x in range(n):
-			for j in range(n):
-				if(x==j):
-					G[x][j] = 0
-		# Topological sort
-		ts_result = topoSort(G)
-		# multiply -1 to each element of G
-		for x in range(n):
-			for j in range(n):
-				G[x][j] *= -1 
-
-		# predecessor & shortest
-		pred = [-1]*n
-		shortest = [0]*n
-		for x in range(n):
-			if(x == (n-1)):
-				shortest[x] = 0
-			else:
-				shortest[x] = sys.maxsize
-		# Relaxation
-		for u in ts_result:
-			for v in range(n):
-				if(G[u][v] != 1):
-					relax(G,u,v,shortest,pred)
-		# get shortest path
-		shortest_path = getPath(shortest,pred,cep)
-		result = shortest_path
+		if(I == 3):
+			min_dist = sys.float_info.max
+			for p0 in cand_exch_point[0]:
+				for p1 in cand_exch_point[1]:
+					for p2 in cand_exch_point[2]:
+						dist = dist = math.sqrt((p0[0]-p1[0])**2 + (p0[1]-p1[1])**2) + math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2) + math.sqrt((p2[0]-p0[0])**2 + (p2[1]-p0[1])**2)
+						if(dist < min_dist):
+							min_dist = dist
+							result = [p0,p1,p2]
+		elif(I == 4):
+			min_dist = sys.float_info.max
+			for p0 in cand_exch_point[0]:
+				for p1 in cand_exch_point[1]:
+					for p2 in cand_exch_point[2]:
+						for p3 in cand_exch_point[3]:
+							dist = dist = math.sqrt((p0[0]-p1[0])**2 + (p0[1]-p1[1])**2) + math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2) + math.sqrt((p2[0]-p3[0])**2 + (p2[1]-p3[1])**2) + math.sqrt((p3[0]-p0[0])**2 + (p3[1]-p0[1])**2)
+							if(dist < min_dist):
+								min_dist = dist
+								result = [p0,p1,p2,p3]
+		else:
+			print("ERROR: incorrect m_I")
 	else: # w = 2
 		# First, calculate outer layer's longest path
 		for i in range(I):
-			tmp = []
-			cep = cand_exch_point[i]
-			cepW = cep_weight[i]
-			# make a graph of adjecency matrix
-			G = makeGraph(w,I,O,cepW,cep,EPSILON)
-			# add v0 to G
-			v0 = [-1]*(len(G))
-			for i in range(len(cepW[0])):
-				v0[i] = cepW[0][i]
-			G.append(v0)
-			n = len(G) # node number
-			for x in range(n):
-				G[x].append(-1)
-			for x in range(n):
-				for j in range(n):
-					if(x==j):
-						G[x][j] = 0
-			# Topological sort
-			ts_result = topoSort(G)
-			# multiply -1 to each element of G
-			for x in range(n):
-				for j in range(n):
-					G[x][j] *= -1 
-
-			# predecessor & shortest
-			pred = [-1]*n
-			shortest = [0]*n
-			for x in range(n):
-				if(x == (n-1)):
-					shortest[x] = 0
-				else:
-					shortest[x] = sys.maxsize
-			# Relaxation
-			for u in ts_result:
-				for v in range(n):
-					if(G[u][v] != 1):
-						relax(G,u,v,shortest,pred)
-			# get shortest path
-			shortest_path = getPath(shortest,pred,cep)
-			result.append(shortest_path)
+			if(O+1 == 3):
+				min_dist = sys.float_info.max
+				for p0 in cand_exch_point[0]:
+					for p1 in cand_exch_point[1]:
+						for p2 in cand_exch_point[2]:
+							dist = dist = math.sqrt((p0[0]-p1[0])**2 + (p0[1]-p1[1])**2) + math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2) + math.sqrt((p2[0]-p0[0])**2 + (p2[1]-p0[1])**2)
+							if(dist < min_dist):
+								min_dist = dist
+								result.append([p0,p1,p2])
+			elif(O+1 == 4):
+				min_dist = sys.float_info.max
+				for p0 in cand_exch_point[0]:
+					for p1 in cand_exch_point[1]:
+						for p2 in cand_exch_point[2]:
+							for p3 in cand_exch_point[3]:
+								dist = dist = math.sqrt((p0[0]-p1[0])**2 + (p0[1]-p1[1])**2) + math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2) + math.sqrt((p2[0]-p3[0])**2 + (p2[1]-p3[1])**2) + math.sqrt((p3[0]-p0[0])**2 + (p3[1]-p0[1])**2)
+								if(dist < min_dist):
+									min_dist = dist
+									result.append([p0,p1,p2,p3])
 	return result
 def get_best_layer_design():
 	global district_points_1st, best1stCenter, district_end_points_1st, best2ndCenter
@@ -768,8 +731,8 @@ def get_best_layer_design():
 				if(dp < min_dp):
 					min_dp = dp
 					brg = rot_deg
-		# if(brg != -1.0):
-		# 	return w,I,O,brg
+		if(brg != -1.0):
+			return w,I,O,brg
 		# if(max_d/SPEED > 0.5*T):
 		# 	print("*** m_I =",i,"cannot guarantee the service time *** ")
 	# Try 2-layer design
@@ -1224,17 +1187,18 @@ def output_info_2(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,best3rdCent
 			f.write(str(len(districted_customer_points_2nd[i][o]))+"\n")
 			for k in range(len(districted_customer_points_2nd[i][o])):
 				f.write(str(int(districted_customer_points_2nd[i][o][k][0]))+' '+str(int(districted_customer_points_2nd[i][o][k][1]))+'\n')
-		f.write(str(int(exch_point_1st[i][0]))+' '+str(int(exch_point_1st[i][1]))+'\n')
+		#f.write(str(int(exch_point_1st[i][0]))+' '+str(int(exch_point_1st[i][1]))+'\n')
 		for o in range(m_O+1):
 			f.write(str(int(exch_point_2nd[i][o][0]))+' '+str(int(exch_point_2nd[i][o][1]))+'\n')
 		f.close()
 def test_show_exch_point_cost_1st(exch_point_1st):
 	dist = 0.0
 	for i in range(m_I):
-		dist += math.sqrt((exch_point_1st[i][0]-exch_point_1st[i+1][0])**2 + (exch_point_1st[i][1]-exch_point_1st[i+1][1])**2)
+		dist += math.sqrt((exch_point_1st[i][0]-exch_point_1st[(i+1)%m_I][0])**2 + (exch_point_1st[i][1]-exch_point_1st[(i+1)%m_I][1])**2)
 	cost_in_hr = dist/SPEED
 	cost_in_min = cost_in_hr*60.0
 	return cost_in_min
+
 ###################### Main Function #################################
 read_file()
 #### Districting Problem
@@ -1276,7 +1240,7 @@ cand_exch_point = []
 if(w == 1):
 	# get candidate exchange point 
 	cand_exch_point = getCandExchPoint(w,m_I,m_O,best2ndCenter, r, maxN, minN)
-	print(cand_exch_point)
+	print(cand_exch_point,end='\n\n')
 	# calculate weight of each candidate exchange point
 	cep_weight = getCepWeight(w,m_I,m_O,a,cand_exch_point,districted_customer_points_1st)
 	# get exchange point of 1st layer

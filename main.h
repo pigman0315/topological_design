@@ -21,8 +21,6 @@ extern vector< vector< vector<Node> > > district_customers_2nd;
 extern vector<Node> exch_points_1st;
 extern vector< vector<Node> > exch_points_2nd;
 extern string DIR_PATH;
-extern int total_postal_num;
-extern int total_cust_num;
 extern float T;
 extern const float H;
 extern const float SPEED;
@@ -32,6 +30,14 @@ extern const int MAX_POSTAL_NUM;
 //
 class ReadFile{
 public:
+	void init(){
+		best_2nd_center.clear();
+		district_endpoints_1st.clear();
+		district_customers_1st.clear();
+		exch_points_1st.clear();
+		int total_postal_num = MAX_POSTAL_NUM;
+		visit_time_vec.clear();
+	}
 	void run(){
 		ifstream file;
 		file.open(DIR_PATH+"sp1_result.txt");
