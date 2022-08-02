@@ -22,7 +22,7 @@ const float SPEED = 40000.0; // unit: m/hr
 const float SERV_COST = 0.0167; // unit: hr, 0.0167 hr ~= 1 min
 const int time_period = 3;
 const int MAX_POSTAL_NUM = 6;
-const float DELTA1 = 0.01;
+const float DELTA1 = 0.05;
 const float DELTA2 = 0.1667; // unit: hr, 0.1667 hr ~= 10 min
 
 //
@@ -30,7 +30,7 @@ const float DELTA2 = 0.1667; // unit: hr, 0.1667 hr ~= 10 min
 //
 int main(){
 	srand(time(NULL));
-	//vector<string> dir_path_vec = {"0/","1/","2/","3/"};
+	//vector<string> dir_path_vec = {"0/","1/","2/","3/"}; // for 2-layer design
 	vector<string> dir_path_vec = {"./"};
 	for(int i = 0;i < dir_path_vec.size();i++){
 		DIR_PATH = dir_path_vec[i];
@@ -65,7 +65,7 @@ int main(){
 		tp.balanceWorkload(FIRST_SHORT, LAST_LONG, FIRST_SHORT_R, LAST_LONG_R);
 
 		// increase familiarity
-		int LOW_BOUND = 2; // need to lower than lower bound
+		int LOW_BOUND = 4; // need to lower than lower bound
 		tp.increaseFamiliarity(LOW_BOUND);
 
 		// show final results

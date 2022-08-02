@@ -9,7 +9,7 @@ CUSTOMER_NUM = 30
 DISTRICT_INTERVAL = INTERVAL*100
 
 ##### FOR DEBUG ##
-random.seed(103) #
+random.seed(105) #
 ##### FOR DEBUG ##
 
 #### open files
