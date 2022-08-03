@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 # arguments
-FILE_NAME_READ = 'dataset/r101.txt'# read data from this file
+FILE_NAME_READ = 'public_dataset/r101.txt'# read data from this file
 FILE_NAME_WRITE1 = 'customers.txt' # write customers' data into this file
 FILE_NAME_WRITE2 = 'boundaries.txt' # write boundaries' data into this file
 CUSTOMER_NUM = 25 # first n customer we use (total 100 customers in dataset)
