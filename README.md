@@ -1,4 +1,36 @@
 # topological_design
+## Introduction
+- Create private dataset
+    - `buildTestCase.py`
+    - After executing, it will generate 2 files
+        - `customers.txt`
+        - `boundaries.txt`
+- Process public dataset
+    - `processTestCase.py`
+    - After executing, it will generate 2 files
+        - `customers.txt`
+        - `boundaries.txt`
+    - public dataset: https://www.sintef.no/globalassets/project/top/vrptw/solomon/solomon-100.zip
+- Do the districting problem (SP1)
+    - `drawMap.py`
+    - It needs 2 files to run
+        - `customers.txt`
+        - `boundaries.txt`
+    - After executing, it will generate 7 files
+        - `c_m_l.txt`
+        - `c_w.txt`
+        - `de.txt`
+        - `dij.txt`
+        - `lu.txt`
+        - `pw.txt`
+        - `sp1_result.txt`
+- Do the main algorithm (SP2~SP4)
+    - `main.cpp`
+    - It needs 3 files to run
+        - `sp1_result.txt`
+        - `c_m_l.txt`
+        - `c_w.txt`
+    - After executing, you will get final results on the screen 
 ## How to prepare testing data
 - Build&Preprocess self-made customers' data
 	- `make all_private`
@@ -29,8 +61,6 @@
 	- `CUSTOMER_NUM`: total number of customers
 - processTestCase.py
 	- `FILE_NAME_READ`: file_path of the input file (e.g., dataset/r101.txt)
-    - `FILE_NAME_WRITE1`: write customers' data into this file
-    - `FILE_NAME_WRITE2`: write boundaries' data into this file
     - `CUSTOMER_NUM`: first n customer we use (total 100 customers in dataset)
     - `SIDE_LENGTH`: side length of the map	
 - drawMap.py
