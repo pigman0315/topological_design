@@ -1,8 +1,12 @@
 test:
-	g++ -std=c++17 main.cpp -o dvrp
-all:
+	g++ main.cpp -o main
+all_public:
+	python3 processTestCase.py
+	python3 drawMap.py
+	g++ main.cpp -o main
+all_private:
 	python3 buildTestCase.py
 	python3 drawMap.py
-	g++ -std=c++17 main.cpp -o dvrp
+	g++ main.cpp -o main
 clean:
-	rm -f dvrp
+	rm -f main

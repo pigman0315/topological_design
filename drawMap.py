@@ -10,8 +10,8 @@ from shapely import wkt
 import csv
 ############################ Variable #################################
 # Constant
-LENGTH_OF_MAP = 20000
-INTERVAL = 200
+LENGTH_OF_MAP = 100
+INTERVAL = 5
 SINGLE_ROT_DEG = 15
 EPSILON = 0.1
 TIME_PERIOD_NUM = 3
@@ -27,7 +27,11 @@ best_rot_deg = -1
 H = 2.0
 SERV_COST = 0.0167
 T = H / (0.5+m_I+2*(w-1)*m_O) - SERV_COST
-SPEED = 40000 # unit: (m/hr)
+SPEED = LENGTH_OF_MAP*2 # unit: (m/hr)
+maxN = 3 # max number of candidate exchange points in a circle
+minN = 2 # min number of candidate exchange points in a circle
+r = LENGTH_OF_MAP/20 # be used to create candidate exchange point around centroid of each sub-district, unit: meter
+a = LENGTH_OF_MAP/5 # be used to calculate weight of each candidate exchange point, unit: meter
 
 # Data points from files
 dataBound = None
@@ -1231,11 +1235,6 @@ if(w == 2):
 
 
 #print("\n********** Start ring network design problem **************")
-# parameter
-maxN = 3 # max number of candidate exchange points in a circle
-minN = 2 # min number of candidate exchange points in a circle
-r = 1000 # be used to create candidate exchange point around centroid of each sub-district, unit: meter
-a = 4000 # be used to calculate weight of each candidate exchange point, unit: meter
 cand_exch_point = []
 if(w == 1):
 	# get candidate exchange point 

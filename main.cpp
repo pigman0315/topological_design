@@ -18,7 +18,7 @@ vector< vector<int> > visit_time_vec;
 string DIR_PATH;
 const float H = 2.0;
 float T; // unit: hr
-const float SPEED = 40000.0; // unit: m/hr
+const float SPEED = 200.0; // unit: m/hr
 const float SERV_COST = 0.0167; // unit: hr, 0.0167 hr ~= 1 min
 const int time_period = 3;
 const int MAX_POSTAL_NUM = 6;
