@@ -10,28 +10,37 @@ from shapely import wkt
 import csv
 ############################ Variable #################################
 # Constant
-LENGTH_OF_MAP = 100
-INTERVAL = LENGTH_OF_MAP//20
 SINGLE_ROT_DEG = 15
 EPSILON = 0.1
-TIME_PERIOD_NUM = 3
-PEAK_TIME_LIST = [TIME_PERIOD_NUM-1,TIME_PERIOD_NUM-1,TIME_PERIOD_NUM-1,TIME_PERIOD_NUM-1]
+TIME_PERIOD_NUM = 6
+PEAK_CUSTOMER_THRESHOLD = 5 # when the number of customers in the time period 
+							# over the threshold, it is a  peak time period
+CUSTOMER_RATIO = [1/25,5/25,10/25,4/25,2/25,3/25] # customer ratio in each time period
+												  # (total time period = 6 (might be 12) for testing)
+PEAK_TIME_LIST = []
+SPEED = 200 # unit: (m/hr)
+maxN = 3 # max number of candidate exchange points in a circle
+minN = 2 # min number of candidate exchange points in a circle
+H = 2.0
+SERV_COST = 0.0167
+
 # Parameter
 # m_I = 4 --> degree = 90, m_I = 3 ---> degree = 120
 # m_O = 3 --> degree = 90, m_O = 2 ---> degree = 120
 # w = 1 ---> single layer, w = 2 ---> two layer
+max_x = -1
+min_x = -1
+max_y = -1
+min_y = -1
+interval = -1
+max_side_length = -1
 m_I = -1
 m_O = -1
 w = -1
 best_rot_deg = -1
-H = 2.0
-SERV_COST = 0.0167
-T = H / (0.5+m_I+2*(w-1)*m_O) - SERV_COST
-SPEED = LENGTH_OF_MAP*2 # unit: (m/hr)
-maxN = 3 # max number of candidate exchange points in a circle
-minN = 2 # min number of candidate exchange points in a circle
-r = LENGTH_OF_MAP//20 # be used to create candidate exchange point around centroid of each sub-district, unit: meter
-a = LENGTH_OF_MAP//5 # be used to calculate weight of each candidate exchange point, unit: meter
+T = -1
+r = -1# be used to create candidate exchange point around centroid of each sub-district, unit: meter
+a = -1 # be used to calculate weight of each candidate exchange point, unit: meter
 
 # Data points from files
 dataBound = None
@@ -73,8 +82,11 @@ def tmp(cand_exch_point,dcp):
 
 def show_info():
 	print("*******************  Map Information  *****************")
-	print("Side length of the map: ", LENGTH_OF_MAP,"(m)")
-	print("Interval between points: ", INTERVAL,"(m)")
+	print("max length x of the map: ", max_x,"(m)")
+	print("max length y of the map: ", max_y,"(m)")
+	print("min length x of the map: ", min_x,"(m)")
+	print("min length y of the map: ", min_y,"(m)")
+	print("Interval between points: ", interval,"(m)")
 	print("Best 1st layer rotation degree: ", best_rotate_degree_1st , "(degree)")
 	print("1-layer or 2-layer:", w)
 	print("Number of inner district(m_I): ", m_I)
@@ -95,7 +107,7 @@ def cross(p1,p2,p3):
 # check if the points out of bound
 def out_of_bound(point, center, mode, I):
 	district_angle = 360.0 / I
-	if(point[0] < 0 or point[0] > LENGTH_OF_MAP or point[1] < 0 or point[1] > LENGTH_OF_MAP):
+	if(point[0] < min_x or point[0] > max_x or point[1] < min_y or point[1] > max_y):
 		return True
 	if(mode == 2):
 			# get endpoint of 1st layer districting lines
@@ -150,16 +162,16 @@ def Rotate(origin,target,degree):
 # Find first layer's center
 def find1stLayerCenter():
 	result = [0,0]
-	result[0] = LENGTH_OF_MAP / 2.0
-	result[1] = LENGTH_OF_MAP / 2.0
+	result[0] = (max_x+min_x) / 2.0
+	result[1] = (max_y+min_y) / 2.0
 	return result
 
 # Find best 1st layer rotation degree
 def find1stLayerRotDeg(I,theta,best1stCenter):
 	return 0
-def find1stDistrictEndPoint(I,district_points_1st, best1stCenter, LENGTH_OF_MAP):
+def find1stDistrictEndPoint(I,district_points_1st, best1stCenter):
 	cps_deg = [45,135,225,315]
-	cps = [[LENGTH_OF_MAP,LENGTH_OF_MAP],[0,LENGTH_OF_MAP],[0,0],[LENGTH_OF_MAP,0]]
+	cps = [[max_x,max_y],[min_x,max_y],[min_x,min_y],[max_x,min_y]]
 	cps_used = [False]*4
 	result = []
 	c = best1stCenter
@@ -197,6 +209,7 @@ def find1stDistrictEndPoint(I,district_points_1st, best1stCenter, LENGTH_OF_MAP)
 		tmp.append(ep2)
 		result.append(tmp)
 	return result
+
 # Find 1st layer districting points
 def find1stLayerDistrictPoint(I,rot_deg):
 	district_angle = 360.0 / I
@@ -204,7 +217,7 @@ def find1stLayerDistrictPoint(I,rot_deg):
    	#best_rotate_degree = find1stLayerRotDeg(m_I,theta,best1stCenter)					 #
 	######################################################################################
 	center = find1stLayerCenter()
-	end_points = [[float(center[0])+LENGTH_OF_MAP*math.sqrt(2),float(center[1])]]
+	end_points = [[float(center[0])+max_side_length*math.sqrt(2),float(center[1])]]
 	end_points[0] = Rotate(center,end_points[0], rot_deg)
 	result = []
 	for i in range(I-1):
@@ -220,11 +233,11 @@ def find1stLayerDistrictPoint(I,rot_deg):
 		if(deg < 0):
 			deg += 360
 		# Use to count how many points we should draw at most on the line
-		counter = LENGTH_OF_MAP*2 // INTERVAL # //: integer division
+		counter = max_side_length*2 // interval # //: integer division
 		result[i].append([center[0], center[1]])
-		for j in range(counter): # counter: length of districting line / INTERVAL
-			tmp_x = result[i][j-1][0] + INTERVAL*math.cos(rad)
-			tmp_y = result[i][j-1][1] + INTERVAL*math.sin(rad)
+		for j in range(counter): # counter: length of districting line / interval
+			tmp_x = result[i][j-1][0] + interval*math.cos(rad)
+			tmp_y = result[i][j-1][1] + interval*math.sin(rad)
 			# if tmp_x or tmp_y is out of bound, ignore it and stop the for-loop
 			
 			if(out_of_bound([tmp_x,tmp_y], center,1,I)):
@@ -316,12 +329,7 @@ def get_max_dist(w,I,O,distr_end_points,bestCenter):
 					if(dist > max_dist):
 						max_dist = dist
 	return max_dist
-# Try to get best 1st layer design(max travel time is lower than 0.5T)
-def get_1stLayer_design(districted_customer_points_1st,best2ndCenter):
-	max_dist = get_max_dist(districted_customer_points_1st,best2ndCenter)
-	if(max_dist/SPEED > 0.5*T):
-		print("GG")
-	return 3,30
+
 #Find 2st layer center
 def find2ndLayerCenter(I,district_end_points_1st):
 	#### ATTENTION: Must add points into set counter-clockwise/clockwise, otherwise, you will get incorrect centroid
@@ -359,12 +367,11 @@ def find2ndLayerDistrictPoint(I,O):
 			delta_y = end_points[j][1] - best2ndCenter[i][1]
 			rad = math.atan2(delta_y, delta_x) #radius
 			# Use to count how many points we should draw at most on the line
-			counter = LENGTH_OF_MAP*2 // INTERVAL # //: integer division
+			counter = max_side_length*2 // interval # //: integer division
 			tmp_list.append([best2ndCenter[i][0],best2ndCenter[i][1]])
 			for k in range(counter):
-				tmp_x = tmp_list[k][0] + INTERVAL*math.cos(rad)
-				tmp_y = tmp_list[k][1] + INTERVAL*math.sin(rad)
-				#if(tmp_x < 0 or tmp_x > LENGTH_OF_MAP or tmp_y < 0 or tmp_y > LENGTH_OF_MAP):
+				tmp_x = tmp_list[k][0] + interval*math.cos(rad)
+				tmp_y = tmp_list[k][1] + interval*math.sin(rad)
 				if(out_of_bound([tmp_x,tmp_y], best2ndCenter[i],2,I) == True):
 					break
 				tmp_list.append([tmp_x,tmp_y])
@@ -719,7 +726,7 @@ def get_best_layer_design():
 			# find center of 1st layer
 			best1stCenter = find1stLayerCenter()
 			# find end points of districting line
-			district_end_points_1st = find1stDistrictEndPoint(i,district_points_1st, best1stCenter,LENGTH_OF_MAP)
+			district_end_points_1st = find1stDistrictEndPoint(i,district_points_1st, best1stCenter)
 			# find center of each sub-district in 2-layer design
 			best2ndCenter = find2ndLayerCenter(i,district_end_points_1st)
 			# distribute customer points to its corresponding district
@@ -752,7 +759,7 @@ def get_best_layer_design():
 				# find center of 1st layer
 				best1stCenter = find1stLayerCenter()
 				# find end points of districting line
-				district_end_points_1st = find1stDistrictEndPoint(i,district_points_1st, best1stCenter,LENGTH_OF_MAP)
+				district_end_points_1st = find1stDistrictEndPoint(i,district_points_1st, best1stCenter)
 				# distribute customer points to its corresponding district
 				district_customer_points_1st = find1stLayerCust(i,dataCust, district_end_points_1st,best2ndCenter)
 				# find center of each sub-district in 2-layer design
@@ -783,17 +790,26 @@ def get_best_layer_design():
 			# 	print("*** m_I =",i,"m_O = ",o,"cannot guarantee the service time ***")
 # Read data points from files
 def read_file():
-	global dataBound,dataCent,dataCust
+	global dataBound,dataCent,dataCust,min_x,min_y,max_x,max_y,interval,max_side_length
 	# open file (file path may use '/' or '\\')
 	curPath = os.path.dirname(os.path.abspath(__file__))
 	fileBound = open(curPath+"/boundaries.txt", "r")
 	fileCust = open(curPath+"/customers.txt", "r")
-	# read boundaries/centers/customers data points from file
+
+	# read side_length_info/boundaries/centers/customers data points from file
+	side_length_info = fileBound.readline().split(' ')
 	dataBound = fileBound.readlines()
 	fileBound.close()
 	dataCust = fileCust.readlines()
 	fileCust.close()
+
 	# convert (x,y) from string to float, e.g.: ('10','10') ---> (10,10)
+	min_x = int(side_length_info[0])
+	max_x = int(side_length_info[1])
+	min_y = int(side_length_info[2])
+	max_y = int(side_length_info[3])
+	interval = int(side_length_info[4])
+	max_side_length = max(max_x,max_y)
 	for i in range(0,len(dataBound)):
 		dataBound[i] = dataBound[i].split()
 		dataBound[i][0] = float(dataBound[i][0])
@@ -841,7 +857,7 @@ def draw_map():
 			y = exch_point_1st[i][1]
 			dx = exch_point_1st[(i+1)%m_I][0] - x
 			dy = exch_point_1st[(i+1)%m_I][1] - y
-			plt.arrow(x,y,dx,dy,width=100,length_includes_head = True,color='r')
+			plt.arrow(x,y,dx,dy,width=max_x*0.005,length_includes_head = True,color='r')
 	################### Plot two layer #######################
 	if(w == 2):
 		# plot 2nd layer districting line
@@ -866,16 +882,16 @@ def draw_map():
 				y = exch_point_2nd[i][o][1]
 				dx = exch_point_2nd[i][o+1][0] - x
 				dy = exch_point_2nd[i][o+1][1] - y
-				plt.arrow(x,y,dx,dy,width=100,length_includes_head = True)
+				plt.arrow(x,y,dx,dy,max_x*0.005,length_includes_head = True)
 		for i in range(m_I):
 			x = exch_point_1st[i][0]
 			y = exch_point_1st[i][1]
 			dx = exch_point_1st[(i+1)%m_I][0] - x
 			dy = exch_point_1st[(i+1)%m_I][1] - y
-			plt.arrow(x,y,dx,dy,width=100,length_includes_head = True,color='r')
+			plt.arrow(x,y,dx,dy,max_x*0.005,length_includes_head = True,color='r')
 	# show graph
-	plt.xticks(np.arange(0,LENGTH_OF_MAP+1,LENGTH_OF_MAP/10))
-	plt.yticks(np.arange(0,LENGTH_OF_MAP+1,LENGTH_OF_MAP/10))
+	plt.xticks(np.arange(min_x,max_x+1,interval))
+	plt.yticks(np.arange(min_y,max_y+1,interval))
 	plt.axis('equal')
 	plt.show()
 def output_testcase_1(customer_points,cand_exch_point,center):
@@ -888,9 +904,11 @@ def output_testcase_1(customer_points,cand_exch_point,center):
 	for i in range(distr_num):
 		num = len(customer_points[i])
 		row = []
+		tmp_total = 0
 		for j in range(TIME_PERIOD_NUM-1):
-			row.append(num//TIME_PERIOD_NUM)
-		row.append(num-(num//TIME_PERIOD_NUM)*(TIME_PERIOD_NUM-1))
+			row.append(round(num*CUSTOMER_RATIO[j]))
+			tmp_total += round(num*CUSTOMER_RATIO[j])
+		row.append(max(0,num-tmp_total))
 		writer.writerow(row)
 		t1 = np.append(t1,row,axis=0)
 	t1 = t1.reshape(I,TIME_PERIOD_NUM)
@@ -936,19 +954,21 @@ def output_testcase_1(customer_points,cand_exch_point,center):
 		tmp += 9999
 		t4[cnt:cnt+len(ceps),cnt:cnt+len(ceps)] = tmp
 		cnt += len(ceps)
+	
 	#
 	csvfile = open('de.txt','w')
 	writer = csv.writer(csvfile,delimiter=' ')
 	for i in range(total_cep):
 		writer.writerow(t4[i])
 	csvfile.close()
+
 	# Table6: postal Exchange point & customer point distance of each time period
 	total_cep = 0
 	for i in range(len(cand_exch_point)):
 		total_cep += len(cand_exch_point[i])
 	tmp_9999 = np.zeros((total_cep,total_cep))
 	tmp_9999 += 9999
-	t4 = tmp_9999 # NOTICE: t4 change to all 9999 here
+	t4 = tmp_9999 # NOTICE: t4 initialized to all 9999 here
 	points = cand_exch_point[0].copy()
 	points.extend(customer_points[0])
 	cus = []
@@ -1008,8 +1028,9 @@ def output_testcase_1(customer_points,cand_exch_point,center):
 	csvfile = open('lu.txt','w')
 	writer = csv.writer(csvfile,delimiter=' ')
 	t8 = np.zeros((TIME_PERIOD_NUM,I),dtype=int)
-	for i in range(I):
-		t8[PEAK_TIME_LIST[i]][i] = 1
+	for t in range(TIME_PERIOD_NUM):
+		if(np.sum(t1,axis=1)[t] >= PEAK_CUSTOMER_THRESHOLD):
+			t8[t] = [str(1)]*I
 	writer.writerows(t8)
 	csvfile.close()
 	# 
@@ -1203,72 +1224,73 @@ def test_show_exch_point_cost_1st(exch_point_1st):
 	cost_in_min = cost_in_hr*60.0
 	return cost_in_min
 
-###################### Main Function #################################
-read_file()
-#### Districting Problem
-print("\n********** Find a proper layer design *********************\n")
-w, m_I, m_O, best_rot_deg = get_best_layer_design()
-print("\n---- Set m_I = ",m_I,", m_O = ",m_O,", w = ",w," ----",sep = "")
-print("\n---- Set rotation degree = ", best_rot_deg, " ----",sep = "")
-print("\n********** Districting problem is done ********************")
-# find districting points in 1-layer
-district_points_1st = find1stLayerDistrictPoint(m_I,best_rot_deg)
-# find center of 1st layer
-best1stCenter = find1stLayerCenter()
-# find end points of districting line
-district_end_points_1st = find1stDistrictEndPoint(m_I,district_points_1st, best1stCenter,LENGTH_OF_MAP)
-# find center of each sub-district in 2-layer design
-best2ndCenter = find2ndLayerCenter(m_I,district_end_points_1st)
-# distribute customer points to its corresponding district
-districted_customer_points_1st = find1stLayerCust(m_I,dataCust, district_end_points_1st,best2ndCenter)
-
-if(w == 2):
-	# find districting points of each sub-district in 2nd layer design
-	district_points_2nd = find2ndLayerDistrictPoint(m_I,m_O)
-	# find end points of each sub-sub-district
-	district_end_points_2nd = find2ndDistrictEndPoint(district_end_points_1st, best2ndCenter, district_points_2nd, m_I, m_O)
-	# find center of each sub-sub-district
-	best3rdCenter = find3rdLayerCenter(district_end_points_2nd, m_I, m_O)
+### Main Function ###
+if __name__ == '__main__':
+	read_file()
+	#### Districting Problem
+	print("\n********** Find a proper layer design *********************\n")
+	w, m_I, m_O, best_rot_deg = get_best_layer_design()
+	print("\n---- Set m_I = ",m_I,", m_O = ",m_O,", w = ",w," ----",sep = "")
+	print("\n---- Set rotation degree = ", best_rot_deg, " ----",sep = "")
+	print("\n********** Districting problem is done ********************")
+	# find districting points in 1-layer
+	district_points_1st = find1stLayerDistrictPoint(m_I,best_rot_deg)
+	# find center of 1st layer
+	best1stCenter = find1stLayerCenter()
+	# find end points of districting line
+	district_end_points_1st = find1stDistrictEndPoint(m_I,district_points_1st, best1stCenter)
+	# find center of each sub-district in 2-layer design
+	best2ndCenter = find2ndLayerCenter(m_I,district_end_points_1st)
 	# distribute customer points to its corresponding district
-	districted_customer_points_2nd = find2ndLayerCust(dataCust, district_end_points_2nd,m_I,m_O,best3rdCenter)
-	
+	districted_customer_points_1st = find1stLayerCust(m_I,dataCust, district_end_points_1st,best2ndCenter)
+
+	if(w == 2):
+		# find districting points of each sub-district in 2nd layer design
+		district_points_2nd = find2ndLayerDistrictPoint(m_I,m_O)
+		# find end points of each sub-sub-district
+		district_end_points_2nd = find2ndDistrictEndPoint(district_end_points_1st, best2ndCenter, district_points_2nd, m_I, m_O)
+		# find center of each sub-sub-district
+		best3rdCenter = find3rdLayerCenter(district_end_points_2nd, m_I, m_O)
+		# distribute customer points to its corresponding district
+		districted_customer_points_2nd = find2ndLayerCust(dataCust, district_end_points_2nd,m_I,m_O,best3rdCenter)
+		
 
 
-#print("\n********** Start ring network design problem **************")
-cand_exch_point = []
-if(w == 1):
-	# get candidate exchange point 
-	cand_exch_point = getCandExchPoint(w,m_I,m_O,best2ndCenter, r, maxN, minN)
-	print(cand_exch_point,end='\n\n')
-	# calculate weight of each candidate exchange point
-	cep_weight = getCepWeight(w,m_I,m_O,a,cand_exch_point,districted_customer_points_1st)
-	# get exchange point of 1st layer
-	exch_point_1st = getExchPoint(w,m_I,m_O,cep_weight, cand_exch_point,EPSILON)
-	print(exch_point_1st)
-	cost = test_show_exch_point_cost_1st(exch_point_1st)
-	print('Exchange points\' cost = {}'.format(cost*(TIME_PERIOD_NUM-1)))
-else: # w = 2
-	cand_exch_point = getCandExchPoint(w,m_I,m_O,best3rdCenter, r, maxN, minN)
-	# calculate weight of each candidate exchange point
-	cep_weight = getCepWeight(w,m_I,m_O,a,cand_exch_point, districted_customer_points_2nd)
-	# get exchange point
-	exch_point = getExchPoint(w,m_I,m_O,cep_weight, cand_exch_point,EPSILON)
-	exch_point_2nd = exch_point
-	exch_point_1st = []
-	for i in range(len(exch_point)):
-		n = len(exch_point[i])
-		exch_point_1st.append(exch_point[i][n-2])
-print("\n********** Ring network design problem is done ************")
+	#print("\n********** Start ring network design problem **************")
+	cand_exch_point = []
+	if(w == 1):
+		# get candidate exchange point 
+		cand_exch_point = getCandExchPoint(w,m_I,m_O,best2ndCenter, r, maxN, minN)
+		print(cand_exch_point,end='\n\n')
+		# calculate weight of each candidate exchange point
+		cep_weight = getCepWeight(w,m_I,m_O,a,cand_exch_point,districted_customer_points_1st)
+		# get exchange point of 1st layer
+		exch_point_1st = getExchPoint(w,m_I,m_O,cep_weight, cand_exch_point,EPSILON)
+		print(exch_point_1st)
+		cost = test_show_exch_point_cost_1st(exch_point_1st)
+		print('Exchange points\' cost = {}'.format(cost*(TIME_PERIOD_NUM-1)))
+	else: # w = 2
+		cand_exch_point = getCandExchPoint(w,m_I,m_O,best3rdCenter, r, maxN, minN)
+		# calculate weight of each candidate exchange point
+		cep_weight = getCepWeight(w,m_I,m_O,a,cand_exch_point, districted_customer_points_2nd)
+		# get exchange point
+		exch_point = getExchPoint(w,m_I,m_O,cep_weight, cand_exch_point,EPSILON)
+		exch_point_2nd = exch_point
+		exch_point_1st = []
+		for i in range(len(exch_point)):
+			n = len(exch_point[i])
+			exch_point_1st.append(exch_point[i][n-2])
+	print("\n********** Ring network design problem is done ************")
 
-### Visualization
-#draw_map()
+	### Visualization
+	draw_map()
 
-if(w == 1):
-	output_info_1(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,district_end_points_1st,districted_customer_points_1st,exch_point_1st)
-else:
-	output_info_2(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,best3rdCenter,district_end_points_1st,district_end_points_2nd, districted_customer_points_2nd,exch_point_1st,exch_point_2nd)
+	if(w == 1):
+		output_info_1(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,district_end_points_1st,districted_customer_points_1st,exch_point_1st)
+	else:
+		output_info_2(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,best3rdCenter,district_end_points_1st,district_end_points_2nd, districted_customer_points_2nd,exch_point_1st,exch_point_2nd)
 
-if(w == 1):
-	output_testcase_1(districted_customer_points_1st,cand_exch_point,best2ndCenter)
-else:
-	output_testcase_2(districted_customer_points_2nd,cand_exch_point,best3rdCenter)
+	if(w == 1):
+		output_testcase_1(districted_customer_points_1st,cand_exch_point,best2ndCenter)
+	else:
+		output_testcase_2(districted_customer_points_2nd,cand_exch_point,best3rdCenter)

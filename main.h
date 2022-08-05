@@ -134,6 +134,7 @@ private:
 	vector<vector<vector<Node>>> time_cust_points;
 	vector<vector<vector<vector<float>>>> cust_dist;
 	vector<vector<int>> postal_nums;
+	vector<vector<int>> peak_time; // (TIME_PERIOD,DISTRICT_NUM)
 	vector<vector<int>> time_cust_nums;
 	vector<Node> exch_points;
 	vector<vector<SolutionNode>> init_solution;
@@ -185,7 +186,8 @@ public:
 	}
 	void readInputFile(){
 		ifstream file;
-		// Read table 1: get customer number in each distirct & time period
+
+		// get customer number in each distirct & time period
 		file.open(DIR_PATH+"c_m_l.txt");
 		while(file){
 			string str;
@@ -194,13 +196,24 @@ public:
 			time_cust_nums.push_back(tmp_v);
 		}
 		file.close();
-		// Read table 2: get postal number
+
+		// get postal number
 		file.open(DIR_PATH+"c_w.txt");
 		while(file){
 			string str;
 			getline(file,str);
 			vector<int> tmp_v = split(str," ");
 			postal_nums.push_back(tmp_v);
+		}
+		file.close();
+
+		// get peak time (TIME_PERIOD x DISTRICT_NUM)
+		file.open(DIR_PATH+"lu.txt");
+		while(file){
+			string str;
+			getline(file,str);
+			vector<int> tmp_v = split(str," ");
+			peak_time.push_back(tmp_v);
 		}
 		file.close();
 	}
@@ -267,19 +280,20 @@ public:
 		}
 		cout << "---- initial solution ok ----" << endl << endl;
 	}
-	void useSameNumCourier(vector<int> peak_time){
+	void useSameNumCourier(){
 		same_courier_num_solution = init_solution;
-		// build fixed_courier_num_list(private member of this class)
+		// build fixed_courier_num_list(a private member of this class)
 		for(int i = 0;i < m_I;i++){
-			int max = 0;
+			int max_courier_n = 0;
+			// find the max courier number of non-peak time periods
 			for(int j = 0;j < time_period;j++){
-				if(find(peak_time.begin(),peak_time.end(),j) == peak_time.end() 
-					&& init_solution[i][j].routes_table.size() > max)
-				{
-					max = init_solution[i][j].routes_table.size();
+				if(peak_time[i][j] == 1) // if it's a peak time, then skip it
+					continue;
+				else{
+					max_courier_n = max(max_courier_n,(int)init_solution[i][j].routes_table.size());
 				}
 			}
-			fixed_courier_num_list.push_back(max);
+			fixed_courier_num_list.push_back(max_courier_n);
 		}
 
 		// use same courier number

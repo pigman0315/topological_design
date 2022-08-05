@@ -20,7 +20,7 @@ const float H = 2.0;
 float T; // unit: hr
 const float SPEED = 200.0; // unit: m/hr
 const float SERV_COST = 0.0167; // unit: hr, 0.0167 hr ~= 1 min
-const int time_period = 3;
+const int time_period = 6;
 const int MAX_POSTAL_NUM = 6;
 const float DELTA1 = 0.05;
 const float DELTA2 = 0.1667; // unit: hr, 0.1667 hr ~= 10 min
@@ -51,13 +51,12 @@ int main(){
 		tp.calcDist();
 
 		// initial solution
-		// including savings algo. & find shortest path(if isTest = True, then it won't do this part)
+		// including savings algo. & find shortest path(if isTest = true, then it won't do this part)
 		bool is_test = false;
 		tp.getInitSolution(is_test);
 
-		// use same courier number (NOT DONE YET)
-		vector<int> peak_time({time_period-1,time_period-1,time_period-1});
-		tp.useSameNumCourier(peak_time);
+		// use same courier number
+		tp.useSameNumCourier();
 
 		// workload balance
 		int FIRST_SHORT = 1, LAST_LONG = 1;

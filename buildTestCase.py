@@ -1,7 +1,8 @@
 import random
 import os
 #### Constant
-SIDE_LENGTH = 100
+SIDE_LENGTH = 100 # boundaries length
+POINTS_SIDE_LEN = int(SIDE_LENGTH*0.9) # prevent the customer points lie on boundaries
 INTERVAL = SIDE_LENGTH//20
 CUSTOMER_NUM = 30
 
@@ -15,6 +16,14 @@ fileBound = open(curPath+"/boundaries.txt", "w")
 fileCust = open(curPath+"/customers.txt", "w")
 
 #### build boundary points
+# left_x, bottom_y, right_x, head_y
+left_x = 0
+right_x = SIDE_LENGTH
+bottom_y = 0
+head_y = SIDE_LENGTH
+interval = SIDE_LENGTH//20
+fileBound.write(str(left_x) + " "+str(right_x) + " "+str(bottom_y) + " "+str(head_y) + " " + str(interval) + "\n")
+
 # make bottom line
 for i in range(0,SIDE_LENGTH+1,INTERVAL):
 	fileBound.write(str(i) + " 0")

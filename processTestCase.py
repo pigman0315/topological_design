@@ -4,12 +4,10 @@ import matplotlib.pyplot as plt
 FILE_NAME_READ = 'public_dataset/r101.txt'# read data from this file
 FILE_NAME_WRITE1 = 'customers.txt' # write customers' data into this file
 FILE_NAME_WRITE2 = 'boundaries.txt' # write boundaries' data into this file
-CUSTOMER_NUM = 25 # first n customer we use (total 100 customers in dataset)
-SIDE_LENGTH = 100 # side length of the map
-INTERVAL = SIDE_LENGTH//20 # INTERVAL of creating boundary points
+CUSTOMER_NUM = 30 # first n customer we use (total 100 customers in dataset)
+
 # main
 if __name__ == '__main__':
-
 
 	# build custormers.txt
 	file = open(FILE_NAME_READ)
@@ -27,21 +25,29 @@ if __name__ == '__main__':
 	for i in range(len(x_list)):
 		file.write(str(x_list[i])+" "+str(y_list[i])+"\n")
 	file.close()
+
+	# get min/max x,y in data, and set interval of boundary points
+	interval = 2 # interval of creating boundary points
+	max_x= max(x_list) + interval
+	min_x = min(x_list) - interval
+	max_y = max(y_list) + interval
+	min_y = min(y_list) - interval
 	
 	
 	# build boundaries.txt
 	file = open(FILE_NAME_WRITE2,'w')
-	for i in range(0,SIDE_LENGTH+1,INTERVAL):# make bottom line
-		file.write(str(i) + " 0")
+	file.write(str(min_x) + " "+str(max_x) + " "+str(min_y) + " "+str(max_y) + " " + str(interval) + "\n")
+	for i in range(min_x,max_x+1,interval):# make bottom line
+		file.write(str(i) + " " + str(min_y))
 		file.write("\n")
-	for i in range(INTERVAL,SIDE_LENGTH,INTERVAL): # make left line
-		file.write("0 "+str(i))
+	for i in range(min_y,max_y+1,interval): # make left line
+		file.write(str(min_x)+" "+str(i))
 		file.write("\n")
-	for i in range(INTERVAL,SIDE_LENGTH,INTERVAL): # make right line
-		file.write(str(SIDE_LENGTH)+" "+str(i))
+	for i in range(min_y,max_y+1,interval): # make right line
+		file.write(str(max_x)+" "+str(i))
 		file.write("\n")
-	for i in range(0,SIDE_LENGTH+1,INTERVAL): # make top line
-		file.write(str(i) + " " + str(SIDE_LENGTH))
+	for i in range(min_x,max_x+1,interval): # make top line
+		file.write(str(i) + " " + str(max_y))
 		file.write("\n")
 	file.close()
 	
