@@ -33,7 +33,7 @@
     - After executing, you will get final results on the screen 
 ## How to prepare testing data
 - Build&Preprocess self-made customers' data
-	- `make all_private`
+	- input `make all_private` on terminal
 - Build&Preprocess public customers' data
 	- First, put the directory of public dataset under **topological_design**
 		```
@@ -46,14 +46,14 @@
 			|- buildTestCase.py
 			|- ...
 		```
-	- And then, `make all_public`
+	- And then, input `make all_public` on terminal
 
 ## How to run
 - **Prepare the testing data first**
-- After preparing the testing data, `./main`
+- After preparing the testing data, input `./main` on terminal
 
 ## Clean all txt file
-- `make clean`
+- input `make clean` on terminal
 
 ## Parameters to set
 - buildTestCase.py
@@ -62,8 +62,20 @@
 - processTestCase.py
 	- `FILE_NAME_READ`: file_path of the input file (e.g., dataset/r101.txt)
     - `CUSTOMER_NUM`: first n customer we use (total 100 customers in dataset)
-    - `SIDE_LENGTH`: side length of the map	
 - drawMap.py
     - `LENGTH_OF_MAP`: side length of the map
+    - `SPEED`: speed of the courier (must be the same as the one in main.cpp)
+    - `H`: guarantee of sending time (must be the same as the one in main.cpp)
+    - `SERV_COST`: service cost of each customers
+    - `VISUALIZE`: visualization of the final map (customer points/distriction/exchange points/boundaires)
+    - `TIME_PERIOD_NUM`: number of time period
+    - `PEAK_CUSTOMER_THRESHOLD`:  when the number of customers (in all district) in the time period over the threshold, it is a  peak time period
+    - `CUSTOMER_RATIO`: customer ratio in each time period
 - main.cpp
-    - `SPEED`: speed of the courier
+    - `SPEED`: speed of the courier (must be the same as the one in drawMap.cpp)
+    - `H`: guarantee of sending time (must be the same as the one in drawMap.cpp)
+    - `SERV_COST`: service cost of each customers
+    - `time_period`: number of time period
+    - `MAX_POSTAL_NUM`: total postal number
+    - `DELTA1`: delta difference of object 1 and object 2
+    - `DELTA2`: delta difference of object 2 and object 3

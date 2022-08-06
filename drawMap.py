@@ -17,7 +17,6 @@ PEAK_CUSTOMER_THRESHOLD = 15 # when the number of customers in the time period
 							# over the threshold, it is a  peak time period
 CUSTOMER_RATIO = [1/25,5/25,10/25,4/25,2/25,3/25] # customer ratio in each time period
 												  # (total time period = 6 (might be 12) for testing)
-PEAK_TIME_LIST = []
 SPEED = 200 # unit: (m/hr)
 maxN = 3 # max number of candidate exchange points in a circle
 minN = 2 # min number of candidate exchange points in a circle
@@ -42,6 +41,7 @@ best_rot_deg = -1
 T = -1
 r = -1# be used to create candidate exchange point around centroid of each sub-district, unit: meter
 a = -1 # be used to calculate weight of each candidate exchange point, unit: meter
+PEAK_TIME_LIST = []
 
 # Data points from files
 dataBound = None
