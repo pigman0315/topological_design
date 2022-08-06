@@ -66,16 +66,16 @@
     - `LENGTH_OF_MAP`: side length of the map
     - `SPEED`: speed of the courier (must be the same as the one in main.cpp)
     - `H`: guarantee of sending time (must be the same as the one in main.cpp)
-    - `SERV_COST`: service cost of each customers
+    - `SERV_COST`: service cost of each customers (must be the same as the one in main.cpp)
+    - `TIME_PERIOD_NUM`: number of time period (must be the same as the one in main.cpp)
     - `VISUALIZE`: visualization of the final map (customer points/distriction/exchange points/boundaires)
-    - `TIME_PERIOD_NUM`: number of time period
     - `PEAK_CUSTOMER_THRESHOLD`:  when the number of customers (in all district) in the time period over the threshold, it is a  peak time period
-    - `CUSTOMER_RATIO`: customer ratio in each time period
+    - `CUSTOMER_RATIO`: simulated customer ratio in each time period
 - main.cpp
     - `SPEED`: speed of the courier (must be the same as the one in drawMap.cpp)
     - `H`: guarantee of sending time (must be the same as the one in drawMap.cpp)
-    - `SERV_COST`: service cost of each customers
-    - `time_period`: number of time period
-    - `MAX_POSTAL_NUM`: total postal number
+    - `SERV_COST`: service cost of each customers (must be the same as the one in drawMap.cpp)
+    - `time_period`: number of time period (must be the same as the one in drawMap.cpp)
+    - `MAX_POSTAL_NUM`: total postal number (usually 2 x NUM_OF_DISTRICT)
     - `DELTA1`: delta difference of object 1 and object 2
     - `DELTA2`: delta difference of object 2 and object 3
