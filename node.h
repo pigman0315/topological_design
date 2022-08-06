@@ -54,11 +54,13 @@ public:
 	}
 };
 class SolutionNode{
+
 public:
 	vector< vector<int> > routes_table;// be used to record routes with customer index of customer_points
 	vector<float> routes_time;
 	float total_time;
 	int route_num;
+
 public:
 	SolutionNode(){
 		total_time = 0.0;
@@ -138,6 +140,14 @@ public:
 			for(int j = 0;j < routes_table[i].size();j++){
 				cnt++;
 			}
+		}
+		return cnt;
+	}
+	int get_empty_route_num(){
+		int cnt = 0;
+		for(int i = 0;i < routes_time.size();i++){
+			if(routes_time[i] == 0)
+				cnt++;
 		}
 		return cnt;
 	}

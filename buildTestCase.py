@@ -4,7 +4,7 @@ import os
 SIDE_LENGTH = 100 # boundaries length
 POINTS_SIDE_LEN = int(SIDE_LENGTH*0.9) # prevent the customer points lie on boundaries
 INTERVAL = SIDE_LENGTH//20
-CUSTOMER_NUM = 30
+CUSTOMER_NUM = 300
 
 ##### FOR DEBUG ##
 random.seed(105) #

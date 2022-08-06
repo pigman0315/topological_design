@@ -13,7 +13,7 @@ import csv
 SINGLE_ROT_DEG = 15
 EPSILON = 0.1
 TIME_PERIOD_NUM = 6
-PEAK_CUSTOMER_THRESHOLD = 5 # when the number of customers in the time period 
+PEAK_CUSTOMER_THRESHOLD = 15 # when the number of customers in the time period 
 							# over the threshold, it is a  peak time period
 CUSTOMER_RATIO = [1/25,5/25,10/25,4/25,2/25,3/25] # customer ratio in each time period
 												  # (total time period = 6 (might be 12) for testing)
@@ -23,6 +23,7 @@ maxN = 3 # max number of candidate exchange points in a circle
 minN = 2 # min number of candidate exchange points in a circle
 H = 2.0
 SERV_COST = 0.0167
+VISUALIZE = False
 
 # Parameter
 # m_I = 4 --> degree = 90, m_I = 3 ---> degree = 120
@@ -1283,7 +1284,8 @@ if __name__ == '__main__':
 	print("\n********** Ring network design problem is done ************")
 
 	### Visualization
-	draw_map()
+	if(VISUALIZE):
+		draw_map()
 
 	if(w == 1):
 		output_info_1(w,m_I,m_O,best_rot_deg,best1stCenter,best2ndCenter,district_end_points_1st,districted_customer_points_1st,exch_point_1st)

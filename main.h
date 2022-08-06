@@ -281,7 +281,9 @@ public:
 		cout << "---- initial solution ok ----" << endl << endl;
 	}
 	void useSameNumCourier(){
+		// assign initial solution
 		same_courier_num_solution = init_solution;
+
 		// build fixed_courier_num_list(a private member of this class)
 		for(int i = 0;i < m_I;i++){
 			int max_courier_n = 0;
@@ -294,18 +296,24 @@ public:
 				}
 			}
 			fixed_courier_num_list.push_back(max_courier_n);
+			cout << "d" << i << ": " << max_courier_n << endl;
 		}
-
-		// use same courier number
+		
+ 		// use same courier number
 		for(int i = 0;i < m_I;i++){
 			for(int j = 0;j < time_period;j++){
 				cout << "--District " << i << ", Time period " << j << "---" << endl;
+				cout << "--- Before ---" << endl;
+				same_courier_num_solution[i][j].show();
+				cout << "--- After ---" << endl;
 				if(init_solution[i][j].routes_table.size() >= fixed_courier_num_list[i]){
 					same_courier_num_solution[i][j].show();
 					continue;
 				}
 				GVNS gvns(init_solution[i][j],time_cust_points[i][j],exch_points[i],cust_dist[i][j],fixed_courier_num_list[i]);
-				gvns.run();
+				// if customer_num < fixed_courier_num, there will be empty route
+				if(init_solution[i][j].get_node_num() > fixed_courier_num_list[i])
+					gvns.run();
 				gvns.solution.show();
 				same_courier_num_solution[i][j] = gvns.solution;
 			}
@@ -717,8 +725,19 @@ public:
 		// in each district
 		for(int i = 0; i < m_I;i++){
 			// Error detection
+			bool is_error = false;
 			if((FIRST_SHORT+LAST_LONG) > fixed_courier_num_list[i]){
 				cout << "Workload balancing failed: FIRST_SHORT or LAST_LONG too big" << endl;
+				is_error = true;
+			}
+			// for(int j = 0;j < time_period;j++){
+			// 	if(balance_solution[i][j].get_node_num() < fixed_courier_num_list[i]){
+			// 		cout << "Workload balancing failed: not enough customer points" << endl;
+			// 		is_error = true;
+			// 		break;
+			// 	}
+			// }
+			if(is_error){
 				continue;
 			}
 			
@@ -795,6 +814,20 @@ public:
 		int count = 0;
 		//
 		for(int a = 0;a < solution.size();a++){
+
+			// error detection
+			// bool is_error = false;
+			// for(int j = 0;j < time_period;j++){
+			// 	if(familiarity_solution[a][j].get_node_num() < fixed_courier_num_list[a]){
+			// 		is_error = true;
+			// 		break;
+			// 	}
+			// }
+			// if(is_error){
+			// 	continue;
+			// }
+
+			// job
 			vector<SolutionNode> distr_solution = solution[a];
 			vector<vector<int>> score_matrix(fixed_courier_num_list[a],vector<int>(MAX_POSTAL_NUM,0));
 			int fixed_courier_num = fixed_courier_num_list[a];
@@ -1258,6 +1291,18 @@ public:
 		else
 			familiarity_solution = balance_solution;
 		for(int i = 0;i < m_I;i++){
+			// error detection
+			// bool is_error = false;
+			// for(int j = 0;j < time_period;j++){
+			// 	if(familiarity_solution[i][j].get_node_num() < fixed_courier_num_list[i]){
+			// 		cout << "Increase familiarity failed: not enough customer points" << endl;
+			// 		is_error = true;
+			// 		break;
+			// 	}
+			// }
+			// if(is_error){
+			// 	continue;
+			// }
 			doFamiliarityVND(i,VISIT_LOW_BOUND);
 		}
 		cout << "---- Increasing familiarity end ----" << endl;
@@ -1322,26 +1367,38 @@ public:
 		float min,max;
 		int fam_score;
 
+		// object 1
+		cout << "\n--- Object 1 (Same courier number) ---" << endl;
 		total_time = getTotalTime(same_courier_num_solution);
-		cout << "\n--- Object 1 ---" << endl;
+		cout << "Fixed courier number: ";
+		for(int i = 0;i < m_I;i++){
+			cout << fixed_courier_num_list[i] << " ";	
+		}
+		cout << endl;
 		cout << "Total time = " << total_time*60 << "(mins)" << endl;
+		getWorkloadMaxMin(balance_solution,min,max);
+		cout << "Workload difference = " << (max - min)*60.0 << endl;
 		showWorkload(same_courier_num_solution);
 
-		total_time = getTotalTime(balance_solution);
+		// object 2
 		cout << "\n--- Object 2(Workload balance) ---" << endl;
+		total_time = getTotalTime(balance_solution);
 		cout << "Total time = " << total_time*60 << "(mins)" << endl;
 		getWorkloadMaxMin(balance_solution,min,max);
 		cout << "Workload difference = " << (max - min)*60.0 << endl;
 		showWorkload(balance_solution);
+		fam_score = getTotalFamiliarityScore(balance_solution);
+		cout << "Familiarity score = " << fam_score << endl; // lower is better
 
-		total_time = getTotalTime(familiarity_solution);
+		// object 3
 		cout << "\n--- Object 3(Familiarity) ---" << endl;
+		total_time = getTotalTime(familiarity_solution);
 		cout << "Total time = " << total_time*60 << "(mins)" << endl;
 		getWorkloadMaxMin(familiarity_solution,min,max);
 		cout << "Workload difference =  " << (max - min)*60.0 << endl;
 		showWorkload(familiarity_solution);
 		fam_score = getTotalFamiliarityScore(familiarity_solution);
-		cout << "Familiarity score = " << fam_score << endl;
+		cout << "Familiarity score = " << fam_score << endl; // lower is better
  	}
 };
 

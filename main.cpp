@@ -59,12 +59,12 @@ int main(){
 		tp.useSameNumCourier();
 
 		// workload balance
-		int FIRST_SHORT = 1, LAST_LONG = 1;
-		int FIRST_SHORT_R = 3, LAST_LONG_R = 3;
+		int FIRST_SHORT = 2, LAST_LONG = 2; // first/last short/long couriers
+		int FIRST_SHORT_R = 3, LAST_LONG_R = 3; // first/last short/long routes
 		tp.balanceWorkload(FIRST_SHORT, LAST_LONG, FIRST_SHORT_R, LAST_LONG_R);
 
 		// increase familiarity
-		int LOW_BOUND = 4; // need to lower than lower bound
+		int LOW_BOUND = 5; // need to lower than lower bound
 		tp.increaseFamiliarity(LOW_BOUND);
 
 		// show final results

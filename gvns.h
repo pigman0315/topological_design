@@ -25,8 +25,8 @@ extern vector<int> cust_postal_num;
 extern vector< vector<int> > visit_time_vec;
 extern const float SERV_COST;
 //
-const time_t t_max = 30;
-const int k_max = 5;
+const time_t t_max = 10; // runtime limit
+const int k_max = 5;	 // shake-VND loop limit, (VND algo.'s k)
 const int l_max = 8;
 const int m_max = 5;
 //const float delta_1 = 0.5;
@@ -104,10 +104,8 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep, vector< vector<float> > d
 		hired_courier_num = _owned_courier_num;
 		owned_courier_num = _owned_courier_num;
 	}
-	// fill up the routes number
-
-	vector< vector<int> > rt = sn.routes_table;
-	while(rt.size() < owned_courier_num){
+	vector< vector<int> > rt = sn.routes_table; // fill up the routes number
+	for(int o = 0;o < owned_courier_num;o++){ 
 		vector<int> route;
 		for(int i = 0;i < rt.size();i++){
 			if(rt[i].size() >= 2){
@@ -124,6 +122,8 @@ GVNS::GVNS(SolutionNode sn, vector<Node> cps, Node ep, vector< vector<float> > d
 				break;
 			}
 		}
+		solution.routes_table.resize(owned_courier_num);
+		solution.routes_time.resize(owned_courier_num);
 	}
 }
 int GVNS::get_score(){
@@ -156,31 +156,32 @@ void GVNS::run(){
 	t = 0;
 	start_t = time(NULL);
 	// step 2, 3: improve initial routes & get fixed number of owned routing courier
-	while(t < t_max){
-		for(int k = 1;k <= k_max;k++){
-			SolutionNode sn1, sn2;
-			sn1 = do_shake(k);
-			sn2 = do_VND(sn1);
-			if(is_better_sol(solution,sn2)){
-				solution = sn2;
-				k = 1;
-			}
+	for(int k = 1;k <= k_max;k++){
+		SolutionNode sn1, sn2;
+		sn1 = do_shake(k);
+		sn2 = do_VND(sn1);
+		if(is_better_sol(solution,sn2)){
+			solution = sn2;
+			//cout << "k is reset to 1" << endl;
+			k = 1;
 		}
 		end_t = time(NULL);
 		t = end_t - start_t;
+		if(t >= t_max) // exceed time limit
+			break;
 	}
 }
 
 SolutionNode GVNS::do_shake(int k){
 	// get neighborhood structures of shaking
 	vector<SolutionNode> ns = build_shake_ns(k);
-	
+
 	// find illegal ns (routes number > owned courier route number)
 	vector<SolutionNode> illegal_ns;
-	if(owned_courier_num == -1){
+	if(owned_courier_num == -1 || solution.get_empty_route_num() >= 1){ // initial phase
 		illegal_ns = ns;
 	}
-	else{
+	else{ // after initial phase (need same courier number)
 		for(int i = 0;i < ns.size();i++){
 			if(ns[i].routes_table.size() == owned_courier_num){
 				illegal_ns.push_back(ns[i]);
@@ -276,7 +277,7 @@ bool GVNS::is_better_sol(SolutionNode best_sn, SolutionNode sn){
 		return false;
 	vector<float> r_time = sn.routes_time;
 	for(int i = 0;i < r_time.size();i++){
-		if(r_time[i] > T)
+		if(r_time[i] > T) // any route exceed the routing time limit, return false
 			return false;
 	}
 	return true;
