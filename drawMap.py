@@ -1032,6 +1032,7 @@ def output_testcase_1(customer_points,cand_exch_point,center):
 	for t in range(TIME_PERIOD_NUM):
 		if(np.sum(t1,axis=1)[t] >= PEAK_CUSTOMER_THRESHOLD):
 			t8[t] = [str(1)]*I
+	t8 = np.transpose(t8) # workaround: t8 (IxTIME_PERIOD) is actually the correct one
 	writer.writerows(t8)
 	csvfile.close()
 	# 
