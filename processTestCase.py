@@ -5,6 +5,7 @@ FILE_NAME_READ = 'public_dataset/c101.txt' # read data from this file
 FILE_NAME_WRITE1 = 'customers.txt' # write customers' data into this file
 FILE_NAME_WRITE2 = 'boundaries.txt' # write boundaries' data into this file
 CUSTOMER_NUM = 100 # first n customer we use (total 100 customers in dataset)
+INTERVAL = 1
 
 # main
 if __name__ == '__main__':
@@ -27,26 +28,26 @@ if __name__ == '__main__':
 	file.close()
 
 	# get min/max x,y in data, and set interval of boundary points
-	interval = 2 # interval of creating boundary points
-	max_x= max(x_list) + interval
-	min_x = min(x_list) - interval
-	max_y = max(y_list) + interval
-	min_y = min(y_list) - interval
+	margin = 5 # margin of creating boundary points
+	max_x= max(x_list) + margin
+	min_x = min(x_list) - margin
+	max_y = max(y_list) + margin
+	min_y = min(y_list) - margin
 	
 	
 	# build boundaries.txt
 	file = open(FILE_NAME_WRITE2,'w')
-	file.write(str(min_x) + " "+str(max_x) + " "+str(min_y) + " "+str(max_y) + " " + str(interval) + "\n")
-	for i in range(min_x,max_x+1,interval):# make bottom line
+	file.write(str(min_x) + " "+str(max_x) + " "+str(min_y) + " "+str(max_y) + " " + str(INTERVAL) + "\n")
+	for i in range(min_x,max_x+1,INTERVAL):# make bottom line
 		file.write(str(i) + " " + str(min_y))
 		file.write("\n")
-	for i in range(min_y,max_y+1,interval): # make left line
+	for i in range(min_y,max_y+1,INTERVAL): # make left line
 		file.write(str(min_x)+" "+str(i))
 		file.write("\n")
-	for i in range(min_y,max_y+1,interval): # make right line
+	for i in range(min_y,max_y+1,INTERVAL): # make right line
 		file.write(str(max_x)+" "+str(i))
 		file.write("\n")
-	for i in range(min_x,max_x+1,interval): # make top line
+	for i in range(min_x,max_x+1,INTERVAL): # make top line
 		file.write(str(i) + " " + str(max_y))
 		file.write("\n")
 	file.close()

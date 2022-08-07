@@ -13,10 +13,8 @@ import csv
 SINGLE_ROT_DEG = 15
 EPSILON = 0.1
 TIME_PERIOD_NUM = 6
-PEAK_CUSTOMER_THRESHOLD = 15 # when the number of customers in the time period 
-							# over the threshold, it is a  peak time period
-CUSTOMER_RATIO = [1/25,5/25,10/25,4/25,2/25,3/25] # customer ratio in each time period
-												  # (total time period = 6 (might be 12) for testing)
+PEAK_CUSTOMER_THRESHOLD = 15 # when the number of customers in the time period over the threshold, it is a  peak time period
+CUSTOMER_RATIO = [1/25,5/25,10/25,4/25,2/25,3/25] # customer ratio in each time period of a district (total time period = 6 (might be 12) for testing)
 SPEED = 200 # unit: (m/hr)
 maxN = 3 # max number of candidate exchange points in a circle
 minN = 2 # min number of candidate exchange points in a circle
@@ -234,7 +232,7 @@ def find1stLayerDistrictPoint(I,rot_deg):
 		if(deg < 0):
 			deg += 360
 		# Use to count how many points we should draw at most on the line
-		counter = max_side_length*2 // interval # //: integer division
+		counter = int(max_side_length*2 // interval) # //: integer division
 		result[i].append([center[0], center[1]])
 		for j in range(counter): # counter: length of districting line / interval
 			tmp_x = result[i][j-1][0] + interval*math.cos(rad)
@@ -245,50 +243,20 @@ def find1stLayerDistrictPoint(I,rot_deg):
 				break
 			result[i].append([tmp_x,tmp_y])
 	return result
-def isRayIntersectsSegment(poi,s_poi,e_poi): #[x,y] [lng,lat]
-    #輸入：判斷點，邊起點，邊終點，都是[lng,lat]格式數組
-    if s_poi[1]==e_poi[1]: #排除與射線平行、重合，線段首尾端點重合的情況
-        return False
-    if s_poi[1]>poi[1] and e_poi[1]>poi[1]: #線段在射線上邊
-        return False
-    if s_poi[1]<poi[1] and e_poi[1]<poi[1]: #線段在射線下邊
-        return False
-    if s_poi[1]==poi[1] and e_poi[1]>poi[1]: #交點爲下端點，對應spoint
-        return False
-    if e_poi[1]==poi[1] and s_poi[1]>poi[1]: #交點爲下端點，對應epoint
-        return False
-    if s_poi[0]<poi[0] and e_poi[1]<poi[1]: #線段在射線左邊
-        return False
 
-    xseg=e_poi[0]-(e_poi[0]-s_poi[0])*(e_poi[1]-poi[1])/(e_poi[1]-s_poi[1]) #求交
-    if xseg<=poi[0]: #交點在射線起點的左側
-        return False
-    return True  #排除上述情況之後
-# determine if a point is in the polygon
-# def in_poly(p,poly): 
-# 	sinsc = 0
-# 	for i in range(len(poly)):
-# 		s = poly[i]
-# 		e = poly[(i+1)%len(poly)]
-# 		if(isRayIntersectsSegment(p,s,e)):
-# 			sinsc +=1
-# 	if(sinsc % 2 == 1):
-# 		return True
-# 	else:
-# 		return False
 def isIntersectSegment(p,s,e,center):
 	p1_1 = p
 	p1_2 = center
 	p2_1 = s
 	p2_2 = e
 	# step1: exclude lines whose max x/y is smaller than the other line's min x/y
-	if(max(p1_1[0],p1_2[0]) >= min(p2_1[0],p2_2[0])
-	and max(p2_1[0],p2_2[0]) >= min(p1_1[0],p1_2[0])
-	and max(p1_1[1],p1_2[1]) >= min(p2_1[1],p2_2[1])
-	and max(p2_1[1],p2_2[1]) >= min(p1_1[1],p1_2[1])):
+	if(max(p1_1[0],p1_2[0]) > min(p2_1[0],p2_2[0])
+	and max(p2_1[0],p2_2[0]) > min(p1_1[0],p1_2[0])
+	and max(p1_1[1],p1_2[1]) > min(p2_1[1],p2_2[1])
+	and max(p2_1[1],p2_2[1]) > min(p1_1[1],p1_2[1])):
 		# cross product checking
-		if(cross(p1_1,p1_2,p2_1)*cross(p1_1,p1_2,p2_2) <= 0
-			and cross(p2_1,p2_2,p1_1)*cross(p2_1,p2_2,p1_2) <= 0):
+		if(cross(p1_1,p1_2,p2_1)*cross(p1_1,p1_2,p2_2) < 0
+			and cross(p2_1,p2_2,p1_1)*cross(p2_1,p2_2,p1_2) < 0):
 			return True
 	return False
 def in_poly(p,poly,center): 
@@ -805,11 +773,11 @@ def read_file():
 	fileCust.close()
 
 	# convert (x,y) from string to float, e.g.: ('10','10') ---> (10,10)
-	min_x = int(side_length_info[0])
-	max_x = int(side_length_info[1])
-	min_y = int(side_length_info[2])
-	max_y = int(side_length_info[3])
-	interval = int(side_length_info[4])
+	min_x = float(side_length_info[0])
+	max_x = float(side_length_info[1])
+	min_y = float(side_length_info[2])
+	max_y = float(side_length_info[3])
+	interval = float(side_length_info[4])
 	max_side_length = max(max_x,max_y)
 	for i in range(0,len(dataBound)):
 		dataBound[i] = dataBound[i].split()
