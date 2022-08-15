@@ -69,7 +69,7 @@
     - `SERV_COST`: service cost of each customers (must be the same as the one in main.cpp)
     - `TIME_PERIOD_NUM`: number of time period (must be the same as the one in main.cpp)
     - `VISUALIZE`: visualization of the final map (customer points/distriction/exchange points/boundaires)
-    - `PEAK_CUSTOMER_THRESHOLD`:  when the number of customers (in all district) in the time period over the threshold, it is a  peak time period
+    - `PEAK_CUSTOMER_THRESHOLD`:  when the number of customers (in a time period of a district) over the threshold, it is a  peak time period
     - `CUSTOMER_RATIO`: simulated customer ratio in each time period
 - main.cpp
     - `SPEED`: speed of the courier (must be the same as the one in drawMap.cpp)

@@ -13,7 +13,7 @@ import csv
 SINGLE_ROT_DEG = 15
 EPSILON = 0.1
 TIME_PERIOD_NUM = 6
-PEAK_CUSTOMER_THRESHOLD = 15 # when the number of customers in the time period over the threshold, it is a  peak time period
+PEAK_CUSTOMER_THRESHOLD = 8 # when the number of customers in the time period over the threshold, it is a  peak time period
 CUSTOMER_RATIO = [1/25,5/25,10/25,4/25,2/25,3/25] # customer ratio in each time period of a district (total time period = 6 (might be 12) for testing)
 SPEED = 200 # unit: (m/hr)
 maxN = 3 # max number of candidate exchange points in a circle
@@ -942,14 +942,14 @@ def output_testcase_1(customer_points,cand_exch_point,center):
 	points.extend(customer_points[0])
 	cus = []
 	idx = [0]*TIME_PERIOD_NUM
-	t1 = t1.T
+	t1_T = t1.T
 	for i in range(TIME_PERIOD_NUM):
 		tmp_cus = []
-		for j in range(len(t1[i])):
-			tmp_cus.append(customer_points[j][int(idx[j]):int(idx[j]+t1[i][j])])
-			idx[j] += t1[i][j]
+		for j in range(len(t1_T[i])):
+			tmp_cus.append(customer_points[j][int(idx[j]):int(idx[j]+t1_T[i][j])])
+			idx[j] += t1_T[i][j]
 		cus.append(tmp_cus)
-	sum_time = np.sum(np.array(t1),axis=1,dtype=int)
+	sum_time = np.sum(np.array(t1_T),axis=1,dtype=int)
 	t6_all = []
 	csvfile = open('dij.txt','w')
 	writer = csv.writer(csvfile,delimiter=' ')
@@ -996,11 +996,11 @@ def output_testcase_1(customer_points,cand_exch_point,center):
 	# Table8: peak time table
 	csvfile = open('lu.txt','w')
 	writer = csv.writer(csvfile,delimiter=' ')
-	t8 = np.zeros((TIME_PERIOD_NUM,I),dtype=int)
-	for t in range(TIME_PERIOD_NUM):
-		if(np.sum(t1,axis=1)[t] >= PEAK_CUSTOMER_THRESHOLD):
-			t8[t] = [str(1)]*I
-	t8 = np.transpose(t8) # workaround: t8 (IxTIME_PERIOD) is actually the correct one
+	t8 = np.zeros((I,TIME_PERIOD_NUM),dtype=int)
+	for i in range(I):
+		for t in range(TIME_PERIOD_NUM):
+			if(t1[i][t] >= PEAK_CUSTOMER_THRESHOLD):
+				t8[i][t] = 1
 	writer.writerows(t8)
 	csvfile.close()
 	# 
